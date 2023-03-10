@@ -42,7 +42,7 @@ class _NOT_AVAILABLE_TYPE:
 NOT_AVAILABLE = _NOT_AVAILABLE_TYPE()
 
 # File column descriptors --------------------------------------------
-class PositionReport(int, Enum):
+class DynamicReport(int, Enum):
     """
     Column descriptor class 
     for assigning column indices of
@@ -73,45 +73,6 @@ class StaticReport(int, Enum):
     raw_message2 = 5
     MMSI         = 6
     originator   = 7
-    
-@dataclass
-class PositionFields:
-    """
-    Fields from position reports
-    eligible for extraction
-    from an AISMessage class from the 
-    pyais package
-    """
-    lat    = "lat"
-    lon    = "lon"
-    speed  = "speed"
-    course = "course"
-    turn   = "turn"
-    status = "status"
-
-@dataclass
-class StaticFields:
-    """
-    Fields from static voyage reports
-    eligible for extraction
-    from an AISMessage class from the 
-    pyais package
-    """
-    shipname    = "shipname"
-    shiptype    = "shiptype"
-    draught     = "draught"
-    destination = "destination"
-    
-@dataclass
-class SizeFields:
-    """
-    Message fields describing 
-    a vessel's dimensions
-    """
-    to_bow = "to_bow"
-    to_stern = "to_stern"
-    to_starboard = "to_starboard"
-    to_port = "to_port"
 
 class TurningRate(int):
     """
@@ -143,7 +104,7 @@ class TurningRate(int):
             sign = -1 if __x < 0 else 1
             if -128 < __x < 128:
                 return float(sign * (__x/_ROTCONST)**2 / 60)
-            else: return NOT_AVAILABLE
+            else: return float(_FLOAT_NA)
         except Exception as e:
             raise e
 
@@ -191,7 +152,7 @@ def _decode_dynamic_messages(df: pd.DataFrame) -> list[ais.ANY_MESSAGE]:
     Decode AIS messages of types 1,2,3,18 
     supplied as a pandas Series object.
     """
-    messages = df[PositionReport.raw_message.name]
+    messages = df[DynamicReport.raw_message.name]
     # Split at exclamation mark and take the last part
     raw = messages.str.split("!",expand=True).iloc[:,-1:]
     # Since we split on the exclamation mark we need to
@@ -222,7 +183,7 @@ def _extract_fields(messages: list[ais.ANY_MESSAGE],
 
 def _get_decoder(
         dataframe: pd.DataFrame
-    ) -> Callable[[pd.Series | pd.DataFrame],list[ais.ANY_MESSAGE]]:
+    ) -> tuple[Callable[[pd.DataFrame],list[ais.ANY_MESSAGE]],dict]:
     """
     Returns a message-specific decoding function
     based on message types present in the dataframe.
@@ -235,18 +196,18 @@ def _get_decoder(
     # The "message_id" field is the same across all files,
     # therefore I randomly chose to extract it via the 
     # PositionReport Enum
-    types = dataframe[PositionReport.message_id.name]
+    types = dataframe[DynamicReport.message_id.name]
     if all(k in dataframe for k in (StaticReport.raw_message1.name, 
-        StaticReport.raw_message1.name)):
+        StaticReport.raw_message2.name)):
         # Maybe type 5 
         if all(b in _STATIC_TYPES for b in types.unique()):
-            return _decode_static_messages
+            return _decode_static_messages, _FIELDS_MSG5
         else: raise StructuralError(
                 "Assumed type-5-only dataframe, but found "
                 f"messages of types {types.unique()}"
         )
     elif all(b in _DYNAMIC_TYPES for b in types.unique()):
-        return _decode_dynamic_messages
+        return _decode_dynamic_messages, _FIELDS_MSG12318
     else: raise StructuralError(
             "Found not processable combination "
             "of message types. Need either type-5-only dataframe "
@@ -262,20 +223,11 @@ def _get_decoder(
 # as new columns in the existing file. 
 def process(datafile: str | PathLike[str]) -> None:  
     df  = pd.read_csv(datafile,sep=",",quotechar='"',
-                      names=[e.name for e in PositionReport],
+                      names=[e.name for e in DynamicReport],
                       encoding="utf-8",header=1)
-    
-    # Remove duplicates based on MMSI and timestamp to account 
-    # for multiple AIS receivers reporting the same vessel
-    df = df.drop_duplicates(
-        subset=[
-            PositionReport.timestamp.name,
-            PositionReport.MMSI.name
-            ], keep="first"
-    )
-    decoder = _get_decoder(df)
+    decoder, fields = _get_decoder(df)
     decoded = decoder(df)
-    df = df.assign(**_extract_fields(decoded,_FIELDS_MSG12318))
+    df = df.assign(**_extract_fields(decoded,fields))
     df.to_csv(datafile)
     return
 
