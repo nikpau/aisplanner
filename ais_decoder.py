@@ -5,8 +5,6 @@ to decode, sort, and export AIS Messages.
 The structures are specific to the EMSA dataset
 being analyzed with it. 
 """
-import multiprocessing as mp
-from dataclasses import dataclass
 from enum import Enum
 from os import PathLike
 import os
@@ -204,9 +202,6 @@ def _get_decoder(
     record messages (types 1,2,3,18), or static messages
     (type 5) but not both.
     """
-    # The "message_id" field is the same across all files,
-    # therefore I randomly chose to extract it via the 
-    # PositionReport Enum
     types = dataframe[AISFile.message_id.name]
     if all(k in dataframe for k in (StaticReport.raw_message1.name, 
         StaticReport.raw_message2.name)):
