@@ -23,7 +23,6 @@ They are therefore added after reading the input file
 """
 from pathlib import Path
 import os
-import multiprocessing as mp
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -54,10 +53,9 @@ def _merge(source: Path[str], dest: Path[str]) -> None:
         for line in final:
             dest.write(f"{line}\n")
 
-
-with mp.Pool() as p:
-    files = SOURCE.rglob("*.csv")
-    dests = []
-    for file in files:
-        dests.append(f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts)-1:])}")
-    p.starmap(_merge,[(file, dest) for file, dest in zip(files,dests)])
+files = SOURCE.rglob("*.csv")
+for file in files:
+    _merge(
+        file,
+        f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts)-1:])}"
+    )
