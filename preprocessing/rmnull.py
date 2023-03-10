@@ -4,6 +4,9 @@ files found at "SOURCE" and save the files
 at "DEST". Folder strucutre is preserved. 
 """
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
 SOURCE = Path("/warm_archive/ws/s2075466-ais/raw")
 DEST = Path("/lustre/ssd/ws/s2075466-ais-temp")

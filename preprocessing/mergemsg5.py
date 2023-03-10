@@ -22,13 +22,16 @@ which also need to be addressed:
 They are therefore added after reading the input file
 """
 from pathlib import Path
+import os
 import multiprocessing as mp
+from dotenv import load_dotenv
+load_dotenv()
 
 HEADER = "timestamp,Message_id,Latitude,Longitude,Raw_message1,Raw_message2,MMSI,Originator"
 
 # Hard coded file paths
-SOURCE = Path("/warm_archive/ws/s2075466-ais/curated/jan2020_to_jun2022/msgtype5")
-DEST = Path("/lustre/ssd/ws/s2075466-ais-temp/msgtype5")
+SOURCE = Path(os.environ["MSG5SOURCE"])
+DEST = Path(os.environ["TEMDEST"])
 
 def _merge(source: Path[str], dest: Path[str]) -> None:
     

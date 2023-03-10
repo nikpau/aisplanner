@@ -5,18 +5,19 @@ to decode, sort, and export AIS Messages.
 The structures are specific to the EMSA dataset
 being analyzed with it. 
 """
-from os import PathLike
-from typing import Callable
-import pyais as ais
-from pyais.messages import (
-    MessageType1,MessageType2,MessageType3,
-    MessageType5,MessageType18
-)
-import pandas as pd
-import numpy as np
+import multiprocessing as mp
 from dataclasses import dataclass
 from enum import Enum
-import multiprocessing as mp
+from os import PathLike
+import os
+from typing import Callable
+from dotenv import load_dotenv
+
+import numpy as np
+import pandas as pd
+import pyais as ais
+
+load_dotenv()
 
 class StructuralError(Exception):
     pass
@@ -282,8 +283,8 @@ def process(datafile: str | PathLike[str]) -> None:
 
 from pathlib import Path
 
-SOURCE = Path("/warm_archive/ws/s2075466-ais/raw")
-DEST = Path("/lustre/ssd/ws/s2075466-ais-temp")
+SOURCE = Path(os.environ("AISSOURCE"))
+DEST = Path(os.environ("DECODEDDEST"))
 
 for file in SOURCE.rglob("*.csv"):
     process(
