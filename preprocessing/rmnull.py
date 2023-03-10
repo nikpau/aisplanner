@@ -8,8 +8,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-SOURCE = Path("/warm_archive/ws/s2075466-ais/raw")
-DEST = Path("/lustre/ssd/ws/s2075466-ais-temp")
+SOURCE = Path(os.environ["AISRAW"])
+DEST = Path(os.environ["TEMDEST"])
 
 def remove_null_bytes(
         old: str | Path[str], new: str | Path[str]) -> str:
