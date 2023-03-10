@@ -32,6 +32,8 @@ _TIMEFORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 # `not available` values.
 _FLOAT_NA = -999.
 
+_NA = "NA"
+
 # Sentinel type for parameters that have not been
 # transmitted or are out out of bounds.
 # Some values have "NOT_AVAILABLE" as their default.
@@ -40,6 +42,15 @@ _FLOAT_NA = -999.
 class _NOT_AVAILABLE_TYPE:
     pass
 NOT_AVAILABLE = _NOT_AVAILABLE_TYPE()
+
+class AISFile(int,Enum):
+    """
+    Column descriptor class
+    for fields present in all
+    AIS files.
+    """
+    timestamp = 0
+    message_id = 1
 
 # File column descriptors --------------------------------------------
 class DynamicReport(int, Enum):
@@ -176,9 +187,9 @@ def _decode_static_messages(df: pd.DataFrame):
 
 def _extract_fields(messages: list[ais.ANY_MESSAGE],
                     fields: tuple) -> dict[str,np.ndarray]:
-    out = np.empty((len(messages),len(fields)))
+    out = np.empty((len(messages),len(fields)),dtype=object)
     for i, msg in enumerate(messages):
-        out[i] = [getattr(msg,field,_FLOAT_NA) for field in fields]
+        out[i] = [getattr(msg,field,_NA) for field in fields]
     return dict(zip(fields,out.T))
 
 def _get_decoder(
@@ -196,7 +207,7 @@ def _get_decoder(
     # The "message_id" field is the same across all files,
     # therefore I randomly chose to extract it via the 
     # PositionReport Enum
-    types = dataframe[DynamicReport.message_id.name]
+    types = dataframe[AISFile.message_id.name]
     if all(k in dataframe for k in (StaticReport.raw_message1.name, 
         StaticReport.raw_message2.name)):
         # Maybe type 5 
@@ -221,15 +232,15 @@ def _get_decoder(
 # as a pandas dataframe, decode the raw AIS
 # message, and save the extracted information 
 # as new columns in the existing file. 
-def process(datafile: str | PathLike[str]) -> None:  
-    df  = pd.read_csv(datafile,sep=",",quotechar='"',
-                      names=[e.name for e in DynamicReport],
-                      encoding="utf-8",header=1)
+def process(source: str | PathLike[str],
+            dest: str | PathLike[str]) -> None:  
+    df  = pd.read_csv(source,sep=",",quotechar='"',
+                      encoding="utf-8",index_col=False)
     decoder, fields = _get_decoder(df)
     decoded = decoder(df)
     df["DECODE_START"] = "||"
     df = df.assign(**_extract_fields(decoded,fields))
-    df.to_csv(datafile)
+    df.to_csv(dest)
     return
 
 # MAIN --------------------------------------------------------------------
