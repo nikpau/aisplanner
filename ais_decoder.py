@@ -227,6 +227,7 @@ def process(datafile: str | PathLike[str]) -> None:
                       encoding="utf-8",header=1)
     decoder, fields = _get_decoder(df)
     decoded = decoder(df)
+    df["DECODE_START"] = "||"
     df = df.assign(**_extract_fields(decoded,fields))
     df.to_csv(datafile)
     return
@@ -235,8 +236,8 @@ def process(datafile: str | PathLike[str]) -> None:
 
 from pathlib import Path
 
-SOURCE = Path(os.environ("AISSOURCE"))
-DEST = Path(os.environ("DECODEDDEST"))
+SOURCE = Path(os.environ["AISSOURCE"])
+DEST = Path(os.environ["DECODEDDEST"])
 
 for file in SOURCE.rglob("*.csv"):
     process(
