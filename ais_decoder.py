@@ -231,6 +231,7 @@ def process(source: str | PathLike[str],
             dest: str | PathLike[str]) -> None:  
     df  = pd.read_csv(source,sep=",",quotechar='"',
                       encoding="utf-8",index_col=False)
+    df = df.drop(df[df[DynamicReport.raw_message.name].str.contains(r"\n")].index)
     decoder, fields = _get_decoder(df)
     decoded = decoder(df)
     df["DECODE_START"] = "||"
