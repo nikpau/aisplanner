@@ -1,0 +1,22 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools"]
+
+[project]
+name = "aisplanner"
+version = "0.0.1"
+authors = [
+    {name = "Niklas Paulig", email = "niklas.paulig@tu-dresden.de"}
+]
+description = "COLREGS-compliant path planning for autonomous vessels based on AIS data."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+]
+dependencies = [
+    "requests",
+    "numpy >= 1.19",
+    "matplotlib >= 3.5.3",
+]
