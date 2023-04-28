@@ -13,7 +13,7 @@ Procedure:
         4. Assume, that a linear path connecting start and end is the unplanned route
 """
 
-from typing import IO, Iterator
+from typing import IO, Iterator, List, Tuple
 import pandas as pd
 import numpy as np
 import pytsa
@@ -102,7 +102,7 @@ def angle_to_2pi(angle: float) -> float:
     return angle % (2 * PI)
 
 def relative_velocity(
-    o_crs: float, o_spd: float, t_crs: float, t_spd: float) -> tuple[float,float]:
+    o_crs: float, o_spd: float, t_crs: float, t_spd: float) -> Tuple[float,float]:
     """
     Calculate the relative velocity between two ships
     and split it into x and y components.
@@ -201,7 +201,7 @@ class EncounterSituations:
     def __repr__(self) -> str:
         return f"EncounterSituations({self.own}, {self.tgt})"
 
-    def analyze(self) -> list[ColregsSituation]:
+    def analyze(self) -> List[ColregsSituation]:
         s = []
         # Early stop if the encounter is not active
         if self.tcpa <= 0:
@@ -237,7 +237,7 @@ class EncounterResult:
     """
     Store the file, timestamp and MMSI of the encounter
     """
-    encounter: list[EncounterSituations]
+    encounter: List[EncounterSituations]
     file: str
     timestamp: str | datetime
     mmsi: str
@@ -329,14 +329,14 @@ class ENCSearchAgent:
     def __init__(self, 
             remote_host: str | Path, 
             remote_dir: str | Path,
-            search_area: list[pytsa.BoundingBox],
-            filelist: list[Path | str] = None) -> None:
+            search_areas: List[pytsa.BoundingBox],
+            filelist: List[Path | str] = None) -> None:
         
         self.remote_host = remote_host
         self.remote_dir = remote_dir
-        self.search_areas = search_area
+        self.search_areas = search_areas
 
-        self.encounters: list[EncounterResult] = []
+        self.encounters: List[EncounterResult] = []
         
         if filelist is not None:
             self.filestream = FileStream(self.remote_host, self.remote_dir)
@@ -351,9 +351,7 @@ class ENCSearchAgent:
             self.current_file: Path = next(self.filestream)
         except StopIteration:
             logger.info("No more files to process")
-            exit(0)
-        df = pd.read_csv(self.current_file, sep=",")
-        return self.select_columns(df)
+            raise
 
     def delete_current_file(self) -> None:
         """
@@ -423,20 +421,24 @@ class ENCSearchAgent:
         """
         return date + timedelta(minutes=n)
     
-    def save_results(self, results: list[EncounterResult]) -> None:
+    def save_results(self,dest: str | Path) -> None:
         """
         Saves the results as a python object.
         """
-        with open("results/encounters.pkl", "wb") as f:
-            pickle.dump(results, f)
+        with open(dest, "wb") as f:
+            pickle.dump(self.encounters, f)
     
-    def search(self) -> list[EncounterResult]:
+    def search(self) -> None:
         """
         Search all areas for encounters.
         """
-        for area in self.search_areas:
-            self.search(area)
-        return self.encounters
+        while True:
+            try:
+                self.load_next_file()
+                for area in self.search_areas:
+                    self._search(area)
+            except StopIteration:
+                return
 
     def _search(
         self,
@@ -445,9 +447,7 @@ class ENCSearchAgent:
         """
         
         """
-        if not override_file:
-            self.load_next_file()
-        else:
+        if override_file is not None:
             self.current_file = Path(override_file)
         # Datetime of current file, starting at midnight
         # NOTE: This only works if the file name is in the format
@@ -487,8 +487,8 @@ class ENCSearchAgent:
         # greater than the date of the current file.
         while start_date.day == search_date.day:
 
-            print(f"Searching {search_date}")
-            ships: list[TargetVessel] = search_agent.get_ships(tpos)
+            # print(f"Searching {search_date}")
+            ships: List[TargetVessel] = search_agent.get_ships(tpos)
             
             # Skip if there are not enough ships in the area
             if len(ships) < 2:

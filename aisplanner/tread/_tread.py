@@ -11,7 +11,7 @@ from datetime import datetime
 from itertools import pairwise
 from os import PathLike
 from pathlib import Path
-from typing import Dict
+from typing import Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
@@ -71,10 +71,10 @@ N_STAT    = 4 # [-]
 # before it is instantiated
 @dataclass
 class Storage:
-    entry: list[AISMessage] = field(default_factory=lambda: [])
-    exit: list[AISMessage] = field(default_factory=lambda: [])
-    stationary: list[AISMessage] = field(default_factory=lambda: [])
-    not_assigned: list[AISMessage] = field(default_factory=lambda: [])
+    entry: List[AISMessage] = field(default_factory=lambda: [])
+    exit: List[AISMessage] = field(default_factory=lambda: [])
+    stationary: List[AISMessage] = field(default_factory=lambda: [])
+    not_assigned: List[AISMessage] = field(default_factory=lambda: [])
 
     def as_list(self):
         return [
@@ -147,7 +147,7 @@ class Vessel:
     status: int
     last_update: datetime
     avg_speed: float # Will be set to -1 if unknown
-    track: list[AISMessage] = field(default_factory = lambda: list())
+    track: List[AISMessage] = field(default_factory = lambda: list())
 
 @dataclass
 class ReducedVessel:
@@ -178,15 +178,15 @@ class ClusterType:
 
 @dataclass
 class Route:
-    avg_start: tuple[Latitude,Longitude] = -1, -1 # Average lat lon of route begin
-    avg_end: tuple[Latitude,Longitude] = -1, -1 # Average lat lon of route end
-    elements: list[AISMessage] = field(default_factory = lambda: list())
+    avg_start: Tuple[Latitude,Longitude] = -1, -1 # Average lat lon of route begin
+    avg_end: Tuple[Latitude,Longitude] = -1, -1 # Average lat lon of route end
+    elements: List[AISMessage] = field(default_factory = lambda: list())
     
 def _load_data(filepath: PathLike, **csv_options) -> pd.DataFrame:
     return pd.read_csv(filepath,**csv_options)
 
 def _add_to_cluster(
-        container: list[AISMessage], cluster: DBSCAN) -> list[AISMessage]:
+        container: List[AISMessage], cluster: DBSCAN) -> List[AISMessage]:
     """
     Waypoint clustering with DBSCAN. 
 
@@ -212,8 +212,8 @@ def _clear_track(vessel: Vessel) -> None:
     """
     vessel.track = []
 
-def _update_labels(labels: list[int], 
-                   container: list[AISMessage]) -> list[AISMessage]:
+def _update_labels(labels: List[int], 
+                   container: List[AISMessage]) -> List[AISMessage]:
     """Assign labels to each message in the repective 
     container. Order must be preserved
     """
@@ -221,8 +221,8 @@ def _update_labels(labels: list[int],
         message.label_group = label
     return container
 
-def _reassign(container: list[AISMessage], 
-              mmsi_dict: dict[MMSI,Vessel]) -> dict[MMSI,Vessel]:
+def _reassign(container: List[AISMessage], 
+              mmsi_dict: Dict[MMSI,Vessel]) -> Dict[MMSI,Vessel]:
     """Reassign the labeled AIS messages to the 
     track of the dictionary mapping MMSIs to Vessel
     objects.
@@ -436,7 +436,7 @@ def _reduced_TRE_no_clustering(data: pd.DataFrame) -> Storage:
 
     return storage
 
-def identify_epsilons(data: pd.DataFrame,eps_cutoff: float = 0) -> tuple[float,float,float]:
+def identify_epsilons(data: pd.DataFrame,eps_cutoff: float = 0) -> Tuple[float,float,float]:
     """
     Find the maximum distance between two samples 
     for one to be considered as in the neighborhood of the other.
@@ -467,7 +467,7 @@ def identify_epsilons(data: pd.DataFrame,eps_cutoff: float = 0) -> tuple[float,f
     plt.savefig(savepath)
     return savepath
 
-def _get_last_position(vessel: Vessel, n:int = 1) -> tuple[Latitude,Longitude]:
+def _get_last_position(vessel: Vessel, n:int = 1) -> Tuple[Latitude,Longitude]:
     """
     Retrieve the vessels (lat,lon) position
     in its recorded track `n` observations ago.
@@ -529,7 +529,7 @@ def route_manager(mmsi_dict: Dict[int,Vessel]) -> Dict[str,Route]:
     logger.info(f"{len(routes)} routes have been extracted")
     return routes
 
-def _filter_routes(routes: dict[str,Route]) -> dict[str,Route]:
+def _filter_routes(routes: Dict[str,Route]) -> Dict[str,Route]:
     """Subset routes with two filters:
 
     1. If two routes are the same but from a differnt 
@@ -556,7 +556,7 @@ def _swap_route_name(name: str) -> str:
     return parts[2] + parts[3] + parts[0] + parts[1]
 
 
-def extract_cluster_and_labels(track: list[AISMessage]) -> list[tuple[str,float,int]]:
+def extract_cluster_and_labels(track: List[AISMessage]) -> List[Tuple[str,float,int]]:
     """
     Extract all cluster types, label groups  
     and indices for a given vessel track which are not ``None``
@@ -575,10 +575,10 @@ def extract_cluster_and_labels(track: list[AISMessage]) -> list[tuple[str,float,
                 )
     return cluster_and_labels
 
-def subroute_ranges(indices: list[int]) ->list[tuple[int,int]]:
+def subroute_ranges(indices: List[int]) ->List[Tuple[int,int]]:
     return [(start,end) for start,end in pairwise(indices)]
 
-def _generate_route_names(cluster_and_label: list[tuple[str,float,int]])-> list[str]:
+def _generate_route_names(cluster_and_label: List[Tuple[str,float,int]])-> List[str]:
     """
     Generate temporary names based on 
     cluster and label for two adjacent routes
@@ -602,7 +602,7 @@ def sorted_kdist_graph(data: list, eps_cutoff: float = 1e-2) -> np.ndarray:
     dist = dist[:,1]
     return dist[dist > eps_cutoff]
 
-def preprocessor(datapath: Path[str] | list[Path[str]] = None) -> pd.DataFrame:
+def preprocessor(datapath: Path[str] | List[Path[str]] = None) -> pd.DataFrame:
     """
     Data pre-processing for decoded AIS message file(s) 
     """
@@ -645,7 +645,7 @@ def preprocessor(datapath: Path[str] | list[Path[str]] = None) -> pd.DataFrame:
 
     return data
 
-def _prompt_for_eps(savepath: Path[str]) -> tuple[float,float,float]:
+def _prompt_for_eps(savepath: Path[str]) -> Tuple[float,float,float]:
 
     while True:
         inp = input(
@@ -664,7 +664,7 @@ def _prompt_for_eps(savepath: Path[str]) -> tuple[float,float,float]:
                 )
     return en, ex, st
 
-def _load_and_concat(files: list[Path[str]]) -> pd.DataFrame:
+def _load_and_concat(files: List[Path[str]]) -> pd.DataFrame:
     """Concatenate an arbitrary amount of csv files
     into one large data frame"""
     dfs = []
@@ -674,7 +674,7 @@ def _load_and_concat(files: list[Path[str]]) -> pd.DataFrame:
     return pd.concat(dfs, axis=0)
 
 
-def run_eps_ident(datapath: Path[str] | list[Path[str]]) -> None:
+def run_eps_ident(datapath: Path[str] | List[Path[str]]) -> None:
     
     messages = preprocessor(datapath)
     
@@ -683,7 +683,7 @@ def run_eps_ident(datapath: Path[str] | list[Path[str]]) -> None:
     # as in the neighborhood of the other.
     return identify_epsilons(messages)
 
-def run_tre(datapath: Path[str] | list[Path[str]], eps: list[float]):
+def run_tre(datapath: Path[str] | List[Path[str]], eps: List[float]):
 
     messages = preprocessor(datapath)
 

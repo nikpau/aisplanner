@@ -6,6 +6,7 @@ import numpy as np
 import geopandas as gpd
 from pathlib import Path
 from aisplanner.tread._tread import Route, AISMessage, ClusterType, Location
+from typing import Dict, List, Tuple
 
 # Path to the directory containing the geometry files
 GEOMPATH = Path("data/geometry")
@@ -16,13 +17,13 @@ LOCATIONS = {
     "Kiel": Location(54.364428,10.171100)
 }
 
-def load_routes(path: Path) -> dict[str,Route]:
+def load_routes(path: Path) -> Dict[str,Route]:
     """Load routes from a file"""
     with open(path, "rb") as p_obj:
-        routes: dict[str,Route] = pickle.load(p_obj)
+        routes: Dict[str,Route] = pickle.load(p_obj)
     return routes
 
-def decompose(route: Route) -> dict[ClusterType,list[AISMessage]]:
+def decompose(route: Route) -> Dict[ClusterType,List[AISMessage]]:
     """
     Sort the messages of a route by 
     their cluster type
@@ -38,7 +39,7 @@ def decompose(route: Route) -> dict[ClusterType,list[AISMessage]]:
     return out
 
 
-def set_endpoints(decomp: dict[ClusterType,list[AISMessage]]) -> Route:
+def set_endpoints(decomp: Dict[ClusterType,List[AISMessage]]) -> Route:
     """Set the coorinates for route start and route end.
     Repack back to a route object"""
     new = Route()
@@ -73,8 +74,8 @@ def set_endpoints(decomp: dict[ClusterType,list[AISMessage]]) -> Route:
     return new
 
 def locate_routes(
-        routes: dict[str,Route], 
-        location: str, eps: float = 0.2) -> list[Route]:
+        routes: Dict[str,Route], 
+        location: str, eps: float = 0.2) -> List[Route]:
     """
     Find route(s) starting or ending not more than `eps` degrees
     away from provided location.
@@ -123,11 +124,11 @@ def located_to_file(file: Path[str],location: str, destination: Path[str], plot:
         plot_found(found,location)
     return
 
-def plot_found(routes: dict[str,Route], location: str):
+def plot_found(routes: Dict[str,Route], location: str):
     # Plot coastline geometry
     f, ax = plt.subplots()
 
-    def lonlat_from_route(route: Route) -> tuple[list[float],list[float]]:
+    def lonlat_from_route(route: Route) -> Tuple[List[float],List[float]]:
         lat, lon = [], []
         for message in route.elements:
             lat.append(message.lat)

@@ -8,16 +8,19 @@ from aisplanner.encounters import (
 from aisplanner.encounters._locdb import LocationDatabase
 import matplotlib.pyplot as plt
 import numpy as np
+import glob
 
 
 # Initialize search agent
 s = ENCSearchAgent(
-    remote_host="taurus.hrsk.tu-dresden.de",
-    remote_dir=os.environ["AISDECODED"],
-    search_area=LocationDatabase.hel_hel
+    remote_host="",
+    remote_dir="",
+    search_areas=LocationDatabase.all(),
+    filelist=glob.glob("/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022/*.csv")
 )
-res = s._search(override_file="data/aisrecords/2020_07_01.csv")
-print(res)
+res = s.search()
+s.save_results("/home/s2075466/aisplanner/results/results.pkl")
+
 exit()
 
 

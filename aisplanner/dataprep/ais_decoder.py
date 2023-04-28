@@ -7,7 +7,7 @@ being analyzed with it.
 """
 from os import PathLike
 import os
-from typing import Callable
+from typing import Callable, List, Tuple, Dict
 from dotenv import load_dotenv
 
 import numpy as np
@@ -31,7 +31,7 @@ _DYNAMIC_TYPES = (1,2,3,18,)
 _NA = "NA"
 
 # Decoding plan
-def _decode_dynamic_messages(df: pd.DataFrame) -> list[ais.ANY_MESSAGE]:
+def _decode_dynamic_messages(df: pd.DataFrame) -> List[ais.ANY_MESSAGE]:
     """
     Decode AIS messages of types 1,2,3,18 
     supplied as a pandas Series object.
@@ -58,8 +58,8 @@ def _decode_static_messages(df: pd.DataFrame):
             zip(raw1.values.ravel(),raw2.values.ravel())]
 
 
-def _extract_fields(messages: list[ais.ANY_MESSAGE],
-                    fields: tuple) -> dict[str,np.ndarray]:
+def _extract_fields(messages: List[ais.ANY_MESSAGE],
+                    fields: tuple) -> Dict[str,np.ndarray]:
     out = np.empty((len(messages),len(fields)),dtype=object)
     for i, msg in enumerate(messages):
         out[i] = [getattr(msg,field,_NA) for field in fields]
@@ -67,7 +67,7 @@ def _extract_fields(messages: list[ais.ANY_MESSAGE],
 
 def _get_decoder(
         dataframe: pd.DataFrame
-    ) -> tuple[Callable[[pd.DataFrame],list[ais.ANY_MESSAGE]],dict]:
+    ) -> Tuple[Callable[[pd.DataFrame],List[ais.ANY_MESSAGE]],dict]:
     """
     Returns a message-specific decoding function
     based on message types present in the dataframe.
