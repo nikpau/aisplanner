@@ -32,6 +32,7 @@ import ciso8601
 from datetime import datetime, timedelta
 from itertools import permutations
 from aisplanner.misc import logger
+import pickle
 
 # Exceptions
 class EndOfFileError(Exception):
@@ -240,6 +241,7 @@ class EncounterResult:
     file: str
     timestamp: str | datetime
     mmsi: str
+    area: pytsa.BoundingBox
 
     def __post_init__(self) -> None:
         self.encounter_names = [e.name for e in self.encounter]
@@ -256,7 +258,7 @@ class FileStream:
         self.path = Path(path)
         self.downloadpath = self._set_downloadpath()
 
-        self._check_environment_variables()
+        #self._check_environment_variables()
         
     def _check_environment_variables(self) -> None:
         """
@@ -327,15 +329,15 @@ class ENCSearchAgent:
     def __init__(self, 
             remote_host: str | Path, 
             remote_dir: str | Path,
-            search_area: pytsa.BoundingBox) -> None:
+            search_area: list[pytsa.BoundingBox]) -> None:
         
         self.remote_host = remote_host
         self.remote_dir = remote_dir
-        self.search_area = search_area
+        self.search_areas = search_area
 
         self.encounters: list[EncounterResult] = []
         
-        self.filestream = FileStream(self.remote_host, self.remote_dir)
+        # self.filestream = FileStream(self.remote_host, self.remote_dir)
 
     def load_next_file(self) -> pd.DataFrame:
         """
@@ -368,9 +370,9 @@ class ENCSearchAgent:
             DecodedReport.status.name,
         ]]
     
-    def filter_rows(self, df: pd.DataFrame) -> pd.DataFrame:
+    def only_underway(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        Filter rows that are needed for the search.
+        Filter rows for ships that are underway.
 
         Since we are only considering ships that are moving, 
         therefore only status == 'UnderWayUsingEngine' is
@@ -385,30 +387,12 @@ class ENCSearchAgent:
             (df[DecodedReport.course.name] != 360) &
             (df[DecodedReport.speed.name] > 0)
         ]
-    
-    def filter_location(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Filter rows that are within the search area.
-        """
-        return df[
-            (df[DecodedReport.lat.name] >= self.search_area.LATMIN) &
-            (df[DecodedReport.lat.name] <= self.search_area.LATMAX) &
-            (df[DecodedReport.lon.name] >= self.search_area.LONMIN) &
-            (df[DecodedReport.lon.name] <= self.search_area.LONMAX)
-        ]
-    
-    def prepare_ais_messages(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Prepare AIS messages for search.
-        """
-        df = self.filter_rows(df)
-        return self.filter_location(df)
-    
+        
     def search_area_center(self) -> pytsa.targetship.Position:
         """
         Get the center of the search area.
         """
-        b = self.search_area
+        b = self.search_areas
         return pytsa.targetship.Position(
             (b.LATMIN + b.LATMAX)/2,
             (b.LONMIN + b.LONMAX)/2
@@ -417,30 +401,51 @@ class ENCSearchAgent:
     def get_search_radius(self) -> float:
         """
         Get the radius of the circle around the bounding box
+        in nautical miles.
+        Due to the earth being a sphere, the radius is not
+        constant, therefore the error of this approximation
+        increases with the distance from the equator.
         """
-        b = self.search_area
+        b = self.search_areas
         center = self.search_area_center()
         lat_extent = abs(b.LATMAX - b.LATMIN)
-        lon_extent = abs(b.LONMAX - b.LONMIN)
-        r_along_lon = np.sqrt(
-            (center.lon-b.LONMIN)**2 + (lat_extent/2)**2
+        r = np.sqrt(
+            (b.LONMAX-center.lon)**2 + (lat_extent/2)**2
         )
-        r_along_lat = np.sqrt(
-            (center.lat-b.LATMIN)**2 + (lon_extent/2)**2
-        )
-        return max(r_along_lon, r_along_lat)
+        return r*60 # convert to nautical miles
     
-    def _increment(self, date: datetime, by: int = 3) -> datetime:
+    def _increment(self, date: datetime, n: int = 3) -> datetime:
         """
-        Increment date by .
+        Increment date by n minutes.
         """
-        return date + timedelta(minutes=by)
+        return date + timedelta(minutes=n)
+    
+    def save_results(self, results: list[EncounterResult]) -> None:
+        """
+        Saves the results as a python object.
+        """
+        with open("results/encounters.pkl", "wb") as f:
+            pickle.dump(results, f)
+    
+    def search(self) -> list[EncounterResult]:
+        """
+        Search all areas for encounters.
+        """
+        for area in self.search_areas:
+            self.search(area)
+        return self.encounters
 
-    def search(self) -> list[EncounterSituations]:
+    def _search(
+        self,
+        area: pytsa.BoundingBox,
+        override_file: Path = None) -> None:
         """
         
         """
-        self.load_next_file()
+        if not override_file:
+            self.load_next_file()
+        else:
+            self.current_file = Path(override_file)
         # Datetime of current file, starting at midnight
         # NOTE: This only works if the file name is in the format
         #       YYYY-MM-DD.csv
@@ -452,11 +457,11 @@ class ENCSearchAgent:
         # Initialize search agent for nearest neighbors
         # and trajectory interpolation
         search_agent = pytsa.SearchAgent(
-            datapath=self.current_file,
-            frame=self.search_area,
+            datapath=self.current_file if not override_file else override_file,
+            frame=area,
             search_radius=self.get_search_radius(),
             n_cells=1,
-            filter=self.prepare_ais_messages
+            filter=self.only_underway
         )
 
         # Use the center of the search area as the starting position
@@ -477,9 +482,10 @@ class ENCSearchAgent:
 
         # Increment the search date until the date of search is
         # greater than the date of the current file.
-        while start_date.day <= search_date.day:
+        while start_date.day == search_date.day:
 
-            ships: list[TargetVessel] = search_agent.get_ships()
+            print(f"Searching {search_date}")
+            ships: list[TargetVessel] = search_agent.get_ships(tpos)
             
             # Skip if there are not enough ships in the area
             if len(ships) < 2:
@@ -511,9 +517,13 @@ class ENCSearchAgent:
                                 file=self.current_file.stem,
                                 timestamp=search_date,
                                 mmsi=os.mmsi,
+                                area=area
                             )
                         )
             # End of search for this time step
             search_date = self._increment(search_date)
-
-        return self.encounters
+            tpos = pytsa.TimePosition(
+                timestamp=search_date,
+                lat=center.lat,
+                lon=center.lon
+            )

@@ -5,26 +5,20 @@ from aisplanner.encounters import (
     dtr, crv, true_bearing, rel_dist, relative_velocity, vel_from_xy,
     DCPA, TCPA
 )
-import pytsa
+from aisplanner.encounters._locdb import LocationDatabase
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Set search area
-# Fredrikshavn - Gothenburg
-b = pytsa.targetship.BoundingBox(
-    LATMIN=57.378,
-    LATMAX=57.778,
-    LONMIN=10.446,
-    LONMAX=11.872
-)
 
 # Initialize search agent
 s = ENCSearchAgent(
     remote_host="taurus.hrsk.tu-dresden.de",
     remote_dir=os.environ["AISDECODED"],
-    search_area=b
+    search_area=LocationDatabase.hel_hel
 )
-res = s.search()
+res = s._search(override_file="data/aisrecords/2020_07_01.csv")
+print(res)
+exit()
 
 
 OS = Ship(Position(0,0),1,dtr(45))
