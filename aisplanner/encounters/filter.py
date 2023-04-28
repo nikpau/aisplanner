@@ -329,7 +329,8 @@ class ENCSearchAgent:
     def __init__(self, 
             remote_host: str | Path, 
             remote_dir: str | Path,
-            search_area: list[pytsa.BoundingBox]) -> None:
+            search_area: list[pytsa.BoundingBox],
+            filelist: list[Path | str] = None) -> None:
         
         self.remote_host = remote_host
         self.remote_dir = remote_dir
@@ -337,7 +338,9 @@ class ENCSearchAgent:
 
         self.encounters: list[EncounterResult] = []
         
-        # self.filestream = FileStream(self.remote_host, self.remote_dir)
+        if filelist is not None:
+            self.filestream = FileStream(self.remote_host, self.remote_dir)
+        else: self.filestream = iter(filelist)
 
     def load_next_file(self) -> pd.DataFrame:
         """
