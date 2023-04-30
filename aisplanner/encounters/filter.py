@@ -340,7 +340,9 @@ class ENCSearchAgent:
         
         if filelist is None:
             self.filestream = FileStream(self.remote_host, self.remote_dir)
-        else: self.filestream = iter(filelist)
+        else: 
+            self.filestream  = [Path(file) for file in filelist]
+            self.filestream = iter(filelist)
 
     def load_next_file(self) -> pd.DataFrame:
         """
