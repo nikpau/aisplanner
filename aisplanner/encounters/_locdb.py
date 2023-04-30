@@ -34,5 +34,6 @@ class LocationDatabase:
         LONMAX=9.995
     )
     # Return all locations as a list
-    def all(self):
-        return [getattr(self,field.name) for field in fields(self)]
+    @classmethod
+    def all(cls):
+        return [getattr(cls,field.name) for field in fields(cls)]
