@@ -338,7 +338,7 @@ class ENCSearchAgent:
 
         self.encounters: List[EncounterResult] = []
         
-        if filelist is not None:
+        if filelist is None:
             self.filestream = FileStream(self.remote_host, self.remote_dir)
         else: self.filestream = iter(filelist)
 
