@@ -11,7 +11,7 @@ from datetime import datetime
 from itertools import pairwise
 from os import PathLike
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
@@ -138,7 +138,7 @@ class AISMessage:
     COG: float # Course over ground
     SOG: float # Speed over ground
     cluster_type: str =  "" # ["EN","EX","PO"]
-    label_group: int | None = None
+    label_group: Union[int,None] = None
 
 
 @dataclass
@@ -602,7 +602,7 @@ def sorted_kdist_graph(data: list, eps_cutoff: float = 1e-2) -> np.ndarray:
     dist = dist[:,1]
     return dist[dist > eps_cutoff]
 
-def preprocessor(datapath: Path[str] | List[Path[str]] = None) -> pd.DataFrame:
+def preprocessor(datapath: Union[Path,List[Path]] = None) -> pd.DataFrame:
     """
     Data pre-processing for decoded AIS message file(s) 
     """
@@ -674,7 +674,7 @@ def _load_and_concat(files: List[Path[str]]) -> pd.DataFrame:
     return pd.concat(dfs, axis=0)
 
 
-def run_eps_ident(datapath: Path[str] | List[Path[str]]) -> None:
+def run_eps_ident(datapath: Union[Path,List[Path]]) -> None:
     
     messages = preprocessor(datapath)
     
@@ -683,7 +683,7 @@ def run_eps_ident(datapath: Path[str] | List[Path[str]]) -> None:
     # as in the neighborhood of the other.
     return identify_epsilons(messages)
 
-def run_tre(datapath: Path[str] | List[Path[str]], eps: List[float]):
+def run_tre(datapath: Union[Path,List[Path]], eps: List[float]):
 
     messages = preprocessor(datapath)
 

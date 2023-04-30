@@ -5,7 +5,6 @@ to decode, sort, and export AIS Messages.
 The structures are specific to the EMSA dataset
 being analyzed with it. 
 """
-from os import PathLike
 import os
 from typing import Callable, List, Tuple, Dict
 from dotenv import load_dotenv
@@ -102,8 +101,8 @@ def _get_decoder(
 # as a pandas dataframe, decode the raw AIS
 # message, and save the extracted information 
 # as new columns in the existing file. 
-def decode_from_file(source: str | PathLike[str],
-            dest: str | PathLike[str]) -> None:  
+def decode_from_file(source: str,
+            dest: str) -> None:  
     df  = pd.read_csv(source,sep=",",quotechar='"',
                       encoding="utf-8",index_col=False)
     df = df.drop(df[df[DynamicReport.raw_message.name].str.contains(r"\n")].index)

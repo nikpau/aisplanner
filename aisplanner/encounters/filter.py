@@ -13,7 +13,7 @@ Procedure:
         4. Assume, that a linear path connecting start and end is the unplanned route
 """
 
-from typing import IO, Iterator, List, Tuple
+from typing import IO, Iterator, List, Tuple, Union
 import pandas as pd
 import numpy as np
 import pytsa
@@ -239,7 +239,7 @@ class EncounterResult:
     """
     encounter: List[EncounterSituations]
     file: str
-    timestamp: str | datetime
+    timestamp: Union[str, datetime]
     mmsi: str
     area: pytsa.BoundingBox
 
@@ -327,10 +327,10 @@ class ENCSearchAgent:
     
     """
     def __init__(self, 
-            remote_host: str | Path, 
-            remote_dir: str | Path,
+            remote_host: Union[str, Path], 
+            remote_dir: Union[str, Path],
             search_areas: List[pytsa.BoundingBox],
-            filelist: List[Path | str] = None) -> None:
+            filelist: List[Union[Path, str]] = None) -> None:
         
         self.remote_host = remote_host
         self.remote_dir = remote_dir
@@ -421,7 +421,7 @@ class ENCSearchAgent:
         """
         return date + timedelta(minutes=n)
     
-    def save_results(self,dest: str | Path) -> None:
+    def save_results(self,dest: Union[str, Path]) -> None:
         """
         Saves the results as a python object.
         """

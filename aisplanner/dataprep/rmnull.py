@@ -11,8 +11,7 @@ load_dotenv()
 SOURCE = Path(os.environ["AISRAW"])
 DEST = Path(os.environ["TEMDEST"])
 
-def remove_null_bytes(
-        old: str | Path[str], new: str | Path[str]) -> str:
+def remove_null_bytes(old: Path, new: Path) -> str:
     """
     
     """
