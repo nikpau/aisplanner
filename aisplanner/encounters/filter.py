@@ -391,17 +391,16 @@ class ENCSearchAgent:
             (df[DecodedReport.speed.name] > 0)
         ]
         
-    def search_area_center(self) -> pytsa.targetship.Position:
+    def search_area_center(self, area: pytsa.BoundingBox) -> pytsa.targetship.Position:
         """
         Get the center of the search area.
         """
-        b = self.search_areas
         return pytsa.targetship.Position(
-            (b.LATMIN + b.LATMAX)/2,
-            (b.LONMIN + b.LONMAX)/2
+            (area.LATMIN + area.LATMAX)/2,
+            (area.LONMIN + area.LONMAX)/2
         )
     
-    def get_search_radius(self) -> float:
+    def get_search_radius(self,area: pytsa.BoundingBox) -> float:
         """
         Get the radius of the circle around the bounding box
         in nautical miles.
@@ -409,11 +408,10 @@ class ENCSearchAgent:
         constant, therefore the error of this approximation
         increases with the distance from the equator.
         """
-        b = self.search_areas
-        center = self.search_area_center()
-        lat_extent = abs(b.LATMAX - b.LATMIN)
+        center = self.search_area_center(area)
+        lat_extent = abs(area.LATMAX - area.LATMIN)
         r = np.sqrt(
-            (b.LONMAX-center.lon)**2 + (lat_extent/2)**2
+            (area.LONMAX-center.lon)**2 + (lat_extent/2)**2
         )
         return r*60 # convert to nautical miles
     
@@ -464,13 +462,13 @@ class ENCSearchAgent:
         search_agent = pytsa.SearchAgent(
             datapath=self.current_file if not override_file else override_file,
             frame=area,
-            search_radius=self.get_search_radius(),
+            search_radius=self.get_search_radius(area),
             n_cells=1,
             filter=self.only_underway
         )
 
         # Use the center of the search area as the starting position
-        center = self.search_area_center()
+        center = self.search_area_center(area)
         tpos = pytsa.TimePosition(
             timestamp=start_date,
             lat=center.lat,
