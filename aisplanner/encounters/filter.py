@@ -17,7 +17,7 @@ from typing import IO, Iterator, List, Tuple, Union
 import pandas as pd
 import numpy as np
 import pytsa
-from pytsa.targetship import TargetVessel
+from pytsa.targetship import TargetVessel, FileLoadingError
 from dataclasses import dataclass
 from enum import Enum
 import math
@@ -417,12 +417,6 @@ class ENCSearchAgent:
         )
         return r*60 # convert to nautical miles
     
-    def _increment(self, date: datetime, n: int = 3) -> datetime:
-        """
-        Increment date by n minutes.
-        """
-        return date + timedelta(minutes=n)
-    
     def save_results(self,dest: Union[str, Path]) -> None:
         """
         Saves the results as a python object.
@@ -480,7 +474,11 @@ class ENCSearchAgent:
         )
 
         # Initialize search agent to that starting position
-        search_agent.init(tpos.position)
+        try:
+            search_agent.init(tpos.position)
+        except FileLoadingError as e:
+            logger.warning(f"File {self.current_file} could not be loaded:\n{e}")
+            return
 
         # Scan the area every 3 minutes. 
         # During every scan, every ship is checked for a possible
@@ -496,7 +494,8 @@ class ENCSearchAgent:
             
             # Skip if there are not enough ships in the area
             if len(ships) < 2:
-                search_date = self._increment(search_date)
+                tpos: pytsa.TimePosition = self._update_timeposition(tpos, 3)
+                search_date = tpos.timestamp
                 continue
             
             # Check every ship combination for a possible encounter
@@ -528,9 +527,17 @@ class ENCSearchAgent:
                             )
                         )
             # End of search for this time step
-            search_date = self._increment(search_date)
-            tpos = pytsa.TimePosition(
-                timestamp=search_date,
-                lat=center.lat,
-                lon=center.lon
-            )
+            tpos = self._update_timeposition(tpos, 3)
+            search_date = tpos.timestamp
+
+    def _update_timeposition(
+            tpos: pytsa.TimePosition, 
+            byminutes: int) -> pytsa.TimePosition:
+        """
+        Update the time of a time position.
+        """
+        return pytsa.TimePosition(
+            timestamp=tpos.timestamp + timedelta(minutes=byminutes),
+            lat=tpos.lat,
+            lon=tpos.lon
+        )
