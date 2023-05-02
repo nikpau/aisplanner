@@ -17,9 +17,10 @@ load_dotenv()
 
 # Initialize search agent
 s = ENCSearchAgent(
-    remote_host="taurus.hrsk.tu-dresden.de",
-    remote_dir=os.environ["AISDECODED"],
+    remote_host="",
+    remote_dir="",
     search_areas=LocationDatabase.all(),
+    filelist=glob.glob("/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022/*.csv"),
 )
 s.search()
 s.save_results("~/TUD/aisplanner/results/results.pkl")
