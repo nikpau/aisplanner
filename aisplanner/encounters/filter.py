@@ -258,7 +258,7 @@ class FileStream:
         self.path = Path(path)
         self.downloadpath = self._set_downloadpath()
 
-        #self._check_environment_variables()
+        self._check_environment_variables()
         
     def _check_environment_variables(self) -> None:
         """
@@ -340,9 +340,11 @@ class ENCSearchAgent:
         
         if filelist is None:
             self.filestream = FileStream(self.remote_host, self.remote_dir)
+            self._using_remote = True
         else: 
             self.filestream  = [Path(file) for file in filelist]
-            self.filestream = iter(filelist)
+        
+        self.filestream = iter(self.filestream)
 
     def load_next_file(self) -> pd.DataFrame:
         """
@@ -437,6 +439,8 @@ class ENCSearchAgent:
                 self.load_next_file()
                 for area in self.search_areas:
                     self._search(area)
+                if self._using_remote:
+                    self.delete_current_file()
             except StopIteration:
                 return
 
