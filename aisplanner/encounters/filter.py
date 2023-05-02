@@ -237,14 +237,14 @@ class EncounterResult:
     """
     Store the file, timestamp and MMSI of the encounter
     """
-    encounter: List[EncounterSituations]
+    encounter: ColregsSituation
     file: str
     timestamp: Union[str, datetime]
     mmsi: str
     area: pytsa.BoundingBox
 
     def __post_init__(self) -> None:
-        self.encounter_names = [e.name for e in self.encounter]
+        self.encounter_names = self.encounter.name
         if isinstance(self.timestamp, str):
             ciso8601.parse_datetime(self.timestamp)
 
@@ -494,7 +494,7 @@ class ENCSearchAgent:
             
             # Skip if there are not enough ships in the area
             if len(ships) < 2:
-                tpos: pytsa.TimePosition = self._update_timeposition(tpos, 3)
+                tpos = self._update_timeposition(tpos, 3)
                 search_date = tpos.timestamp
                 continue
             
@@ -530,7 +530,7 @@ class ENCSearchAgent:
             tpos = self._update_timeposition(tpos, 3)
             search_date = tpos.timestamp
 
-    def _update_timeposition(
+    def _update_timeposition(self,
             tpos: pytsa.TimePosition, 
             byminutes: int) -> pytsa.TimePosition:
         """
