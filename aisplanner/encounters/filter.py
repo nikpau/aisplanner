@@ -337,6 +337,9 @@ class ENCSearchAgent:
         self.search_areas = search_areas
 
         self.encounters: List[EncounterResult] = []
+
+        # Check if filelist is given or if files should be streamed
+        self._using_remote = False
         
         if filelist is None:
             self.filestream = FileStream(self.remote_host, self.remote_dir)
