@@ -3,7 +3,7 @@
 name = "aisplanner"
 version = "0.1.0"
 description = ""
-authors = ["Niklas Paulig <niklsa-paulig@tu-dresden.de>"]
+authors = ["Niklas Paulig <niklas-paulig@tu-dresden.de>"]
 readme = "README.md"
 packages = [{include = "aisplanner"}]
 
