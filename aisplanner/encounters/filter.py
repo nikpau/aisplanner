@@ -255,7 +255,7 @@ class FileStream:
     _DOWNLOADPATH = Path("./data/aisrecords")
     def __init__(self, host: str, path: str) -> None:
         self.host = host
-        self.path = Path(path)
+        self.path = Path(path) if not isinstance(path, Path) else path
         self.downloadpath = self._set_downloadpath()
 
         self._check_environment_variables()
@@ -265,13 +265,13 @@ class FileStream:
         Check if required environment variables are set.
         Raise ValueError if any of them is missing.
         """
-        required_vars = ["TUUSER", "PRIVKEY"]
+        required_vars = ["ZIH", "PKEYLOC"]
         missing_vars = [var for var in required_vars if var not in os.environ]
 
         if missing_vars:
             raise ValueError(f"Environment variables {', '.join(missing_vars)} are not set")
 
-        if not Path(os.environ["PRIVKEY"]).exists():
+        if not Path(os.environ["PKEYLOC"]).exists():
             raise ValueError("Private key does not exist")   
 
     def _set_downloadpath(self) -> Path:
