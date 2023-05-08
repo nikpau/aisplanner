@@ -48,12 +48,13 @@ class DecodedReport(int, Enum):
     decoded position report messages (types 1,2,3,18) to
     human-understandable names.
     """
-    MMSI   = 5
-    status = 10
-    speed  = 12
-    lon    = 14
-    lat    = 15
-    course = 16
+    timestamp = 0 # TODO: this may be wrong
+    MMSI      = 5
+    status    = 10
+    speed     = 12
+    lon       = 14
+    lat       = 15
+    course    = 16
 
 # Tuple of attrs we want to extract from the decoded ais message
 # Order is the same as the bits appear in the original message.
