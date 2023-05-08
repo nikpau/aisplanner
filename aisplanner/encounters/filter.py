@@ -257,6 +257,8 @@ class FileStream:
         self.host = host
         self.path = Path(path) if not isinstance(path, Path) else path
         self.downloadpath = self._set_downloadpath()
+        self.username = os.environ["ZIH"]
+        self.pkey = os.environ["PKEYLOC"]
 
         self._check_environment_variables()
         
@@ -288,8 +290,8 @@ class FileStream:
             ssh.load_system_host_keys()
             ssh.connect(
                 self.host, 
-                username=os.environ["TUUSER"],
-                key_filename=os.environ["PRIVKEY"])
+                username=self.username,
+                key_filename=self.pkey)
             sftp = ssh.open_sftp()
             for file in sftp.listdir(self.path.as_posix()):
                 sftp.get(
@@ -304,8 +306,8 @@ class FileStream:
             ssh.load_system_host_keys()
             ssh.connect(
                 self.host, 
-                username=os.environ["TUUSER"],
-                key_filename=os.environ["PRIVKEY"])
+                username=self.username,
+                key_filename=self.pkey)
             sftp = ssh.open_sftp()
             sftp.get(
                 (self.path/filename).as_posix(), 
