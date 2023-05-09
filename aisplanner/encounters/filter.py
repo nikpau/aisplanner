@@ -20,8 +20,6 @@ import pytsa
 from pytsa.targetship import TargetVessel, FileLoadingError
 from dataclasses import dataclass
 from enum import Enum
-import math
-import matplotlib.pyplot as plt
 import paramiko
 import os
 from contextlib import closing
@@ -171,9 +169,17 @@ def TCPA(d_rel: float, crv: float, true_bearing: float, v_rel:float) -> float:
     crv: course of relative velocity"""
     return d_rel * np.cos(crv-true_bearing-PI)/v_rel
 
+def nm2m(nm: float) -> float:
+    """Convert nautical miles to meters"""
+    return nm * 1852
+
+def m2nm(m: float) -> float:
+    """Convert meters to nautical miles"""
+    return m / 1852
+
 class EncounterSituations:
     """
-    Classify COLREGS encounter situatio TWO
+    Classify COLREGS encounter situatios
     based on Zhang et al. (2021), Table 6.
 
     10.1109/ACCESS.2021.3060150
@@ -241,7 +247,7 @@ class EncounterResult:
     file: str
     timestamp: Union[str, datetime]
     mmsi: str
-    area: pytsa.BoundingBox
+    area: pytsa.LatLonBoundingBox
 
     def __post_init__(self) -> None:
         self.encounter_names = self.encounter.name
@@ -331,7 +337,7 @@ class ENCSearchAgent:
     def __init__(self, 
             remote_host: Union[str, Path], 
             remote_dir: Union[str, Path],
-            search_areas: List[pytsa.BoundingBox],
+            search_areas: List[pytsa.UTMBoundingBox],
             filelist: List[Union[Path, str]] = None) -> None:
         
         self.remote_host = remote_host
@@ -398,16 +404,16 @@ class ENCSearchAgent:
             (df[DecodedReport.speed.name] > 0)
         ]
         
-    def search_area_center(self, area: pytsa.BoundingBox) -> pytsa.targetship.Position:
+    def search_area_center(self, area: pytsa.UTMBoundingBox) -> pytsa.structs.UTMPosition:
         """
         Get the center of the search area.
         """
-        return pytsa.targetship.Position(
-            (area.LATMIN + area.LATMAX)/2,
-            (area.LONMIN + area.LONMAX)/2
+        return pytsa.structs.UTMPosition(
+            (area.min_northing + area.max_northing)/2,
+            (area.min_easting + area.max_easting)/2
         )
     
-    def get_search_radius(self,area: pytsa.BoundingBox) -> float:
+    def get_search_radius(self,area: pytsa.UTMBoundingBox) -> float:
         """
         Get the radius of the circle around the bounding box
         in nautical miles.
@@ -416,11 +422,11 @@ class ENCSearchAgent:
         increases with the distance from the equator.
         """
         center = self.search_area_center(area)
-        lat_extent = abs(area.LATMAX - area.LATMIN)
+        north_extent = abs(area.max_northing - area.min_northing)
         r = np.sqrt(
-            (area.LONMAX-center.lon)**2 + (lat_extent/2)**2
+            (area.max_easting-center.easting)**2 + (north_extent/2)**2
         )
-        return r*60 # convert to nautical miles
+        return m2nm(r) # convert to nautical miles
     
     def save_results(self,dest: Union[str, Path]) -> None:
         """
@@ -445,7 +451,7 @@ class ENCSearchAgent:
 
     def _search(
         self,
-        area: pytsa.BoundingBox,
+        area: pytsa.UTMBoundingBox,
         override_file: Path = None) -> None:
         """
         
@@ -474,8 +480,8 @@ class ENCSearchAgent:
         center = self.search_area_center(area)
         tpos = pytsa.TimePosition(
             timestamp=start_date,
-            lat=center.lat,
-            lon=center.lon
+            easting=center.easting,
+            northing=center.northing
         )
 
         # Initialize search agent to that starting position

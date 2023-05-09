@@ -35,5 +35,8 @@ class LocationDatabase:
     )
     # Return all locations as a list
     @classmethod
-    def all(cls):
-        return [getattr(cls,field.name) for field in fields(cls)]
+    def all(cls,utm=False):
+        if utm:
+            return [getattr(cls,field.name).to_utm() for field in fields(cls)]
+        else:
+            return [getattr(cls,field.name) for field in fields(cls)]

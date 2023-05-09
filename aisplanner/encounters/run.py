@@ -19,11 +19,11 @@ load_dotenv()
 s = ENCSearchAgent(
     remote_host="",
     remote_dir="",
-    search_areas=LocationDatabase.all(),
-    filelist=glob.glob("/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022/*.csv"),
+    search_areas=LocationDatabase.all(utm=True),
+    filelist=glob.glob("/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022/2021_08*.csv"),
 )
 s.search()
-s.save_results("~/TUD/aisplanner/results/results.pkl")
+s.save_results("/home/s2075466/aisplanner/results/results.pkl")
 
 exit()
 
