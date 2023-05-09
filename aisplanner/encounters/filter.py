@@ -31,6 +31,7 @@ from datetime import datetime, timedelta
 from itertools import permutations
 from aisplanner.misc import logger
 import pickle
+import multiprocessing as mp
 
 # Exceptions
 class EndOfFileError(Exception):
@@ -442,8 +443,8 @@ class ENCSearchAgent:
         while True:
             try:
                 self.load_next_file()
-                for area in self.search_areas:
-                    self._search(area)
+                with mp.Pool(len(self.search_areas)) as pool:
+                    pool.map(self._search, self.search_areas)
                 if self._using_remote:
                     self.delete_current_file()
             except StopIteration:
@@ -486,7 +487,7 @@ class ENCSearchAgent:
 
         # Initialize search agent to that starting position
         try:
-            search_agent.init(tpos.position)
+            search_agent.init(tpos)
         except FileLoadingError as e:
             logger.warning(f"File {self.current_file} could not be loaded:\n{e}")
             return
