@@ -556,6 +556,6 @@ class ENCSearchAgent:
         """
         return pytsa.TimePosition(
             timestamp=tpos.timestamp + timedelta(minutes=byminutes),
-            lat=tpos.lat,
-            lon=tpos.lon
+            easting=tpos.easting,
+            northing=tpos.northing
         )
