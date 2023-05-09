@@ -347,7 +347,7 @@ class ENCSearchAgent:
         self.search_areas = search_areas
         self.parallel = parallel
 
-        self.encounters: List[EncounterResult] = []
+        self.encounters_total: List[EncounterResult] = []
 
         # Check if filelist is given or if files should be streamed
         self._using_remote = False
@@ -436,7 +436,7 @@ class ENCSearchAgent:
         Saves the results as a python object.
         """
         with open(dest, "wb") as f:
-            pickle.dump(self.encounters, f)
+            pickle.dump(self.encounters_total, f)
     
     def search(self) -> None:
         """
@@ -447,10 +447,13 @@ class ENCSearchAgent:
                 self.load_next_file()
                 if self.parallel:
                     with mp.Pool(len(self.search_areas)) as pool:
-                        pool.map(self._search, self.search_areas)
+                        encs = pool.map(self._search, self.search_areas)
+                    # Flatten list of lists
+                    self.encounters_total.extend([enc for sublist in encs for enc in sublist])
                 else:
                     for area in self.search_areas:
-                        self._search(area)
+                        enc = self._search(area)
+                        self.encounters_total.extend(enc)
                 if self._using_remote:
                     self.delete_current_file()
             except StopIteration:
@@ -503,6 +506,9 @@ class ENCSearchAgent:
         # encounter situation.
         search_date = start_date
 
+        # Initialize the list of encounters
+        encounters: List[EncounterSituations] = []
+
         # Increment the search date until the date of search is
         # greater than the date of the current file.
         while start_date.day == search_date.day:
@@ -535,7 +541,7 @@ class ENCSearchAgent:
                 found = EncounterSituations(OS,TS).analyze()
                 if found:
                     for encounter in found:
-                        self.encounters.append(
+                        encounters.append(
                             EncounterResult(
                                 encounter=encounter,
                                 file=self.current_file.stem,
@@ -547,6 +553,8 @@ class ENCSearchAgent:
             # End of search for this time step
             tpos = self._update_timeposition(tpos, 3)
             search_date = tpos.timestamp
+        
+        return encounters
 
     def _update_timeposition(self,
             tpos: pytsa.TimePosition, 
