@@ -21,6 +21,7 @@ s = ENCSearchAgent(
     remote_dir="",
     search_areas=LocationDatabase.all(utm=True),
     filelist=glob.glob("/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022/2021_08*.csv"),
+    parallel=False
 )
 s.search()
 s.save_results("/home/s2075466/aisplanner/results/results.pkl")

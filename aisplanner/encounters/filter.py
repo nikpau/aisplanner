@@ -339,11 +339,13 @@ class ENCSearchAgent:
             remote_host: Union[str, Path], 
             remote_dir: Union[str, Path],
             search_areas: List[pytsa.UTMBoundingBox],
-            filelist: List[Union[Path, str]] = None) -> None:
+            filelist: List[Union[Path, str]] = None,
+            parallel: bool = False) -> None:
         
         self.remote_host = remote_host
         self.remote_dir = remote_dir
         self.search_areas = search_areas
+        self.parallel = parallel
 
         self.encounters: List[EncounterResult] = []
 
@@ -443,8 +445,12 @@ class ENCSearchAgent:
         while True:
             try:
                 self.load_next_file()
-                with mp.Pool(len(self.search_areas)) as pool:
-                    pool.map(self._search, self.search_areas)
+                if self.parallel:
+                    with mp.Pool(len(self.search_areas)) as pool:
+                        pool.map(self._search, self.search_areas)
+                else:
+                    for area in self.search_areas:
+                        self._search(area)
                 if self._using_remote:
                     self.delete_current_file()
             except StopIteration:
