@@ -13,7 +13,7 @@ Procedure:
         4. Assume, that a linear path connecting start and end is the unplanned route
 """
 
-from typing import IO, Iterator, List, Tuple, Union
+from typing import IO, Callable, Iterator, List, Tuple, Union
 import pandas as pd
 import numpy as np
 import pytsa
@@ -32,6 +32,10 @@ from itertools import permutations
 from aisplanner.misc import logger
 import pickle
 import multiprocessing as mp
+
+# Identity function
+def _id(x):
+    return x
 
 # Exceptions
 class EndOfFileError(Exception):
@@ -260,12 +264,14 @@ class FileStream:
     Yield files from a remote folder over ssh.
     """
     _DOWNLOADPATH = Path("./data/aisrecords")
-    def __init__(self, host: str, path: str) -> None:
+    def __init__(self, host: str, path: str, filter: Callable = _id) -> None:
         self.host = host
         self.path = Path(path) if not isinstance(path, Path) else path
         self.downloadpath = self._set_downloadpath()
         self.username = os.environ["ZIH"]
         self.pkey = os.environ["PKEYLOC"]
+
+        self.filter = filter
 
         self._check_environment_variables()
         
@@ -300,7 +306,8 @@ class FileStream:
                 username=self.username,
                 key_filename=self.pkey)
             sftp = ssh.open_sftp()
-            for file in sftp.listdir(self.path.as_posix()):
+            filelist = sftp.listdir(self.path.as_posix())
+            for file in self.filter(filelist):
                 sftp.get(
                     (self.path/file).as_posix(), 
                     (self.downloadpath/file).as_posix()
@@ -340,7 +347,8 @@ class ENCSearchAgent:
             remote_dir: Union[str, Path],
             search_areas: List[pytsa.UTMBoundingBox],
             filelist: List[Union[Path, str]] = None,
-            parallel: bool = False) -> None:
+            parallel: bool = False,
+            **fsargs) -> None:
         
         self.remote_host = remote_host
         self.remote_dir = remote_dir
@@ -353,7 +361,9 @@ class ENCSearchAgent:
         self._using_remote = False
         
         if filelist is None:
-            self.filestream = FileStream(self.remote_host, self.remote_dir)
+            self.filestream = FileStream(
+                self.remote_host, self.remote_dir, **fsargs
+            )
             self._using_remote = True
         else: 
             self.filestream  = [Path(file) for file in filelist]
