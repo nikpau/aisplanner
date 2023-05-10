@@ -472,7 +472,7 @@ class ENCSearchAgent:
     def _search(
         self,
         area: pytsa.UTMBoundingBox,
-        override_file: Path = None) -> None:
+        override_file: Path = None) -> List[EncounterResult]:
         """
         
         """
@@ -509,7 +509,7 @@ class ENCSearchAgent:
             search_agent.init(tpos)
         except FileLoadingError as e:
             logger.warning(f"File {self.current_file} could not be loaded:\n{e}")
-            return
+            return []
 
         # Scan the area every 3 minutes. 
         # During every scan, every ship is checked for a possible
