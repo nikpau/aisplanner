@@ -202,6 +202,8 @@ class EncounterSituations:
 
         self.rel_bearing = relative_bearing(own,tgt)
         self.rel_dist = rel_dist(own.pos,tgt.pos)
+        if self.rel_dist < nm2m(self.D1safe):
+            logger.info(f"Close encounter: {self.rel_dist} m")
         self.rel_vel = relative_velocity(own.cog,own.sog,tgt.cog,tgt.sog)
         self.crv = crv(*self.rel_vel) # Course of relative velocity
         self.true_bearing = true_bearing(own.pos,tgt.pos)
@@ -226,21 +228,21 @@ class EncounterSituations:
         return s
         
     def _is_headon(self) -> bool:
-        in_radius = self.rel_dist < self.D1 # Is the target in the sensor range?
+        in_radius = self.rel_dist < nm2m(self.D1) # Is the target in the sensor range?
         in_bearing = abs(self.rel_bearing) < dtr(5) # Is the target in front of the ship?
-        in_safety = abs(self.dcpa) < self.D1safe # Is the target within the safety margin?
+        in_safety = abs(self.dcpa) < nm2m(self.D1safe) # Is the target within the safety margin?
         return in_radius and in_bearing and in_safety
     
     def _is_overtaking(self) -> bool:
-        in_radius = self.rel_dist < self.D2
+        in_radius = self.rel_dist < nm2m(self.D2)
         in_bearing = dtr(112.5) < abs(self.rel_bearing) < dtr(247.5)
-        in_safety = abs(self.dcpa) < self.D2safe
+        in_safety = abs(self.dcpa) < nm2m(self.D2safe)
         return in_radius and in_bearing and in_safety
     
     def _is_crossing(self) -> bool:
-        in_radius = self.rel_dist < self.D3
+        in_radius = self.rel_dist < nm2m(self.D3)
         in_bearing = abs(self.rel_bearing) >= dtr(5)
-        in_safety = abs(self.dcpa) < self.D3safe
+        in_safety = abs(self.dcpa) < nm2m(self.D3safe)
         return in_radius and in_bearing and in_safety
     
 @dataclass
@@ -533,7 +535,7 @@ class ENCSearchAgent:
                 continue
             
             # Check every ship combination for a possible encounter
-            for os, ts in permutations(ships,2):
+            for os, ts in self._unique_permuts(ships):
                 os_obs = os.observe() # Get [lat,lon,course,speed]
                 ts_obs = ts.observe() # Get [lat,lon,course,speed]
 
@@ -551,6 +553,7 @@ class ENCSearchAgent:
                 found = EncounterSituations(OS,TS).analyze()
                 if found:
                     for encounter in found:
+                        logger.info(f"Found encounter: {encounter}")
                         encounters.append(
                             EncounterResult(
                                 encounter=encounter,
@@ -578,3 +581,15 @@ class ENCSearchAgent:
             northing=tpos.northing,
             as_utm=True
         )
+    
+    def _unique_permuts(self, ships: List[TargetVessel]) -> List[Tuple[TargetVessel,TargetVessel]]:
+        """
+        Get all unique permutations of the ships.
+        """
+        uniques = []
+        permutes = list(permutations(ships,2))
+        for a,b in permutes:
+            if not (b,a) in uniques:
+                uniques.append((a,b))
+        return uniques
+        
