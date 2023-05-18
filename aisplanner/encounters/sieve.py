@@ -16,10 +16,11 @@ from aisplanner.dataprep._file_descriptors import DecodedReport
 import numpy as np
 from datetime import datetime, timedelta
 import warnings
+from rdp import rdp
+import multiprocessing as mp
 
 # Types
 MMSI = int
-
 
 load_dotenv()
 
@@ -36,7 +37,7 @@ def load_results(filename: str | Path):
     return results
 
 
-class COLREGSPlotter:
+class COLREGSSieve:
 
     def __init__(self, encounter: EncounterResult, tlen: int = 10):
         self.encres = encounter
@@ -68,38 +69,39 @@ class COLREGSPlotter:
         dt = timedelta(minutes=5)
         date = self.encres.timestamp
         mask = (
-            (celldata[DecodedReport.MMSI.name]==self.encres.mmsi) &
+            (celldata[DecodedReport.MMSI.name]==self.encres.mmsi[0]) &
             (celldata[DecodedReport.timestamp.name] > (date-dt)) & 
             (celldata[DecodedReport.timestamp.name] < (date+dt))
         )
-        os: pd.DataFrame = celldata.loc[mask]
+        ownship: pd.DataFrame = celldata.loc[mask]
 
         # Check if os is more than one row
-        if len(os) > 1:
+        if len(ownship) > 1:
             warnings.warn(
                 f"More than one row found for own ship. Result is ambiguous.\n"
-                f"Result: {os}\n Using observation closest to encounter timestamp."
+                f"Result: {ownship}\n Using observation closest to encounter timestamp."
             )
             # Use observation closest to encounter timestamp
-            os = os.iloc[os[DecodedReport.timestamp.name].sub(date).abs().argsort()[:1]]
+            ownship = ownship.iloc[ownship[DecodedReport.timestamp.name].sub(date).abs().argsort()[:1]]
             
-        elif len(os) == 0:
+        elif len(ownship) == 0:
             raise ValueError(
                 f"No row found for own ship."
             )
         return pytsa.TimePosition(
-            os[DecodedReport.timestamp.name].iloc[0],
-            os[DecodedReport.lat.name].iloc[0],
-            os[DecodedReport.lon.name].iloc[0]
+            ownship[DecodedReport.timestamp.name].iloc[0],
+            ownship[DecodedReport.lat.name].iloc[0],
+            ownship[DecodedReport.lon.name].iloc[0]
         )
         
     def search_area_center(self, area: pytsa.UTMBoundingBox) -> pytsa.structs.UTMPosition:
         """
         Get the center of the search area.
         """
-        return pytsa.structs.UTMPosition(
-            (area.min_northing + area.max_northing)/2,
-            (area.min_easting + area.max_easting)/2
+        return pytsa.TimePosition(
+            timestamp=datetime.now(), #Irrelevant
+            northing=(area.min_northing + area.max_northing)/2,
+            easting=(area.min_easting + area.max_easting)/2
         )
     
     def message_filter(self, records: pd.DataFrame) -> pd.DataFrame:
@@ -108,8 +110,9 @@ class COLREGSPlotter:
         and with status "UnderWayUsingEngine"
         """
         return records[
-            records[DecodedReport.course.name] != 360 &
-            (records[DecodedReport.status.name] == "NavigationStatus.UnderWayUsingEngine")
+            (records[DecodedReport.course.name] != 360) &
+            (records[DecodedReport.status.name] == "NavigationStatus.UnderWayUsingEngine") &
+            (records[DecodedReport.MMSI.name].isin(self.encres.mmsi))
         ]
     
     def record_trajectories(self) -> dict[MMSI,list[np.ndarray]]:
@@ -137,6 +140,7 @@ class COLREGSPlotter:
         )
         sa.init(self.search_area_center(self.encres.area))
         tpos = self.find_os_tpos(sa.cell_data)
+        tpos._is_utm = True
 
         # Record trajectories in 10 second increments
         # for the given time length
@@ -144,9 +148,21 @@ class COLREGSPlotter:
 
         # Record the encounter from 10 minutes before
         # to 10 minutes after the encounter
-        start = self.encres.timestamp - timedelta(minutes=10)
-        end = self.encres.timestamp + timedelta(minutes=10)
+        start = self.encres.timestamp - timedelta(minutes=self.tlen)
+        end = self.encres.timestamp + timedelta(minutes=self.tlen)
+
+        # Set the time position to the start time
+        tpos.timestamp: datetime = start
+
+        # Extract the day from the encounter timestamp
+        enc_day = self.encres.timestamp.date().day
+
         while start <= tpos.timestamp < end:
+            # Check if the day has changed
+            if tpos.timestamp.day != enc_day or \
+                  (tpos.timestamp - timedelta(minutes=self.tlen)).day != enc_day:
+                tpos.timestamp += timedelta(seconds=10)
+                continue
             ships: list[TargetVessel] = sa.get_ships(tpos)
             for ship in ships:
                 if not ship.mmsi in trajs:
@@ -155,6 +171,19 @@ class COLREGSPlotter:
             tpos.timestamp += timedelta(seconds=10)
 
         return trajs
+    
+    def compress_trajectories(self, trajs: dict[MMSI,list[np.ndarray]]) -> dict[MMSI,list[np.ndarray]]:
+        """
+        Compress the trajectories to the given length
+        """
+        for mmsi, traj in trajs.items():
+            # Make sure the trajectory is a numpy array
+            traj = np.array(traj)
+            # Perform the compression using the Douglas-Peucker algorithm
+            mask = rdp(traj[:,0:2],epsilon=0.2,return_mask=True)
+            # Apply the mask to the trajectory
+            trajs[mmsi] = traj[mask]
+        return trajs
 
     def plot(self, trajs: dict[MMSI,list[np.ndarray]]):
         """
@@ -162,43 +191,60 @@ class COLREGSPlotter:
         Different colors are for different vessels.
         Points are equidistant in time.
         """
-        f, ax = plt.subplots(1,1,figsize=(10,10))
-        for mmsi, traj in trajs.items():
+        colors = ["#c1121f","#003049"]
+        f, (ax1,ax2) = plt.subplots(2,1, figsize=(10,10))
+        #trajs = self.compress_trajectories(trajs)
+        for i, (mmsi, traj) in enumerate(trajs.items()):
             # Plot every n-th point as an arrow to indicate
             # the course of the vessel
             n = 3
             traj = np.array(traj)
-            northing, easting, course, speed = traj[:,0], traj[:,1], traj[:,2], traj[:,3]
+            northing, easting, course, speed, rot, drot =\
+                  traj[:,0], traj[:,1], traj[:,2], traj[:,3], traj[:,4], traj[:,5]
             # Scatter plot for each vessel
-            ax.scatter(easting[::n],northing[::n],label=mmsi)
+            ax1.scatter(easting[::n],northing[::n],label=mmsi,c=colors[i])
             # Line plot for each vessel
-            ax.plot(easting,northing)
+            ax1.plot(easting,northing,c=colors[i])
             # Transform course to radians such that
             # 0 is north and pi/2 is east
             course = np.pi/2 - np.deg2rad(course)
-            ax.quiver(
+            ax1.quiver(
                 easting[::n],northing[::n],
                 np.cos(course[::n]),np.sin(course[::n]),
-                color="black",scale=100
+                color="black",scale=50
             )
             # Draw safety circle from EncounterSituations object
-            [ax.add_patch(
+            [ax1.add_patch(
                 plt.Circle(
                     (lo,la),
-                    EncounterSituations.D1safe/60/2,
-                    color="red",fill=False
+                    EncounterSituations.D1safe*1852,
+                    color="r",fill=False
                 )
-            ) for lo,la in zip(easting[::n*4],northing[::n*4])]
-        ax.legend()
-        # ar = 1.0/np.cos(60*np.pi/180)
-        # plt.gca().set_aspect(ar)
-        plt.show()
+            ) for lo,la in zip(easting[::n*8],northing[::n*8])]
+
+            # Plot the rot and drot as a function of time
+            ax2.plot(np.arange(len(rot)),rot,label="ROT[deg/min]",c=colors[i])
+            ax2.plot(np.arange(len(rot)),drot,label="DROT[deg/min²]",c=colors[i])
+
+        ax1.legend(title="MMSI")
+        ax1.set_xlabel("Easting [m]")
+        ax1.set_ylabel("Northing [m]")
+        ax1.set_aspect("equal")
+        ax1.set_title("Trajectories of vessels")
+
+        ax2.legend()
+        ax2.set_xlabel("Time [min]")
+        ax2.set_title("Rates of turn")
+
+        plt.suptitle(f"Encounter between {self.encres.mmsi[0]} and {self.encres.mmsi[1]}")
+        plt.savefig(f"out/plots/{self.encres.mmsi[0]}_encounter.png",dpi = 300)
 
 if __name__ == "__main__":
     # Load results
-    res = load_results("2021-08.pkl")
+    res = load_results("newresults.pkl")
     print(len(res))
     # Plot encounter
-    plotter = COLREGSPlotter(res[0])
-    trajs = plotter.record_trajectories()
-    plotter.plot(trajs)
+    for i in range(100):
+        plotter = COLREGSSieve(res[i*10])
+        trajs = plotter.record_trajectories()
+        plotter.plot(trajs)
