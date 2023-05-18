@@ -13,25 +13,31 @@ Procedure:
         4. Assume, that a linear path connecting start and end is the unplanned route
 """
 
-from typing import IO, Callable, Iterator, List, Tuple, Union
-import pandas as pd
-import numpy as np
-import pytsa
-from pytsa.targetship import TargetVessel, FileLoadingError
-from dataclasses import dataclass
-from enum import Enum
-import paramiko
-import os
-from contextlib import closing
-import dotenv
-from pathlib import Path
-from aisplanner.dataprep._file_descriptors import DecodedReport
-import ciso8601
-from datetime import datetime, timedelta
-from itertools import permutations
-from aisplanner.misc import logger
-import pickle
 import multiprocessing as mp
+import os
+import pickle
+from contextlib import closing
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from itertools import permutations
+from pathlib import Path
+from typing import IO, Callable, Iterator, List, Tuple, Union
+
+import ciso8601
+import dotenv
+import numpy as np
+import pandas as pd
+import paramiko
+import pytsa
+from pytsa.targetship import (
+    FileLoadingError, SplineInterpolationError,
+    TargetVessel
+)
+
+from aisplanner.dataprep._file_descriptors import DecodedReport
+from aisplanner.misc import logger
+
 
 # Identity function
 def _id(x):
@@ -203,7 +209,7 @@ class EncounterSituations:
         self.rel_bearing = relative_bearing(own,tgt)
         self.rel_dist = rel_dist(own.pos,tgt.pos)
         if self.rel_dist < nm2m(self.D1safe):
-            logger.info(f"Close encounter: {self.rel_dist} m")
+            logger.info(f"Close encounter: {self.rel_dist:.2f} m")
         self.rel_vel = relative_velocity(own.cog,own.sog,tgt.cog,tgt.sog)
         self.crv = crv(*self.rel_vel) # Course of relative velocity
         self.true_bearing = true_bearing(own.pos,tgt.pos)
@@ -253,7 +259,7 @@ class EncounterResult:
     encounter: ColregsSituation
     file: str
     timestamp: Union[str, datetime]
-    mmsi: str
+    mmsi: List[int] # MMSIs of the ships involved in the encounter
     area: pytsa.LatLonBoundingBox
 
     def __post_init__(self) -> None:
@@ -535,9 +541,13 @@ class ENCSearchAgent:
                 continue
             
             # Check every ship combination for a possible encounter
-            for os, ts in self._unique_permuts(ships):
-                os_obs = os.observe() # Get [lat,lon,course,speed]
-                ts_obs = ts.observe() # Get [lat,lon,course,speed]
+            for os, ts in self._unique_2_permuts(ships):
+                try:
+                    os_obs = os.observe(skip_linear=True) # Get [lat,lon,course,speed]
+                    ts_obs = ts.observe(skip_linear=True) # Get [lat,lon,course,speed]
+                except SplineInterpolationError as e:
+                    logger.warning(e)
+                    continue
 
                 # Construct ship objects
                 OS = Ship(
@@ -559,7 +569,7 @@ class ENCSearchAgent:
                                 encounter=encounter,
                                 file=self.current_file.stem,
                                 timestamp=search_date,
-                                mmsi=os.mmsi,
+                                mmsi=[os.mmsi, ts.mmsi],
                                 area=area
                             )
                         )
@@ -582,7 +592,7 @@ class ENCSearchAgent:
             as_utm=True
         )
     
-    def _unique_permuts(self, ships: List[TargetVessel]) -> List[Tuple[TargetVessel,TargetVessel]]:
+    def _unique_2_permuts(self, ships: List[TargetVessel]) -> List[Tuple[TargetVessel,TargetVessel]]:
         """
         Get all unique permutations of the ships.
         """
@@ -591,5 +601,4 @@ class ENCSearchAgent:
         for a,b in permutes:
             if not (b,a) in uniques:
                 uniques.append((a,b))
-        return uniques
-        
+                yield (a,b)

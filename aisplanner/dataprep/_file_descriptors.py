@@ -51,6 +51,7 @@ class DecodedReport(int, Enum):
     timestamp = 0 # TODO: this may be wrong
     MMSI      = 5
     status    = 10
+    turn      = 11
     speed     = 12
     lon       = 14
     lat       = 15
