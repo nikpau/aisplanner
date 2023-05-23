@@ -603,6 +603,89 @@ class ENCSearchAgent:
                 uniques.append((a,b))
                 yield (a,b)
 
+
+class ENCTrajectorySearchAgent(ENCSearchAgent):
+    """
+    Subclass of ENCSearchAgent that retruns the 
+    raw trajectories of the ships, rather than 
+    interpolated positions.
+    
+    """
+    
+    def _search(self,
+        area: pytsa.UTMBoundingBox,
+        override_file: Path = None) -> List[TargetVessel]:
+        """
+        
+        """
+        if override_file is not None:
+            self.current_file = Path(override_file)
+        # Datetime of current file, starting at midnight
+        # NOTE: This only works if the file name is in the format
+        #       YYYY-MM-DD.csv
+        #       Since the AIS messages we use are in the format
+        #       YYYY_MM_DD.csv, we need to replace the _ with -.
+        corrected_filename = self.current_file.stem.replace("_", "-")
+        start_date = ciso8601.parse_datetime(corrected_filename)
+
+        # Initialize search agent for nearest neighbors
+        # and trajectory interpolation
+        search_agent = pytsa.SearchAgent(
+            datapath=self.current_file if not override_file else override_file,
+            frame=area,
+            search_radius=self.get_search_radius(area),
+            n_cells=1,
+            filter=MessageFilter.only_german
+        )
+        
+        # Set the maximum temporal deviation of target
+        # ships from provided time in `init()`
+        search_agent.time_delta = 30 # in minutes
+
+        # Use the center of the search area as the starting position
+        center = self.search_area_center(area)
+        tpos = pytsa.TimePosition(
+            timestamp=start_date,
+            easting=center.easting,
+            northing=center.northing
+        )
+
+        # Initialize search agent to that starting position
+        try:
+            search_agent.init(tpos)
+        except FileLoadingError as e:
+            logger.warning(f"File {self.current_file} could not be loaded:\n{e}")
+            return []
+
+        # Scan the area every 3 minutes. 
+        # During every scan, every ship is checked for a possible
+        # encounter situation.
+        search_date = start_date
+
+        # Initialize the list of encounters
+        found: List[TargetVessel] = []
+
+        # Increment the search date until the date of search is
+        # greater than the date of the current file.
+        while start_date.day == search_date.day:
+
+            ships: List[TargetVessel] = search_agent.get_ships(tpos)
+            
+            # Skip if there are not enough ships in the area
+            if len(ships) < 2:
+                tpos = self._update_timeposition(tpos, 30)
+                search_date = tpos.timestamp
+                continue
+            
+            else:
+                found.extend(ships)
+            
+            # End of search for this time step
+            tpos = self._update_timeposition(tpos, 30)
+            search_date = tpos.timestamp
+        
+        return found
+
 @dataclass
 class MessageFilter:
     """
