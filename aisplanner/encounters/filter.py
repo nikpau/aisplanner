@@ -614,4 +614,4 @@ class MessageFilter:
         Filter for all messages that have been recorded by 
         German base stations.
         """
-        return df[df[DecodedReport.originator.name].isin(["GER"])]
+        return df[df[DecodedReport.originator.name].isin(["DEU"])]
