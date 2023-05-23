@@ -56,6 +56,7 @@ class DecodedReport(int, Enum):
     lon       = 14
     lat       = 15
     course    = 16
+    originator= 6
 
 # Tuple of attrs we want to extract from the decoded ais message
 # Order is the same as the bits appear in the original message.

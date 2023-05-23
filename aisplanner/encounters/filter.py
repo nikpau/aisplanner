@@ -501,7 +501,7 @@ class ENCSearchAgent:
             frame=area,
             search_radius=self.get_search_radius(area),
             n_cells=1,
-            filter=self.only_underway
+            filter=MessageFilter.only_german
         )
 
         # Use the center of the search area as the starting position
@@ -602,3 +602,16 @@ class ENCSearchAgent:
             if not (b,a) in uniques:
                 uniques.append((a,b))
                 yield (a,b)
+
+@dataclass
+class MessageFilter:
+    """
+    Collection of filters to apply to AIS messages.
+    """
+    @classmethod
+    def only_german(cls, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Filter for all messages that have been recorded by 
+        German base stations.
+        """
+        return df[df[DecodedReport.originator].isin(["GER"])]
