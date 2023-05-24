@@ -1,6 +1,7 @@
 """
 Module for plotting colregs encounters found via filter.py
 """
+from typing import Union
 from aisplanner.encounters.filter import (
     EncounterResult, ColregsSituation, 
     FileStream, EncounterSituations
@@ -29,7 +30,7 @@ REMOTEHOST = "taurus.hrsk.tu-dresden.de"
 REMOTEDIR = Path("/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022")
 
 # Load pickled results
-def load_results(filename: str | Path):
+def load_results(filename: Union[str, Path]):
     if not isinstance(filename, Path):
         filename = Path(filename)
     with open(RESDIR / filename, "rb") as f:
