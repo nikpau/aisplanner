@@ -5,7 +5,7 @@ from aisplanner.encounters.filter import (
     EncounterResult, ColregsSituation, 
     FileStream, EncounterSituations
 )
-from pytsa.targetship import BoundingBox, TargetVessel
+from pytsa.targetship import TargetVessel, TrajectoryMatcher, AISMessage
 import pytsa
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -13,10 +13,12 @@ import pickle
 from dotenv import load_dotenv
 import pandas as pd
 from aisplanner.dataprep._file_descriptors import DecodedReport
+from aisplanner.encounters.filter import MessageFilter
 import numpy as np
 from datetime import datetime, timedelta
 import warnings
 from rdp import rdp
+from itertools import pairwise
 import multiprocessing as mp
 
 # Types
@@ -79,7 +81,7 @@ class COLREGSSieve:
         if len(ownship) > 1:
             warnings.warn(
                 f"More than one row found for own ship. Result is ambiguous.\n"
-                f"Result: {ownship}\n Using observation closest to encounter timestamp."
+                f"Result: {ownship}\nUsing observation closest to encounter timestamp."
             )
             # Use observation closest to encounter timestamp
             ownship = ownship.iloc[ownship[DecodedReport.timestamp.name].sub(date).abs().argsort()[:1]]
@@ -114,6 +116,16 @@ class COLREGSSieve:
             (records[DecodedReport.status.name] == "NavigationStatus.UnderWayUsingEngine") &
             (records[DecodedReport.MMSI.name].isin(self.encres.mmsi))
         ]
+
+    def mmsi_filter(self, records: pd.DataFrame) -> pd.DataFrame:
+        """
+        Return only records with valid course i.e. not 360
+        and with status "UnderWayUsingEngine"
+        """
+        records = MessageFilter.only_german(records)
+        return records[
+            records[DecodedReport.MMSI.name].isin(self.encres.mmsi)
+        ]
     
     def record_trajectories(self) -> dict[MMSI,list[np.ndarray]]:
         """
@@ -136,7 +148,7 @@ class COLREGSSieve:
             frame=self.encres.area,
             search_radius=20, # nm
             n_cells=1,
-            filter=self.message_filter,
+            filter=self.mmsi_filter,
         )
         sa.init(self.search_area_center(self.encres.area))
         tpos = self.find_os_tpos(sa.cell_data)
@@ -193,7 +205,7 @@ class COLREGSSieve:
         """
         colors = ["#c1121f","#003049"]
         f, (ax1,ax2) = plt.subplots(2,1, figsize=(10,10))
-        #trajs = self.compress_trajectories(trajs)
+        trajs = self.compress_trajectories(trajs)
         for i, (mmsi, traj) in enumerate(trajs.items()):
             # Plot every n-th point as an arrow to indicate
             # the course of the vessel
@@ -224,7 +236,7 @@ class COLREGSSieve:
 
             # Plot the rot and drot as a function of time
             ax2.plot(np.arange(len(rot)),rot,label="ROT[deg/min]",c=colors[i])
-            ax2.plot(np.arange(len(rot)),drot,label="DROT[deg/min²]",c=colors[i])
+            ax2.plot(np.arange(len(rot)),drot,label="dROT[deg/min²]",c=colors[i])
 
         ax1.legend(title="MMSI")
         ax1.set_xlabel("Easting [m]")
@@ -233,7 +245,7 @@ class COLREGSSieve:
         ax1.set_title("Trajectories of vessels")
 
         ax2.legend()
-        ax2.set_xlabel("Time [min]")
+        ax2.set_xlabel("Time [sec*10]")
         ax2.set_title("Rates of turn")
 
         plt.suptitle(f"Encounter between {self.encres.mmsi[0]} and {self.encres.mmsi[1]}")
@@ -241,10 +253,10 @@ class COLREGSSieve:
 
 if __name__ == "__main__":
     # Load results
-    res = load_results("newresults.pkl")
+    res = load_results("gertraj.pkl")
     print(len(res))
-    # Plot encounter
-    for i in range(100):
-        plotter = COLREGSSieve(res[i*10])
-        trajs = plotter.record_trajectories()
-        plotter.plot(trajs)
+
+    # Plot trajectories
+    for v1,v2 in pairwise(res):
+        tm = TrajectoryMatcher(v1,v2)
+        tm.plot(interval = 10,every=5)
