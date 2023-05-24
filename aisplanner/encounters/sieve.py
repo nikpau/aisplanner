@@ -257,6 +257,6 @@ if __name__ == "__main__":
     print(len(res))
 
     # Plot trajectories
-    for v1,v2 in pairwise(res):
+    for v1,v2 in zip(res,res[1:]):
         tm = TrajectoryMatcher(v1,v2)
         tm.plot(interval = 10,every=5)
