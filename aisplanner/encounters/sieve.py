@@ -1,7 +1,7 @@
 """
 Module for plotting colregs encounters found via filter.py
 """
-from typing import Union
+from typing import Union, Dict
 from aisplanner.encounters.filter import (
     EncounterResult, ColregsSituation, 
     FileStream, EncounterSituations
@@ -126,7 +126,7 @@ class COLREGSSieve:
             records[DecodedReport.MMSI.name].isin(self.encres.mmsi)
         ]
     
-    def record_trajectories(self) -> dict[MMSI,list[np.ndarray]]:
+    def record_trajectories(self) -> Dict[MMSI,list[np.ndarray]]:
         """
         Record the positions, course and speed of the
         vessels involved in the encounter
@@ -183,7 +183,7 @@ class COLREGSSieve:
 
         return trajs
     
-    def compress_trajectories(self, trajs: dict[MMSI,list[np.ndarray]]) -> dict[MMSI,list[np.ndarray]]:
+    def compress_trajectories(self, trajs: Dict[MMSI,list[np.ndarray]]) -> Dict[MMSI,list[np.ndarray]]:
         """
         Compress the trajectories to the given length
         """
@@ -196,7 +196,7 @@ class COLREGSSieve:
             trajs[mmsi] = traj[mask]
         return trajs
 
-    def plot(self, trajs: dict[MMSI,list[np.ndarray]]):
+    def plot(self, trajs: Dict[MMSI,list[np.ndarray]]):
         """
         Plot the trajectories of the vessels involved.
         Different colors are for different vessels.
