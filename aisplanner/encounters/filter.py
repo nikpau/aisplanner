@@ -31,9 +31,9 @@ import pandas as pd
 import paramiko
 import pytsa
 from pytsa.targetship import (
-    FileLoadingError, SplineInterpolationError,
     TargetVessel
 )
+from pytsa.search_agent import FileLoadingError
 
 from aisplanner.dataprep._file_descriptors import DecodedReport
 from aisplanner.misc import logger
@@ -609,7 +609,6 @@ class ENCTrajectorySearchAgent(ENCSearchAgent):
     Subclass of ENCSearchAgent that retruns the 
     raw trajectories of the ships, rather than 
     interpolated positions.
-    
     """
     
     def _search(self,
