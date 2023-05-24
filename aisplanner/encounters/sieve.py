@@ -18,8 +18,6 @@ import numpy as np
 from datetime import datetime, timedelta
 import warnings
 from rdp import rdp
-from itertools import pairwise
-import multiprocessing as mp
 
 # Types
 MMSI = int
