@@ -1,7 +1,7 @@
 """
 Module for plotting colregs encounters found via filter.py
 """
-from typing import Union, Dict
+from typing import Union, Dict, List
 from aisplanner.encounters.filter import (
     EncounterResult, ColregsSituation, 
     FileStream, EncounterSituations
@@ -126,7 +126,7 @@ class COLREGSSieve:
             records[DecodedReport.MMSI.name].isin(self.encres.mmsi)
         ]
     
-    def record_trajectories(self) -> Dict[MMSI,list[np.ndarray]]:
+    def record_trajectories(self) -> Dict[MMSI,List[np.ndarray]]:
         """
         Record the positions, course and speed of the
         vessels involved in the encounter
@@ -155,7 +155,7 @@ class COLREGSSieve:
 
         # Record trajectories in 10 second increments
         # for the given time length
-        trajs: dict[MMSI,list[np.ndarray]] = {}
+        trajs: dict[MMSI,List[np.ndarray]] = {}
 
         # Record the encounter from 10 minutes before
         # to 10 minutes after the encounter
@@ -174,7 +174,7 @@ class COLREGSSieve:
                   (tpos.timestamp - timedelta(minutes=self.tlen)).day != enc_day:
                 tpos.timestamp += timedelta(seconds=10)
                 continue
-            ships: list[TargetVessel] = sa.get_ships(tpos)
+            ships: List[TargetVessel] = sa.get_ships(tpos)
             for ship in ships:
                 if not ship.mmsi in trajs:
                     trajs[ship.mmsi] = []
@@ -183,7 +183,7 @@ class COLREGSSieve:
 
         return trajs
     
-    def compress_trajectories(self, trajs: Dict[MMSI,list[np.ndarray]]) -> Dict[MMSI,list[np.ndarray]]:
+    def compress_trajectories(self, trajs: Dict[MMSI,List[np.ndarray]]) -> Dict[MMSI,List[np.ndarray]]:
         """
         Compress the trajectories to the given length
         """
@@ -196,7 +196,7 @@ class COLREGSSieve:
             trajs[mmsi] = traj[mask]
         return trajs
 
-    def plot(self, trajs: Dict[MMSI,list[np.ndarray]]):
+    def plot(self, trajs: Dict[MMSI,List[np.ndarray]]):
         """
         Plot the trajectories of the vessels involved.
         Different colors are for different vessels.
