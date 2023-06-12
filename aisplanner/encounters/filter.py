@@ -37,7 +37,6 @@ from pytsa.search_agent import FileLoadingError
 
 from aisplanner.dataprep._file_descriptors import DecodedReport
 from aisplanner.misc import logger
-from threading import RLock
 
 
 # Identity function
@@ -267,13 +266,6 @@ class EncounterResult:
         self.encounter_names = self.encounter.name
         if isinstance(self.timestamp, str):
             ciso8601.parse_datetime(self.timestamp)
-
-class EncounterFilter:
-    """
-    Takes in two Target
-    """
-    def __init__(self, situation: ColregsSituation) -> None:
-        pass
 
 
 class FileStream:
@@ -511,8 +503,7 @@ class TrajectoryExtractionAgent:
             datapath=self.current_file if not override_file else override_file,
             frame=area,
             search_radius=self.get_search_radius(area),
-            n_cells=1,
-            filter=MessageFilter.only_german
+            n_cells=1
         )
         
         # Set the maximum temporal deviation of target
