@@ -503,7 +503,8 @@ class TrajectoryExtractionAgent:
             datapath=self.current_file if not override_file else override_file,
             frame=area,
             search_radius=self.get_search_radius(area),
-            n_cells=1
+            n_cells=1,
+            filter=MessageFilter.only_german
         )
         
         # Set the maximum temporal deviation of target
@@ -590,3 +591,60 @@ class MessageFilter:
         German base stations.
         """
         return df[df[DecodedReport.originator.name].isin(["DEU"])]
+
+class ForwardBackwardScan:
+    """
+    Scan for evasive maneuvers using a forward-backward scan 
+    proposed by Rong et al. (2022).
+    
+    https://doi.org/10.1016/j.oceaneng.2021.110479
+
+    Input for this class are two target vessels who are 
+    involved in an encounter situation as decided by the
+    `EncounterSituation` class.
+
+    According to the original paper, the forward-backward scan
+    is performed as follows:
+        1.  The time-sorted AIS messages of the two vessels are
+            scanned forward in time and the distance between
+            the two vessels is calculated. 
+        2.  The time of minimum distance is identified.
+        3.  The AIS messages are scanned backward in time, 
+            starting from the time of minimum distance, in 
+            order to check if there exists a time interval
+            that the sign of every ROT value within the time 
+            interval is the same with the rudder direction 
+            sign(δ) = sign(ψ''), and the sign of the derivative of ROT at 
+            the first message in the interval is the same with sign(δ)
+    """
+
+    def __init__(self, t1: TargetVessel, t2: TargetVessel) -> None:
+        self.t1 = t1
+        self.t2 = t2
+
+        # Set the interval for the scan
+        self.interval = 10 # in seconds
+
+        matcher = pytsa.TrajectoryMatcher(t1, t2)
+        if matcher.disjoint_trajectories:
+            raise ValueError("Trajectories are disjoint.")
+        
+        self.start = matcher.start
+        self.end = matcher.end
+        matcher.observe_interval(interval=self.interval)
+        self.matcher = matcher
+
+    def forward_scan(self) -> float:
+        """
+        Perform the forward scan.
+
+        Returns the time of minimum distance as 
+        a unix timestamp.
+        """
+
+        # Array of times at which the distance is calculated
+        times = np.arange(self.start, self.end, self.interval)
+
+        # Array of distances between the two vessels
+        for obs_v1, obs_v2 in zip(self.matcher.obs_vessel1, self.matcher.obs_vessel2):
+            dist  = np.linalg.norm(obs_v1[0:2] - obs_v2[0:2])
