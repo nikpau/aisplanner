@@ -37,6 +37,7 @@ from pytsa.search_agent import FileLoadingError
 
 from aisplanner.dataprep._file_descriptors import DecodedReport
 from aisplanner.misc import logger
+from threading import RLock
 
 
 # Identity function
@@ -267,6 +268,14 @@ class EncounterResult:
         if isinstance(self.timestamp, str):
             ciso8601.parse_datetime(self.timestamp)
 
+class EncounterFilter:
+    """
+    Takes in two Target
+    """
+    def __init__(self, situation: ColregsSituation) -> None:
+        pass
+
+
 class FileStream:
     """
     Yield files from a remote folder over ssh.
@@ -338,9 +347,9 @@ class FileStream:
             sftp.close()
             return self.downloadpath/filename
 
-class ENCSearchAgent:
+class TrajectoryExtractionAgent:
     """
-    Search agent for COLREGS encounter situations in a
+    Search agent for Trajectories in a
     stream of AIS messages.
 
     Files are streamed from a remote server over ssh and
@@ -363,7 +372,10 @@ class ENCSearchAgent:
         self.search_areas = search_areas
         self.parallel = parallel
 
-        self.encounters_total: List[EncounterResult] = []
+        # List of Trajectories will be a list of TargetVessels
+        # which are dataclasses containing the trajectory of raw 
+        # AIS messages as well as their interpolated metrics.
+        self.trajectories: List[TargetVessel] = []
 
         # Check if filelist is given or if files should be streamed
         self._using_remote = False
@@ -454,7 +466,7 @@ class ENCSearchAgent:
         Saves the results as a python object.
         """
         with open(dest, "wb") as f:
-            pickle.dump(self.encounters_total, f)
+            pickle.dump(self.trajectories, f)
     
     def search(self) -> None:
         """
@@ -467,155 +479,21 @@ class ENCSearchAgent:
                     with mp.Pool(len(self.search_areas)) as pool:
                         encs = pool.map(self._search, self.search_areas)
                     # Flatten list of lists
-                    self.encounters_total.extend([enc for sublist in encs for enc in sublist])
+                    self.trajectories.extend([enc for sublist in encs for enc in sublist])
                 else:
                     for area in self.search_areas:
                         enc = self._search(area)
-                        self.encounters_total.extend(enc)
+                        self.trajectories.extend(enc)
                 if self._using_remote:
                     self.delete_current_file()
             except StopIteration:
                 return
-
-    def _search(
-        self,
-        area: pytsa.UTMBoundingBox,
-        override_file: Path = None) -> List[EncounterResult]:
-        """
-        
-        """
-        if override_file is not None:
-            self.current_file = Path(override_file)
-        # Datetime of current file, starting at midnight
-        # NOTE: This only works if the file name is in the format
-        #       YYYY-MM-DD.csv
-        #       Since the AIS messages we use are in the format
-        #       YYYY_MM_DD.csv, we need to replace the _ with -.
-        corrected_filename = self.current_file.stem.replace("_", "-")
-        start_date = ciso8601.parse_datetime(corrected_filename)
-
-        # Initialize search agent for nearest neighbors
-        # and trajectory interpolation
-        search_agent = pytsa.SearchAgent(
-            datapath=self.current_file if not override_file else override_file,
-            frame=area,
-            search_radius=self.get_search_radius(area),
-            n_cells=1,
-            filter=MessageFilter.only_german
-        )
-
-        # Use the center of the search area as the starting position
-        center = self.search_area_center(area)
-        tpos = pytsa.TimePosition(
-            timestamp=start_date,
-            easting=center.easting,
-            northing=center.northing
-        )
-
-        # Initialize search agent to that starting position
-        try:
-            search_agent.init(tpos)
-        except FileLoadingError as e:
-            logger.warning(f"File {self.current_file} could not be loaded:\n{e}")
-            return []
-
-        # Scan the area every 3 minutes. 
-        # During every scan, every ship is checked for a possible
-        # encounter situation.
-        search_date = start_date
-
-        # Initialize the list of encounters
-        encounters: List[EncounterSituations] = []
-
-        # Increment the search date until the date of search is
-        # greater than the date of the current file.
-        while start_date.day == search_date.day:
-
-            # print(f"Searching {search_date}")
-            ships: List[TargetVessel] = search_agent.get_ships(tpos)
             
-            # Skip if there are not enough ships in the area
-            if len(ships) < 2:
-                tpos = self._update_timeposition(tpos, 3)
-                search_date = tpos.timestamp
-                continue
-            
-            # Check every ship combination for a possible encounter
-            for os, ts in self._unique_2_permuts(ships):
-                try:
-                    os_obs = os.observe(skip_linear=True) # Get [lat,lon,course,speed]
-                    ts_obs = ts.observe(skip_linear=True) # Get [lat,lon,course,speed]
-                except SplineInterpolationError as e:
-                    logger.warning(e)
-                    continue
-
-                # Construct ship objects
-                OS = Ship(
-                    pos=Position(os_obs[0],os_obs[1]),
-                    sog=os_obs[3],
-                    cog=dtr(os_obs[2])
-                )
-                TS = Ship(
-                    pos=Position(ts_obs[0],ts_obs[1]),
-                    sog=ts_obs[3],
-                    cog=dtr(ts_obs[2])
-                )
-                found = EncounterSituations(OS,TS).analyze()
-                if found:
-                    for encounter in found:
-                        logger.info(f"Found encounter: {encounter}")
-                        encounters.append(
-                            EncounterResult(
-                                encounter=encounter,
-                                file=self.current_file.stem,
-                                timestamp=search_date,
-                                mmsi=[os.mmsi, ts.mmsi],
-                                area=area
-                            )
-                        )
-            # End of search for this time step
-            tpos = self._update_timeposition(tpos, 3)
-            search_date = tpos.timestamp
-        
-        return encounters
-
-    def _update_timeposition(self,
-            tpos: pytsa.TimePosition, 
-            byminutes: int) -> pytsa.TimePosition:
-        """
-        Update the time of a time position.
-        """
-        return pytsa.TimePosition(
-            timestamp=tpos.timestamp + timedelta(minutes=byminutes),
-            easting=tpos.easting,
-            northing=tpos.northing,
-            as_utm=True
-        )
-    
-    def _unique_2_permuts(self, ships: List[TargetVessel]) -> List[Tuple[TargetVessel,TargetVessel]]:
-        """
-        Get all unique permutations of the ships.
-        """
-        uniques = []
-        permutes = list(permutations(ships,2))
-        for a,b in permutes:
-            if not (b,a) in uniques:
-                uniques.append((a,b))
-                yield (a,b)
-
-
-class ENCTrajectorySearchAgent(ENCSearchAgent):
-    """
-    Subclass of ENCSearchAgent that retruns the 
-    raw trajectories of the ships, rather than 
-    interpolated positions.
-    """
-    
     def _search(self,
         area: pytsa.UTMBoundingBox,
         override_file: Path = None) -> List[TargetVessel]:
         """
-        
+        Search for valid trajectories in a given area.
         """
         if override_file is not None:
             self.current_file = Path(override_file)
@@ -656,7 +534,7 @@ class ENCTrajectorySearchAgent(ENCSearchAgent):
             logger.warning(f"File {self.current_file} could not be loaded:\n{e}")
             return []
 
-        # Scan the area every 3 minutes. 
+        # Scan the area every 30 minutes. 
         # During every scan, every ship is checked for a possible
         # encounter situation.
         search_date = start_date
@@ -684,6 +562,30 @@ class ENCTrajectorySearchAgent(ENCSearchAgent):
             search_date = tpos.timestamp
         
         return found
+
+    def _update_timeposition(self,
+            tpos: pytsa.TimePosition, 
+            byminutes: int) -> pytsa.TimePosition:
+        """
+        Update the time of a time position.
+        """
+        return pytsa.TimePosition(
+            timestamp=tpos.timestamp + timedelta(minutes=byminutes),
+            easting=tpos.easting,
+            northing=tpos.northing,
+            as_utm=True
+        )
+    
+def unique_2_permuts(ships: List[TargetVessel]) -> List[Tuple[TargetVessel,TargetVessel]]:
+    """
+    Get all unique permutations of the ships.
+    """
+    uniques = []
+    permutes = list(permutations(ships,2))
+    for a,b in permutes:
+        if not (b,a) in uniques:
+            uniques.append((a,b))
+            yield (a,b)
 
 @dataclass
 class MessageFilter:
