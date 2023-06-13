@@ -16,6 +16,7 @@ Procedure:
 import multiprocessing as mp
 import os
 import pickle
+import psutil
 from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime, timedelta
@@ -551,6 +552,13 @@ class TrajectoryExtractionAgent:
         # Increment the search date until the date of search is
         # greater than the date of the current file.
         logger.info(f"Searching {self.current_file}")
+        
+        # Print memory usage of the process
+        logger.info(
+            f"Memory usage: {psutil.Process(os.getpid()).memory_info().rss / 1024 ** 2} MB"
+            )
+        
+        
         while start_date.day == search_date.day:
 
             ships: List[TargetVessel] = search_agent.get_ships(tpos)
