@@ -22,7 +22,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 from itertools import permutations
 from pathlib import Path
-from typing import IO, Callable, Iterator, List, Tuple, Union
+from typing import IO, Any, Callable, Generator, Iterator, List, Tuple, Union
 
 import ciso8601
 import dotenv
@@ -57,6 +57,20 @@ longitude = float
 # Constants
 PI = np.pi
 TWOPI = 2 * PI
+
+
+class TargetShipIntpFields(Enum):
+    """
+    Dataclass to store the indices of the interpolated fields
+    of the target ship.
+    """
+    northing = 0
+    easting = 1
+    COG = 2
+    SOG = 3
+    ROT = 4
+    dROT = 5
+
  
 @dataclass
 class Position:
@@ -536,6 +550,7 @@ class TrajectoryExtractionAgent:
 
         # Increment the search date until the date of search is
         # greater than the date of the current file.
+        logger.info(f"Searching {self.current_file}")
         while start_date.day == search_date.day:
 
             ships: List[TargetVessel] = search_agent.get_ships(tpos)
@@ -619,8 +634,6 @@ class ForwardBackwardScan:
     """
 
     def __init__(self, t1: TargetVessel, t2: TargetVessel) -> None:
-        self.t1 = t1
-        self.t2 = t2
 
         # Set the interval for the scan
         self.interval = 10 # in seconds
@@ -634,17 +647,91 @@ class ForwardBackwardScan:
         matcher.observe_interval(interval=self.interval)
         self.matcher = matcher
 
+        # Array of times at which the track is observed
+        self.times = np.arange(self.start, self.end, self.interval)
+
+    def __call__(self, interval_length) -> bool:
+
+        min_index = self.forward_scan()
+        if min_index is None or min_index < interval_length:
+            return False
+        success = []
+        for obs in [self.matcher.obs_vessel1,self.matcher.obs_vessel2]:
+            success.append(
+                self.backward_scan(obs[:min_index],interval_length)
+            )
+        return any(success)
+        
+
     def forward_scan(self) -> float:
         """
         Perform the forward scan.
 
-        Returns the time of minimum distance as 
-        a unix timestamp.
+        Returns the index of minimum distance 
+        in the 'self.times' attribute.
         """
 
-        # Array of times at which the distance is calculated
-        times = np.arange(self.start, self.end, self.interval)
-
         # Array of distances between the two vessels
-        for obs_v1, obs_v2 in zip(self.matcher.obs_vessel1, self.matcher.obs_vessel2):
+        distances = np.zeros_like(self.times)
+        for i, (obs_v1, obs_v2) in enumerate(
+            zip(self.matcher.obs_vessel1, self.matcher.obs_vessel2)):
             dist  = np.linalg.norm(obs_v1[0:2] - obs_v2[0:2])
+            distances[i] = dist
+
+        # Find the time of minimum distance
+        min_dist = np.min(distances)
+        min_dist_idx = np.where(distances == min_dist)[0][0]
+
+        return min_dist_idx
+    
+    def sliding_window(self, input: list, interval_length: int = 3) -> Generator:
+        """
+        Generator yielding a sliding window of length `interval_length`
+        over the input list.
+        """
+        for i in range(len(input)-interval_length):
+            yield input[i:i+interval_length]
+    
+    def backward_scan(
+            self, 
+            obs: np.ndarray,
+            interval_length: int = 3) -> bool:
+        """
+        Perform the backward scan.
+
+        Returns True if the backward scan was successful,
+        False otherwise.
+
+        A backwards scan is successful if the sign of
+        every ROT value within the time interval is the
+        same with the rudder direction sign(δ).
+
+        Args:
+            obs (np.ndarray): Array of observations
+            idx (int): Index of minimum distance
+            interval_length (int, optional): Length of the
+                interval to scan. Defaults to 3.
+        """
+        # Walk backwards in time using a sliding window
+        # of length `interval_length`
+        for window in zip(self.sliding_window(obs, interval_length)):
+            # Get the ROT values
+            rot = window[:, TargetShipIntpFields.ROT.value]
+            drot = window[:, TargetShipIntpFields.dROT.value]
+
+            # Check if the signs of the ROT values are the same
+            # as the rudder direction
+            if all(np.sign(rot) == 1) or all(np.sign(rot) == -1):
+                rots_sign = np.sign(rot[0])
+            else:
+                continue
+            
+            # Check if the sign of the dROT value at the first
+            # message in the interval is the same as the rudder
+            # direction
+            if np.sign(drot[0]) == rots_sign:
+                return True
+            else:
+                continue
+        return False
+            
