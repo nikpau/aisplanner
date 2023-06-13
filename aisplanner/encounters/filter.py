@@ -519,7 +519,6 @@ class TrajectoryExtractionAgent:
             frame=area,
             search_radius=self.get_search_radius(area),
             n_cells=1,
-            filter=MessageFilter.only_german
         )
         
         # Set the maximum temporal deviation of target
