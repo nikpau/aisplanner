@@ -646,8 +646,8 @@ class ForwardBackwardScan:
         self.interval = 10 # in seconds
 
         matcher = pytsa.TrajectoryMatcher(t1, t2)
-        if matcher.disjoint_trajectories:
-            raise ValueError("Trajectories are disjoint.")
+        if matcher.disjoint_trajectories or not matcher.overlapping_trajectories:
+            raise ValueError("Trajectories are disjoint or do not overlap.")
         
         self.start = matcher.start
         self.end = matcher.end
