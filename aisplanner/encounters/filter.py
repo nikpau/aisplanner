@@ -203,7 +203,7 @@ def m2nm(m: float) -> float:
     """Convert meters to nautical miles"""
     return m / 1852
 
-class EncounterSituations:
+class EncounterSituation:
     """
     Classify COLREGS encounter situatios
     based on Zhang et al. (2021), Table 6.
@@ -235,18 +235,16 @@ class EncounterSituations:
     def __repr__(self) -> str:
         return f"EncounterSituations({self.own}, {self.tgt})"
 
-    def analyze(self) -> List[ColregsSituation]:
-        s = []
+    def analyze(self) -> Union[ColregsSituation,None]:
         # Early stop if the encounter is not active
         if self.tcpa <= 0:
-            return s
+            return 
         if self._is_headon():
-            s.append(ColregsSituation.HEADON)
+            return ColregsSituation.HEADON
         if self._is_overtaking():
-            s.append(ColregsSituation.OVERTAKING)
+            return ColregsSituation.OVERTAKING
         if self._is_crossing():
-            s.append(ColregsSituation.CROSSING)
-        return s
+            return ColregsSituation.CROSSING
         
     def _is_headon(self) -> bool:
         in_radius = self.rel_dist < nm2m(self.D1) # Is the target in the sensor range?
@@ -640,7 +638,7 @@ class ForwardBackwardScan:
             the first message in the interval is the same with sign(δ)
     """
 
-    def __init__(self, t1: TargetVessel, t2: TargetVessel) -> None:
+    def __init__(self, t1: TargetVessel, t2: TargetVessel, interval: int = 10) -> None:
 
         # Set the interval for the scan
         self.interval = 10 # in seconds
