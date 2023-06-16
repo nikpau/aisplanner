@@ -683,11 +683,8 @@ class ForwardBackwardScan:
             dist  = np.linalg.norm(obs_v1[0:2] - obs_v2[0:2])
             distances[i] = dist
 
-        # Find the time of minimum distance
-        min_dist = np.min(distances)
-        min_dist_idx = np.where(distances == min_dist)[0][0]
-
-        return min_dist_idx
+        # Return the time of minimum distance
+        return np.where(distances == np.min(distances))[0][0]
     
     def sliding_window(self, input: list, interval_length: int = 3) -> Generator:
         """
