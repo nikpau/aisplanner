@@ -52,8 +52,8 @@ class EndOfFileError(Exception):
 dotenv.load_dotenv()
 
 # Types
-latitude = float
-longitude = float
+Northing = float
+Easting = float
 
 # Constants
 PI = np.pi
@@ -75,15 +75,15 @@ class TargetShipIntpFields(Enum):
  
 @dataclass
 class Position:
-    lat: latitude
-    lon: longitude
+    northing: Northing
+    easting: Easting
 
     @property
-    def x(self) -> longitude:
-        return self.lon
+    def x(self) -> Easting:
+        return self.easting
     @property
-    def y(self) -> latitude:
-        return self.lat
+    def y(self) -> Northing:
+        return self.northing
 
 @dataclass
 class Ship:
@@ -640,8 +640,6 @@ class ForwardBackwardScan:
 
     def __init__(self, t1: TargetVessel, t2: TargetVessel, interval: int = 10) -> None:
 
-        # Set the interval for the scan
-        self.interval = 10 # in seconds
 
         matcher = pytsa.TrajectoryMatcher(t1, t2)
         if matcher.disjoint_trajectories or not matcher.overlapping_trajectories:
@@ -649,21 +647,22 @@ class ForwardBackwardScan:
         
         self.start = matcher.start
         self.end = matcher.end
-        matcher.observe_interval(interval=self.interval)
+        #                  -------v Set the interval for the scan [s]
+        matcher.observe_interval(interval=interval)
         self.matcher = matcher
 
         # Array of times at which the track is observed
-        self.times = np.arange(self.start, self.end, self.interval)
+        self.times = np.arange(self.start, self.end, interval)
 
-    def __call__(self, interval_length) -> bool:
+    def __call__(self, window_width) -> bool:
 
         min_index = self.forward_scan()
-        if min_index is None or min_index < interval_length:
+        if min_index is None or min_index < window_width:
             return False
         success = []
         for obs in [self.matcher.obs_vessel1,self.matcher.obs_vessel2]:
             success.append(
-                self.backward_scan(obs[:min_index],interval_length)
+                self.backward_scan(obs[:min_index],window_width)
             )
         return any(success)
         
@@ -693,11 +692,20 @@ class ForwardBackwardScan:
         """
         for i in range(len(input)-interval_length):
             yield input[i:i+interval_length]
+            
+    def reverse_sliding_window(self, input: list, interval_length: int = 3) -> Generator:
+        """
+        Generator yielding a sliding window of length `interval_length`
+        over the reversed input list.
+        """
+        for i in range(len(input)-interval_length,0,-1):
+            yield input[i:i+interval_length]
+        
     
     def backward_scan(
             self, 
             obs: np.ndarray,
-            interval_length: int = 3) -> bool:
+            window_width: int = 3) -> bool:
         """
         Perform the backward scan.
 
@@ -711,12 +719,12 @@ class ForwardBackwardScan:
         Args:
             obs (np.ndarray): Array of observations
             idx (int): Index of minimum distance
-            interval_length (int, optional): Length of the
-                interval to scan. Defaults to 3.
+            window_width (int, optional): Number of observations
+                                        to scan per window. Defaults to 3.
         """
         # Walk backwards in time using a sliding window
         # of length `interval_length`
-        for window in zip(self.sliding_window(obs, interval_length)):
+        for window in zip(self.reverse_sliding_window(obs, window_width)):
             # Get the ROT values
             rot = window[:, TargetShipIntpFields.ROT.value]
             drot = window[:, TargetShipIntpFields.dROT.value]
@@ -731,7 +739,9 @@ class ForwardBackwardScan:
             # Check if the sign of the dROT value at the first
             # message in the interval is the same as the rudder
             # direction
-            if np.sign(drot[0]) == rots_sign:
+            # We take the last value of the dROT array because
+            # the array is reversed
+            if np.sign(drot[-1]) == rots_sign:
                 return True
             else:
                 continue
