@@ -8,12 +8,18 @@ from typing import Any, Union
 from dataclasses import dataclass
 from aisplanner.encounters.filter import (
     ForwardBackwardScan, EncounterSituation,
-    Ship
+    Ship, Position
 )
 
 RESDIR = Path("results")
 REMOTEHOST = "taurus.hrsk.tu-dresden.de"
 REMOTEDIR = Path("/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022")
+
+# Sampling frequency for the trajectories in seconds
+_SAMPLINGFREQ = 10
+
+# Rolling window width for evasive maneuver detection
+_WINDOWWIDTH = 3
 
 @dataclass
 class OverlappingPair:
@@ -58,10 +64,15 @@ def plot_encounter(v1: TargetVessel,v2: TargetVessel):
         tm = TrajectoryMatcher(v1,v2)
         if not tm.disjoint_trajectories and tm.overlapping_trajectories:
             print(f"Plotting encounter for {v1.mmsi} and {v2.mmsi}")
-            tm.observe_interval(10).plot(every=6, path="out/plots/")
+            tm.observe_interval(_SAMPLINGFREQ).plot(every=6, path="out/plots/")
             return
         print(f"Disjoint trajectories for {v1.mmsi} and {v2.mmsi}")
         return
+
+def _overlapping_pipeline(file: str, outfile: str):
+    tgts = load_results(file)
+    save_overlapping_trajectories(tgts, outfile)
+    return
 
 def overlaps_from_raw():
     """
@@ -80,17 +91,11 @@ def overlaps_from_raw():
         RESDIR.joinpath("overlapping")/f"{f.stem}_ol.tr" for f in files
     ]
 
-    # Pipeline function for multiprocessing
-    def pipeline(file: str, outfile: str):
-        tgts = load_results(file)
-        save_overlapping_trajectories(tgts, outfile)
-        return
-
     # Create a pool of workers
     with mp.Pool() as pool:
-        pool.starmap(pipeline, zip(files, outfiles))
+        pool.starmap(_overlapping_pipeline, zip(files, outfiles))
 
-    return 
+    return
 
 def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
     """
@@ -99,15 +104,29 @@ def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
     """
     encs = []
     tm = TrajectoryMatcher(v1, v2)
-    tm.observe_interval()
+    tm.observe_interval(_SAMPLINGFREQ)
     for o1, o2 in zip(tm.obs_vessel1, tm.obs_vessel2):
-        s1 = Ship(pos=o1[0:2], cog=o1[2], sog=o1[3])
-        s2 = Ship(pos=o2[0:2], cog=o2[2], sog=o2[3])
-        enc = EncounterSituation(s1, s2).analyze()
-        if enc is not None:
-            encs.extend(enc)
+        s1 = Ship(pos=Position(o1[0],o1[1]), cog=o1[2], sog=o1[3])
+        s2 = Ship(pos=Position(o2[0],o2[1]), cog=o2[2], sog=o2[3])
+        found = EncounterSituation(s1, s2).analyze()
+        if found is not None:
+            encs.append(found)
     return len(encs) > 0
-        
+    
+def _encounter_pipeline(file: str):
+    out: set[OverlappingPair] = set()
+    tgts: list[OverlappingPair] = load_results(file)
+    for vobj in tgts:
+        if vobj.same_mmsi():
+            continue
+        if has_encounter(*vobj()):
+            fb = ForwardBackwardScan(*vobj(),interval=_SAMPLINGFREQ)
+            if fb(_WINDOWWIDTH):
+                out.add(vobj)
+    outpath = RESDIR.joinpath("encounters")/f"{Path(file).stem}_en.tr"
+    with open(outpath, "wb") as f:
+        pickle.dump(out, f)
+    return 
 
 def encounters_from_overlapping() -> None:
     """
@@ -123,24 +142,8 @@ def encounters_from_overlapping() -> None:
     # Get all files from the results directory
     files = list(RESDIR.joinpath("overlapping").glob("*.tr"))
 
-    # Pipeline function for multiprocessing
-    def pipeline(file: str):
-        out: set[OverlappingPair] = set()
-        tgts: list[OverlappingPair] = load_results(file)
-        for vobj in tgts:
-            if vobj.same_mmsi():
-                continue
-            if has_encounter(*vobj()):
-                fb = ForwardBackwardScan(*vobj())
-                if fb():
-                    out.add(vobj)
-        outpath = RESDIR.joinpath("encounters")/f"{Path(file).stem}_en.tr"
-        with open(outpath, "wb") as f:
-            pickle.dump(out, f)
-        return 
-
     # Create a pool of workers
     with mp.Pool() as pool:
-        pool.map(pipeline, files)
+        pool.map(_encounter_pipeline, files)
 
     return
