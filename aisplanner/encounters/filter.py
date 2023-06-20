@@ -108,6 +108,9 @@ class ColregsSituation(Enum):
     # Head-on situation
     HEADON = 3
 
+    def __hash__(self) -> int:
+        return super().__hash__()
+
 def dtr(deg: float) -> float:
     """Convert degrees to radians"""
     return deg * PI / 180
