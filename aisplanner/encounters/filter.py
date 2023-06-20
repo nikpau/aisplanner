@@ -92,8 +92,7 @@ class Ship:
     cog: float
 
     def __post_init__(self):
-        if not (0 <= self.cog <= 2*np.pi):
-            self.cog = angle_to_pi(self.cog)
+        self.cog = angle_to_2pi(dtr(self.cog))
 
 @dataclass
 class ColregsSituation(Enum):
@@ -118,8 +117,8 @@ def rtd(rad: float) -> float:
     return rad * 180 / PI
 
 def angle_to_pi(angle: float) -> float:
-    """Convert an angle to the range [-pi,pi]"""
-    return (angle + PI) % (2 * PI) - PI
+    """Convert an angle to the range [0,pi]"""
+    return angle % PI
 
 def angle_to_2pi(angle: float) -> float:
     """Convert an angle to the range [0,2pi]"""
@@ -135,13 +134,13 @@ def relative_velocity(
     t_crs: target course in radians
     t_spd: target speed in knots
     """
-    vx_rel = t_spd * np.sin(t_crs) - o_spd * np.sin(o_crs)
-    vy_rel = t_spd * np.cos(t_crs) - o_spd * np.cos(o_crs)
-    if np.isclose(vx_rel,0):
-        vx_rel = 0
-    if np.isclose(vy_rel,0):
-        vy_rel = 0
-    return vx_rel,vy_rel
+    o_vx, o_vy = velocity_components(o_crs,o_spd)
+    t_vx, t_vy = velocity_components(t_crs,t_spd)
+    return t_vx - o_vx, t_vy - o_vy
+
+def velocity_components(crs: float, spd: float) -> Tuple[float,float]:
+    """Calculate the x and y components of a velocity vector"""
+    return spd * np.sin(crs), spd * np.cos(crs)
 
 def vel_from_xy(x: float, y: float) -> float:
     """Calculate the velocity from x and y components"""
@@ -162,7 +161,7 @@ def crv(vx_rel: float, vy_rel: float) -> float:
             return TWOPI
     return np.arctan(vx_rel/vy_rel) + alpha(vx_rel,vy_rel)
 
-def rel_dist(own: Position, tgt: Position) -> float:
+def relative_distance(own: Position, tgt: Position) -> float:
     """Calculate the relative distance between two ships"""
     own = np.array([own.x,own.y])
     tgt = np.array([tgt.x,tgt.y])
@@ -211,9 +210,10 @@ class EncounterSituation:
     10.1109/ACCESS.2021.3060150
     """
     # Sensor ranges [nm] for the ship to detect specific encounters
-    D1 = 6 # Head-on
-    D2 = 3 # Overtaking
-    D3 = 6 # Crossing
+    # TODO: Check if these values are justified
+    D1 = .5 # 6 # Head-on
+    D2 = .5 # 3 # Overtaking
+    D3 = .5 # 6 # Crossing
     D1safe, D2safe, D3safe = 1, 1, 1 # Safety margins [nm]
     MAX_RANGE = max(D1,D2,D3) # Maximum sensor range [nm]
 
@@ -222,16 +222,14 @@ class EncounterSituation:
         self.tgt = tgt
 
         self.rel_bearing = relative_bearing(own,tgt)
-        self.rel_dist = rel_dist(own.pos,tgt.pos)
-        if self.rel_dist < nm2m(self.D1safe):
-            logger.info(f"Close encounter: {self.rel_dist:.2f} m")
+        self.rel_dist = relative_distance(own.pos,tgt.pos)
         self.rel_vel = relative_velocity(own.cog,own.sog,tgt.cog,tgt.sog)
         self.crv = crv(*self.rel_vel) # Course of relative velocity
         self.true_bearing = true_bearing(own.pos,tgt.pos)
         self.v_rel = vel_from_xy(*self.rel_vel)
         self.dcpa = DCPA(self.rel_dist,self.crv,self.true_bearing)
         self.tcpa = TCPA(self.rel_dist,self.crv,self.true_bearing,self.v_rel)
-    
+        
     def __repr__(self) -> str:
         return f"EncounterSituations({self.own}, {self.tgt})"
 
@@ -724,7 +722,7 @@ class ForwardBackwardScan:
         """
         # Walk backwards in time using a sliding window
         # of length `interval_length`
-        for window in zip(self.reverse_sliding_window(obs, window_width)):
+        for window in self.reverse_sliding_window(obs, window_width):
             # Get the ROT values
             rot = window[:, TargetShipIntpFields.ROT.value]
             drot = window[:, TargetShipIntpFields.dROT.value]
@@ -742,6 +740,10 @@ class ForwardBackwardScan:
             # We take the last value of the dROT array because
             # the array is reversed
             if np.sign(drot[-1]) == rots_sign:
+                logger.info(
+                    f"Evasive maneuver detected between "
+                    f"{self.matcher.vessel1.mmsi} and {self.matcher.vessel2.mmsi}"
+                )
                 return True
             else:
                 continue
