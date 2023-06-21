@@ -31,10 +31,8 @@ import numpy as np
 import pandas as pd
 import paramiko
 import pytsa
-from pytsa.targetship import (
-    TargetVessel
-)
 from pytsa.search_agent import FileLoadingError
+from pytsa import ShipType, TargetVessel
 
 from aisplanner.dataprep._file_descriptors import DecodedReport
 from aisplanner.misc import logger
@@ -363,18 +361,25 @@ class TrajectoryExtractionAgent:
     together with the file and timestamp of the encounter.
     
     """
-    def __init__(self, 
-            remote_host: Union[str, Path], 
-            remote_dir: Union[str, Path],
+    def __init__(self,
             search_areas: List[pytsa.UTMBoundingBox],
-            filelist: List[Union[Path, str]] = None,
-            parallel: bool = False,
-            **fsargs) -> None:
+            ship_types: list[ShipType],
+            msg12318files: List[Union[Path, str]] = None,
+            msg5files: List[Union[Path, str]] = None,
+            parallel: bool = False) -> None:
         
-        self.remote_host = remote_host
-        self.remote_dir = remote_dir
+        # Check if search areas are given
+        if len(search_areas) == 1 and parallel:
+            raise ValueError(
+                "Only one search area given. "
+                "Parallel processing is not possible."
+                )
         self.search_areas = search_areas
         self.parallel = parallel
+
+        # List of ShipTypes to be searched for
+        self.ship_types = ship_types
+
 
         # List of Trajectories will be a list of TargetVessels
         # which are dataclasses containing the trajectory of raw 
@@ -384,23 +389,29 @@ class TrajectoryExtractionAgent:
         # Check if filelist is given or if files should be streamed
         self._using_remote = False
         
-        if filelist is None:
-            self.filestream = FileStream(
-                self.remote_host, self.remote_dir, **fsargs
-            )
-            self._using_remote = True
-        else: 
-            self.filestream  = [Path(file) for file in filelist]
-        
-        self.filestream = iter(self.filestream)
+        if msg12318files is None:
+            raise ValueError("No filelist for dynamic messages given")
+        self.dynamic_filestream  = [Path(file) for file in msg12318files]
+        self.dynamic_filestream = iter(self.dynamic_filestream)
 
-    def load_next_file(self) -> pd.DataFrame:
+        if msg5files is None:
+            logger.info(
+                "No filelist for static messages given. "
+                "Static messages will not be processed."
+                )
+            self.static_filestream = None
+        else:
+            self.static_filestream = [Path(file) for file in msg5files]
+            self.static_filestream = iter(self.static_filestream)
+
+    def load_next_file(self) -> None:
         """
         Download AIS messages from remote server and
         open it as a pandas dataframe.
         """
         try:
-            self.current_file: Path = next(self.filestream)
+            self.current_file: Path = next(self.dynamic_filestream)
+            self.current_static_file: Path = next(self.static_filestream)
         except StopIteration:
             logger.info("No more files to process")
             raise
@@ -512,7 +523,8 @@ class TrajectoryExtractionAgent:
         # Initialize search agent for nearest neighbors
         # and trajectory interpolation
         search_agent = pytsa.SearchAgent(
-            datapath=self.current_file if not override_file else override_file,
+            msg12318file=self.current_file if not override_file else override_file,
+            msg5file=self.current_static_file,
             frame=area,
             search_radius=self.get_search_radius(area),
             n_cells=1,
@@ -564,6 +576,10 @@ class TrajectoryExtractionAgent:
                 tpos = self._update_timeposition(tpos, 30)
                 search_date = tpos.timestamp
                 continue
+
+            for i, ship in enumerate(ships):
+                if ship.ship_type not in self.ship_types:
+                    del ships[i]
             
             else:
                 found.extend(ships)
