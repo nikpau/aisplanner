@@ -92,7 +92,7 @@ class Ship:
     cog: float
 
     def __post_init__(self):
-        self.cog = angle_to_2pi(dtr(self.cog))
+        self.cog = dtr(self.cog)
 
 @dataclass
 class ColregsSituation(Enum):
@@ -155,7 +155,6 @@ def crv(vx_rel: float, vy_rel: float) -> float:
     y: y-component of the relative velocity
     """
     def alpha(x: float, y: float) -> float:
-        """Calculate the angle of a vector in radians"""
         if x >= 0 and y >= 0:
             return 0
         if (x < 0 and y < 0) or (x >= 0 and y < 0):
@@ -173,7 +172,6 @@ def relative_distance(own: Position, tgt: Position) -> float:
 def true_bearing(own: Position, tgt: Position) -> float:
     """Calculate the true bearing between two ships"""
     def alpha(own: Position, tgt: Position) -> float:
-        """Calculate the angle of a vector in radians"""
         if tgt.x >= own.x and tgt.y >= own.y:
             return 0
         if (tgt.x < own.x and tgt.y < own.y) or\
@@ -181,7 +179,7 @@ def true_bearing(own: Position, tgt: Position) -> float:
             return PI
         if tgt.x < own.x and tgt.y >= own.y:
             return TWOPI
-    return np.arctan((tgt.x-own.x)/(tgt.y-own.x)) + alpha(own,tgt)
+    return np.arctan2((tgt.x-own.x),(tgt.y-own.y)) + alpha(own,tgt)
 
 def relative_bearing(own: Ship, tgt: Ship) -> float:
     """Calculate the relative bearing between two ships"""
@@ -751,4 +749,11 @@ class ForwardBackwardScan:
             else:
                 continue
         return False
+    
+s1 = Ship(Position(0,10),cog=180,sog=20)
+s2 = Ship(Position(0,100),cog=0,sog=10)
+print(f"True bearing: {rtd(true_bearing(s1.pos,s2.pos))}")
+print(f"relative bearing: {rtd(relative_bearing(s1,s2))}")
+vxrel, vyrel = relative_velocity(s1.cog,s1.sog,s2.cog,s2.sog)
+print(f"Course of relative velocity: {rtd(crv(vxrel,vyrel))}")
             
