@@ -1,7 +1,7 @@
 # Poetry build chain
 [tool.poetry]
 name = "aisplanner"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Niklas Paulig <niklas-paulig@tu-dresden.de>"]
 readme = "README.md"
