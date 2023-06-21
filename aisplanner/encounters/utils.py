@@ -12,7 +12,7 @@ from aisplanner.encounters.filter import (
     ForwardBackwardScan, EncounterSituation,
     Ship, Position,ColregsSituation
 )
-dotenv.load_dotenv()
+dotenv.load_dotenv("~/.env")
 
 RESDIR = Path(os.environ.get("RESPATH"))
 
