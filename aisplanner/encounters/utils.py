@@ -2,24 +2,25 @@ from pytsa import TrajectoryMatcher
 from pytsa.targetship import TargetVessel
 from itertools import permutations
 import pickle
+import os
+import dotenv
 from aisplanner.misc import logger
 from pathlib import Path
 from typing import Any, Union
 from dataclasses import dataclass
 from aisplanner.encounters.filter import (
     ForwardBackwardScan, EncounterSituation,
-    Ship, Position
+    Ship, Position,ColregsSituation
 )
+dotenv.load_dotenv()
 
-RESDIR = Path("results")
-REMOTEHOST = "taurus.hrsk.tu-dresden.de"
-REMOTEDIR = Path("/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022")
+RESDIR = Path(os.environ.get("RESPATH"))
 
 # Sampling frequency for the trajectories in seconds
 _SAMPLINGFREQ = 10
 
 # Rolling window width for evasive maneuver detection
-_WINDOWWIDTH = 3
+_WINDOWWIDTH = 30
 
 @dataclass
 class OverlappingPair:
@@ -87,6 +88,9 @@ def overlaps_from_raw():
     files = list(RESDIR.glob("*.tr"))
 
     # Create new files for storing the overlapping trajectories
+    # Create "overlapping" directory if it doesn't exist
+    if not RESDIR.joinpath("overlapping").exists():
+        RESDIR.joinpath("overlapping").mkdir()
     outfiles = [
         RESDIR.joinpath("overlapping")/f"{f.stem}_ol.tr" for f in files
     ]
@@ -97,7 +101,7 @@ def overlaps_from_raw():
 
     return
 
-def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
+def has_encounter(v1: TargetVessel, v2: TargetVessel, etype: ColregsSituation) -> bool:
     """
     Check if any message-pair in the trajectories of
     v1 and v2 has a COLREGS relevant encounter.
@@ -111,7 +115,11 @@ def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
         found = EncounterSituation(s1, s2).analyze()
         if found is not None:
             encs.append(found)
-    return len(set(encs)) == 1 and len(encs) > 30
+    resset = set(encs)
+    if len(resset) == 1:
+        return list(resset)[0] == etype and len(encs) > 30
+    return False
+    # return len(set(encs)) == 1# and len(encs) > 100
     
 def _encounter_pipeline(file: str):
     out: set[OverlappingPair] = set()
@@ -119,10 +127,13 @@ def _encounter_pipeline(file: str):
     for vpair in overlaps:
         if vpair.same_mmsi():
             continue
-        if has_encounter(*vpair()):
+        if has_encounter(*vpair(),ColregsSituation.CROSSING):
             scanner = ForwardBackwardScan(*vpair(),interval=_SAMPLINGFREQ)
             if scanner(_WINDOWWIDTH):
                 out.add(vpair)
+    # Create "encounters" directory if it doesn't exist
+    if not RESDIR.joinpath("encounters").exists():
+        RESDIR.joinpath("encounters").mkdir()
     outpath = RESDIR.joinpath("encounters")/f"{Path(file).stem}_en.tr"
     with open(outpath, "wb") as f:
         pickle.dump(out, f)
