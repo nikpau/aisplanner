@@ -749,11 +749,3 @@ class ForwardBackwardScan:
             else:
                 continue
         return False
-    
-s1 = Ship(Position(0,10),cog=180,sog=20)
-s2 = Ship(Position(0,100),cog=0,sog=10)
-print(f"True bearing: {rtd(true_bearing(s1.pos,s2.pos))}")
-print(f"relative bearing: {rtd(relative_bearing(s1,s2))}")
-vxrel, vyrel = relative_velocity(s1.cog,s1.sog,s2.cog,s2.sog)
-print(f"Course of relative velocity: {rtd(crv(vxrel,vyrel))}")
-            
