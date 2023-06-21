@@ -111,18 +111,18 @@ def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
         found = EncounterSituation(s1, s2).analyze()
         if found is not None:
             encs.append(found)
-    return len(encs) > 0
+    return len(set(encs)) == 1 and len(encs) > 30
     
 def _encounter_pipeline(file: str):
     out: set[OverlappingPair] = set()
-    tgts: list[OverlappingPair] = load_results(file)
-    for vobj in tgts:
-        if vobj.same_mmsi():
+    overlaps: list[OverlappingPair] = load_results(file)
+    for vpair in overlaps:
+        if vpair.same_mmsi():
             continue
-        if has_encounter(*vobj()):
-            fb = ForwardBackwardScan(*vobj(),interval=_SAMPLINGFREQ)
-            if fb(_WINDOWWIDTH):
-                out.add(vobj)
+        if has_encounter(*vpair()):
+            scanner = ForwardBackwardScan(*vpair(),interval=_SAMPLINGFREQ)
+            if scanner(_WINDOWWIDTH):
+                out.add(vpair)
     outpath = RESDIR.joinpath("encounters")/f"{Path(file).stem}_en.tr"
     with open(outpath, "wb") as f:
         pickle.dump(out, f)
