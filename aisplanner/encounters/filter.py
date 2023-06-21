@@ -369,6 +369,8 @@ class TrajectoryExtractionAgent:
             parallel: bool = False) -> None:
         
         # Check if search areas are given
+        if not isinstance(search_areas, list):
+            search_areas = [search_areas]
         if len(search_areas) == 1 and parallel:
             raise ValueError(
                 "Only one search area given. "
