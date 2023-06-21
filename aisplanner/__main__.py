@@ -11,7 +11,7 @@ from pytsa import ShipType
 def parse_args():
     parser = argparse.ArgumentParser(
         description="AISplanner: A tool for analyzing AIS data.",)
-    parser.add_argument("-t", "--type,", type=str, help="Ship type to search for.")
+    parser.add_argument("-t", "--type", type=str, help="Ship type to search for.")
     parser.add_argument("-v", "--version", action="version", version=f"{__version__}")
     parser.add_argument("-a", "--author", action="version", version=f"{__author__}")
     return parser.parse_args()
