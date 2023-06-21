@@ -1,4 +1,4 @@
-import utils
+from aisplanner.encounters import utils
 import os
 from glob import glob
 import multiprocessing as mp
