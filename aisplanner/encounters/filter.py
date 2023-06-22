@@ -376,6 +376,8 @@ class TrajectoryExtractionAgent:
         self.parallel = parallel
 
         # List of ShipTypes to be searched for
+        if not isinstance(ship_types, list):
+            ship_types = [ship_types]
         self.ship_types = ship_types
 
 
