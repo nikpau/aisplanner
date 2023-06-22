@@ -115,7 +115,7 @@ def has_encounter(v1: TargetVessel, v2: TargetVessel, etype: ColregsSituation) -
             encs.append(found)
     resset = set(encs)
     if len(resset) == 1:
-        return list(resset)[0] == etype and len(encs) > 30
+        return list(resset)[0] == etype and len(encs) > 10
     return False
     # return len(set(encs)) == 1# and len(encs) > 100
     
