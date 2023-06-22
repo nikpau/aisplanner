@@ -11,35 +11,32 @@ class LocationDatabase:
         LATMIN=57.378,
         LATMAX=57.778,
         LONMIN=10.446,
-        LONMAX=11.872
+        LONMAX=11.872,
+        name="Frederikshavn_to_Gothenburg"
     )
     elbe_approach: LatLonBoundingBox = LatLonBoundingBox(
         LATMIN=53.9807,
         LATMAX = 54.049,
         LONMIN=7.487,
-        LONMAX=7.7734
+        LONMAX=7.7734,
+        name="Elbe_approach"
     )
     # Helsingor to Helsingborg
     hel_hel: LatLonBoundingBox = LatLonBoundingBox(
         LATMIN=55.998,
         LATMAX=56.064,
         LONMIN=12.560,
-        LONMAX=12.745
+        LONMAX=12.745,
+        name="Helsingor_to_Helsingborg"
     )
     # Hirtsals to Kristiansand
     hir_krs: LatLonBoundingBox = LatLonBoundingBox(
         LATMIN=57.393,
         LATMAX=58.240,
         LONMIN=7.280,
-        LONMAX=9.995
+        LONMAX=9.995,
+        name="Hirtsals_to_Kristiansand"
     )
-
-    def __post_init__(self):
-        self.fre_got.name = "Frederikshavn_to_Gothenburg"
-        self.elbe_approach.name = "Elbe_approach"
-        self.hel_hel.name = "Helsingor_to_Helsingborg"
-        self.hir_krs.name = "Hirtsals_to_Kristiansand"
-        
 
     # Return all locations as a list
     @classmethod
