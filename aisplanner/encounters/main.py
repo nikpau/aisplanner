@@ -37,4 +37,4 @@ def _do(loc: LatLonBoundingBox, ship_type: ShipType):
     )
     s.search()
     # Saved object's type is list[TargetVessel]
-    s.save_results(f"{os.environ.get('ENCOUNTERS_DIR')}/2021_{loc.name}.tr")
+    s.save_results(f"{os.environ.get('RESPATH')}/2021_{loc.name}.tr")
