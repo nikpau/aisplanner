@@ -31,8 +31,8 @@ def search_for(ship_type: ShipType):
 def _do(loc: LatLonBoundingBox, ship_type: ShipType):
     s = TrajectoryExtractionAgent(
         search_areas=loc,
-        msg12318files=glob(f"{os.environ.get('AISDECODED')}/2021_*.tr"),
-        msg5files=glob(f"{os.environ.get('MSG5DECODED')}/2021_*.tr"),
+        msg12318files=glob(f"{os.environ.get('AISDECODED')}/2021_*.csv"),
+        msg5files=glob(f"{os.environ.get('MSG5DECODED')}/2021_*.csv"),
         ship_types=ship_type,
     )
     s.search()
