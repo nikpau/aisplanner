@@ -26,7 +26,6 @@ from pathlib import Path
 from typing import IO, Any, Callable, Generator, Iterator, List, Tuple, Union
 
 import ciso8601
-import dotenv
 import numpy as np
 import pandas as pd
 import paramiko
@@ -45,9 +44,6 @@ def _id(x):
 # Exceptions
 class EndOfFileError(Exception):
     pass
-
-# Load environment variables
-dotenv.load_dotenv()
 
 # Types
 Northing = float

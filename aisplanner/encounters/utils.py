@@ -3,7 +3,6 @@ from pytsa.targetship import TargetVessel
 from itertools import permutations
 import pickle
 import os
-import dotenv
 from aisplanner.misc import logger
 from pathlib import Path
 from typing import Any, Union
@@ -12,7 +11,6 @@ from aisplanner.encounters.filter import (
     ForwardBackwardScan, EncounterSituation,
     Ship, Position,ColregsSituation
 )
-dotenv.load_dotenv("~/.env")
 
 RESDIR = Path(os.environ.get("RESPATH"))
 

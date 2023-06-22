@@ -7,8 +7,6 @@ from aisplanner.encounters.filter import (
     TrajectoryExtractionAgent
 )
 from aisplanner.encounters._locdb import LocationDatabase, LatLonBoundingBox
-from dotenv import load_dotenv
-load_dotenv("~/.env")
 
 
 # Extract a list of TargetVessel objects from raw AIS messages
