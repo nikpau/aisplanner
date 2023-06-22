@@ -28,6 +28,12 @@ def load_env(path: str):
 
 def main():
     args = parse_args()
+    if args.env:
+        load_env(args.env)
+    else: 
+        print("No .env file given. Exiting.")
+        sys.exit(1)
+
     if args.type:
         try:
             ship_type = ShipType[f"{args.type}"]
