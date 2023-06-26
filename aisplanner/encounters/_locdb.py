@@ -39,10 +39,10 @@ class LocationDatabase:
     )
     # North north-sea
     nns: LatLonBoundingBox = LatLonBoundingBox(
-        LATMIN=57.47,
-        LATMAX=59.20,
-        LONMIN=7.83,
-        LONMAX=12.63,
+        LATMIN=57.88,
+        LATMAX=58.34,
+        LONMIN=9.80,
+        LONMAX=11.27,
         name="North_north_sea"
     )
 
