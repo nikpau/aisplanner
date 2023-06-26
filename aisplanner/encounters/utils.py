@@ -116,28 +116,24 @@ def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
         s2 = Ship(pos=Position(o2[0],o2[1]), cog=o2[2], sog=o2[3])
         # Check for an encounter
         found = EncounterSituation(s1, s2).analyze()
+        if found is not None:
+            encs.append(found)
         # Check if s2 is to the left or right of s1
         # as seen from s1's perspective
+
+        # Save the left/right and perpendicular left/right
         lor = left_or_right(s1, s2)
         lorp = left_or_right(s1, s2, perp=True)
         lors.append(lor); lorsp.append(lorp)
-        if found is not None:
-            encs.append(found)
     resset = set(encs)
     if len(resset) == 1:
         colrtype = resset.pop()
         if colrtype == ColregsSituation.CROSSING:
             # Get the sequence of left/right with no consecutive repetitions
-            sseq = noreps(lors)
-            return sseq == sol_seq_from_encounter(ColregsSituation.CROSSING)
+            return noreps(lors) == sol_seq_from_encounter(colrtype)
         else:
-            sseq = noreps(lorsp)
-            return sseq == sol_seq_from_encounter(colrtype)
+            return noreps(lorsp) == sol_seq_from_encounter(colrtype)
     return False
-        
-
-    return False
-    # return len(set(encs)) == 1# and len(encs) > 100
     
 def _encounter_pipeline(file: str):
     out: set[OverlappingPair] = set()
