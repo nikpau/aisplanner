@@ -53,6 +53,19 @@ Easting = float
 PI = np.pi
 TWOPI = 2 * PI
 
+class SideOfLine(Enum):
+    """
+    Enum to store the side of a line (sol) a point is on.
+    """
+    LEFT = 0
+    RIGHT = 1
+    ON = -1
+    
+# Tuples of SideOfLine sequences for COLREGS situations
+SOL_CROSSING = (SideOfLine.LEFT, SideOfLine.RIGHT)
+SOL_HEAD_ON = (SideOfLine.LEFT, SideOfLine.RIGHT)
+SOL_OVERTAKING = (SideOfLine.RIGHT, SideOfLine.LEFT)
+
 
 class TargetShipIntpFields(Enum):
     """
@@ -104,6 +117,19 @@ class ColregsSituation(Enum):
 
     def __hash__(self) -> int:
         return super().__hash__()
+
+def sol_seq_from_encounter(colr: ColregsSituation) -> tuple:
+    """
+    Get the sequence of sides of line (sol) from a COLREGS situation.
+    """
+    if colr == ColregsSituation.CROSSING:
+        return SOL_CROSSING
+    elif colr == ColregsSituation.HEADON:
+        return SOL_HEAD_ON
+    elif colr == ColregsSituation.OVERTAKING:
+        return SOL_OVERTAKING
+    else:
+        raise ValueError(f"Invalid COLREGS situation: {colr}")
 
 def dtr(deg: float) -> float:
     """Convert degrees to radians"""
@@ -197,6 +223,91 @@ def m2nm(m: float) -> float:
     """Convert meters to nautical miles"""
     return m / 1852
 
+def course_lineq(s: Ship, perp: bool = False) -> Callable[[Easting],Northing]:
+    """
+    Return the linear equation passing through the ship
+    in the direction of the course over ground.
+    
+    If the perpendicular flag is set to True,
+    the line will be perpendicular to the course over ground.
+    """
+    # Calculate the slope of the line via the course over ground.
+    # We must negate and shift the angle by 90 degrees
+    # to align the course to the global reference frame.
+    sl = -np.tan(s.cog - PI/2)
+    if perp:
+        sl = -1/sl
+    
+    # Get intercept of the line
+    # Get northing of the line 
+    # given the easting.
+    intercept = s.pos.y - sl * s.pos.x
+    
+    # Define inner line function
+    def line(e: Easting) -> Northing:
+        return sl * e + intercept
+    
+    return line
+
+def proxy_points(s: Ship, perp: bool = False, d: int = 1000) -> Tuple[Position,Position]:
+    """
+    Return two points that are d and -d meters away
+    from the ship along the course over ground.
+    """
+    # Get the line equation of the course over ground
+    line = course_lineq(s,perp=perp)
+    
+    # Get the easting
+    e = s.pos.x
+    
+    # Get the easting of the proxy points
+    e1 = e - d * np.cos(s.cog)
+    e2 = e + d * np.cos(s.cog)
+    
+    # Get the northing of the proxy points
+    n1 = line(e1)
+    n2 = line(e2)
+    
+    # Return the proxy points
+    return Position(e1,n1), Position(e2,n2)
+
+def left_or_right(s: Ship, t: Ship, perp: bool = False) -> SideOfLine:
+    """
+    Determine whether the target is to the left or right
+    of the ship's course over ground.
+    """
+    # Get the two proxy points of the own ship
+    px1, px2 = proxy_points(s,perp=perp)
+    
+    # The position of the target vessel relative to the 
+    # line of course of the own ship is calculated using 
+    # the cross product between the vectors formed by the 
+    # line and the target vessel position.
+    position = (px2.x - px1.x) * (t.pos.y - px1.y) -\
+                (px2.y - px1.y) * (t.pos.x - px1.x)
+    
+    if position > 0:
+        return SideOfLine.LEFT
+    elif position < 0:
+        return SideOfLine.RIGHT
+    else:
+        return SideOfLine.ON
+
+def noreps(seq):
+    """
+    Remove adjacent repeated elements 
+    from a sequence:
+    [1,1,2,2,2,5,1] -> [1,2,5,1]
+    """
+    out = []
+    for i, val in enumerate(seq):
+        if i == 0 or i == len(seq)-1:
+            out.append(val)
+        else: 
+            if out[-1] != seq[i]:
+                out.append(val)
+    return tuple(out)
+
 class EncounterSituation:
     """
     Classify COLREGS encounter situatios
@@ -256,6 +367,7 @@ class EncounterSituation:
         in_bearing = abs(self.rel_bearing) >= dtr(5)
         in_safety = abs(self.dcpa) < nm2m(self.D3safe)
         return in_radius and in_bearing and in_safety
+    
     
 @dataclass
 class EncounterResult:
@@ -765,3 +877,19 @@ class ForwardBackwardScan:
             else:
                 continue
         return False
+
+        
+s1 = Ship(Position(15,15), sog=10, cog=315)
+s2 = Ship(Position(5,5), sog=10, cog=324)
+rel_bearing = relative_bearing(s1,s2)
+rel_dist = relative_distance(s1.pos,s2.pos)
+rel_vel = relative_velocity(s1.cog,s1.sog,s2.cog,s2.sog)
+crv = crv(*rel_vel) # Course of relative velocity
+true_bearing = true_bearing(s1.pos,s2.pos)
+v_rel = vel_from_xy(*rel_vel)
+dcpa = DCPA(rel_dist,crv,true_bearing)
+tcpa = TCPA(rel_dist,crv,true_bearing,v_rel)
+print(f"DCPA: {dcpa:.3f}, TCPA: {tcpa:.3f}")
+
+lor = left_or_right(s1,s2)
+print(f"Left or right: {lor}")

@@ -9,7 +9,8 @@ from typing import Any, Union
 from dataclasses import dataclass
 from aisplanner.encounters.filter import (
     ForwardBackwardScan, EncounterSituation,
-    Ship, Position,ColregsSituation
+    Ship, Position,ColregsSituation, SideOfLine,
+    left_or_right, noreps, sol_seq_from_encounter
 )
 
 RESDIR = Path(os.environ.get("RESPATH"))
@@ -99,23 +100,42 @@ def overlaps_from_raw():
 
     return
 
-def has_encounter(v1: TargetVessel, v2: TargetVessel, etype: ColregsSituation) -> bool:
+def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
     """
     Check if any message-pair in the trajectories of
     v1 and v2 has a COLREGS relevant encounter.
     """
+    # Encounters
     encs = []
+    # Left or right, (normal to course, perpendicular to course)
+    lors, lorsp = [], []
     tm = TrajectoryMatcher(v1, v2)
     tm.observe_interval(_SAMPLINGFREQ)
     for o1, o2 in zip(tm.obs_vessel1, tm.obs_vessel2):
         s1 = Ship(pos=Position(o1[0],o1[1]), cog=o1[2], sog=o1[3])
         s2 = Ship(pos=Position(o2[0],o2[1]), cog=o2[2], sog=o2[3])
+        # Check for an encounter
         found = EncounterSituation(s1, s2).analyze()
+        # Check if s2 is to the left or right of s1
+        # as seen from s1's perspective
+        lor = left_or_right(s1, s2)
+        lorp = left_or_right(s1, s2, perp=True)
+        lors.append(lor); lorsp.append(lorp)
         if found is not None:
             encs.append(found)
     resset = set(encs)
     if len(resset) == 1:
-        return list(resset)[0] == etype and len(encs) > 10
+        colrtype = resset.pop()
+        if colrtype == ColregsSituation.CROSSING:
+            # Get the sequence of left/right with no consecutive repetitions
+            sseq = noreps(lors)
+            return sseq == sol_seq_from_encounter(ColregsSituation.CROSSING)
+        else:
+            sseq = noreps(lorsp)
+            return sseq == sol_seq_from_encounter(colrtype)
+    return False
+        
+
     return False
     # return len(set(encs)) == 1# and len(encs) > 100
     
