@@ -273,8 +273,8 @@ def proxy_points(s: Ship, perp: bool = False, d: int = 1000) -> Tuple[Position,P
 
 def left_or_right(s: Ship, t: Ship, perp: bool = False) -> SideOfLine:
     """
-    Determine whether the target is to the left or right
-    of the ship's course over ground.
+    Determine whether the target 't' is to the left or right
+    of the ship 's' as seen from s's perspective.
     """
     # Get the two proxy points of the own ship
     px1, px2 = proxy_points(s,perp=perp)
