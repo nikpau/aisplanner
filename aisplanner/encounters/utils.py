@@ -141,7 +141,7 @@ def _encounter_pipeline(file: str):
     for vpair in overlaps:
         if vpair.same_mmsi():
             continue
-        if has_encounter(*vpair(),ColregsSituation.CROSSING):
+        if has_encounter(*vpair()):
             scanner = ForwardBackwardScan(*vpair(),interval=_SAMPLINGFREQ)
             if scanner(_WINDOWWIDTH):
                 out.add(vpair)
