@@ -879,17 +879,17 @@ class ForwardBackwardScan:
         return False
 
         
-s1 = Ship(Position(15,15), sog=10, cog=315)
-s2 = Ship(Position(5,5), sog=10, cog=324)
-rel_bearing = relative_bearing(s1,s2)
-rel_dist = relative_distance(s1.pos,s2.pos)
-rel_vel = relative_velocity(s1.cog,s1.sog,s2.cog,s2.sog)
-crv = crv(*rel_vel) # Course of relative velocity
-true_bearing = true_bearing(s1.pos,s2.pos)
-v_rel = vel_from_xy(*rel_vel)
-dcpa = DCPA(rel_dist,crv,true_bearing)
-tcpa = TCPA(rel_dist,crv,true_bearing,v_rel)
-print(f"DCPA: {dcpa:.3f}, TCPA: {tcpa:.3f}")
+# s1 = Ship(Position(15,15), sog=10, cog=315)
+# s2 = Ship(Position(5,5), sog=10, cog=324)
+# rel_bearing = relative_bearing(s1,s2)
+# rel_dist = relative_distance(s1.pos,s2.pos)
+# rel_vel = relative_velocity(s1.cog,s1.sog,s2.cog,s2.sog)
+# crv = crv(*rel_vel) # Course of relative velocity
+# true_bearing = true_bearing(s1.pos,s2.pos)
+# v_rel = vel_from_xy(*rel_vel)
+# dcpa = DCPA(rel_dist,crv,true_bearing)
+# tcpa = TCPA(rel_dist,crv,true_bearing,v_rel)
+# print(f"DCPA: {dcpa:.3f}, TCPA: {tcpa:.3f}")
 
-lor = left_or_right(s1,s2)
-print(f"Left or right: {lor}")
+# lor = left_or_right(s1,s2)
+# print(f"Left or right: {lor}")
