@@ -469,9 +469,10 @@ class TrajectoryExtractionAgent:
     together with the file and timestamp of the encounter.
     
     """
-    def __init__(self,
+    def __init__(self,*,
             search_areas: List[pytsa.UTMBoundingBox],
             ship_types: list[ShipType],
+            time_delta: int = 30,
             msg12318files: List[Union[Path, str]] = None,
             msg5files: List[Union[Path, str]] = None,
             parallel: bool = False) -> None:
@@ -491,6 +492,10 @@ class TrajectoryExtractionAgent:
         if not isinstance(ship_types, list):
             ship_types = [ship_types]
         self.ship_types = ship_types
+        
+        # Set the maximum temporal deviation of target
+        # ships from provided time in `init()`
+        self.time_delta = time_delta # in minutes
 
 
         # List of Trajectories will be a list of TargetVessels
@@ -644,7 +649,7 @@ class TrajectoryExtractionAgent:
         
         # Set the maximum temporal deviation of target
         # ships from provided time in `init()`
-        search_agent.time_delta = 30 # in minutes
+        search_agent.time_delta = self.time_delta # in minutes
 
         # Use the center of the search area as the starting position
         center = self.search_area_center(area)
