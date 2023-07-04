@@ -45,7 +45,7 @@ def _id(x):
 class EndOfFileError(Exception):
     pass
 
-class _ALL_SHIPS_TYPE(Enum):
+class _ALL_SHIPS_TYPE():
     pass
 ALL_SHIPS = _ALL_SHIPS_TYPE()
 
