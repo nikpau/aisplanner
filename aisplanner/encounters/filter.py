@@ -45,6 +45,10 @@ def _id(x):
 class EndOfFileError(Exception):
     pass
 
+class _ALL_SHIPS_TYPE(Enum):
+    pass
+ALL_SHIPS = _ALL_SHIPS_TYPE()
+
 # Types
 Northing = float
 Easting = float
@@ -491,6 +495,8 @@ class TrajectoryExtractionAgent:
         # List of ShipTypes to be searched for
         if not isinstance(ship_types, list):
             ship_types = [ship_types]
+        if not ship_types:
+            ship_types = ALL_SHIPS
         self.ship_types = ship_types
         
         # Set the maximum temporal deviation of target
@@ -694,9 +700,10 @@ class TrajectoryExtractionAgent:
                 search_date = tpos.timestamp
                 continue
 
-            for i, ship in enumerate(ships):
-                if ship.ship_type not in self.ship_types:
-                    del ships[i]
+            if self.ship_types is not ALL_SHIPS:
+                for i, ship in enumerate(ships):
+                    if ship.ship_type not in self.ship_types:
+                        del ships[i]
             
             else:
                 found.extend(ships)

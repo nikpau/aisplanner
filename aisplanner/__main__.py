@@ -26,8 +26,9 @@ def main():
             sys.exit(1)
         search_for(ship_type)
     else:
-        print("No ship type given. Use -h for help.")
-        sys.exit(1)
+        print("No ship type given. Searching for all ship types.")
+        search_for([])
+        sys.exit(0)
 
 if __name__ == "__main__":
     main()
