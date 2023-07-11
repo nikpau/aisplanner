@@ -273,7 +273,7 @@ def proxy_points(s: Ship, perp: bool = False, d: int = 1000) -> Tuple[Position,P
     n2 = line(e2)
     
     # Return the proxy points
-    return Position(e1,n1), Position(e2,n2)
+    return Position(n1,e1), Position(n2,e2)
 
 def left_or_right(s: Ship, t: Ship, perp: bool = False) -> SideOfLine:
     """
