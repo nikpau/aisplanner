@@ -37,14 +37,14 @@ class LocationDatabase:
         LONMAX=9.995,
         name="Hirtsals_to_Kristiansand"
     )
-    # # North north-sea
-    # nns: LatLonBoundingBox = LatLonBoundingBox(
-    #     LATMIN=57.88,
-    #     LATMAX=58.34,
-    #     LONMIN=9.80,
-    #     LONMAX=11.27,
-    #     name="North_north_sea"
-    # )
+    # North north-sea
+    nns: LatLonBoundingBox = LatLonBoundingBox(
+        LATMIN=57.88,
+        LATMAX=58.34,
+        LONMIN=9.80,
+        LONMAX=11.27,
+        name="North_north_sea"
+    )
 
     # Return all locations as a list
     @classmethod
