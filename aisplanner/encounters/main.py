@@ -34,7 +34,7 @@ def _do(loc: LatLonBoundingBox, ship_type: ShipType):
         msg12318files=glob(f"{os.environ.get('AISDECODED')}/2021_*.csv"),
         msg5files=glob(f"{os.environ.get('MSG5DECODED')}/2021_*.csv"),
         ship_types=ship_type,
-        time_delta=120
+        time_delta=60
     )
     s.search()
     # Saved object's type is list[TargetVessel]
