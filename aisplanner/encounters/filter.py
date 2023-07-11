@@ -696,7 +696,7 @@ class TrajectoryExtractionAgent:
             
             # Skip if there are not enough ships in the area
             if len(ships) < 2:
-                tpos = self._update_timeposition(tpos, 30)
+                tpos = self._update_timeposition(tpos, self.time_delta)
                 search_date = tpos.timestamp
                 continue
 
@@ -709,7 +709,7 @@ class TrajectoryExtractionAgent:
                 found.extend(ships)
             
             # End of search for this time step
-            tpos = self._update_timeposition(tpos, 30)
+            tpos = self._update_timeposition(tpos, self.time_delta)
             search_date = tpos.timestamp
         
         return found
