@@ -706,6 +706,7 @@ class TrajectoryExtractionAgent:
                         del ships[i]
             
             else:
+                logger.info(f"Found {len(ships)} ships in area {area}")
                 found.extend(ships)
             
             # End of search for this time step
