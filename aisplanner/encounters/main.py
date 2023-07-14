@@ -14,11 +14,15 @@ from aisplanner.encounters._locdb import LocationDatabase, LatLonBoundingBox
 # in the LocationDatabase. Time frame is 2021-01-01 to 2021-12-31.
 areas = LocationDatabase.all(utm=True)
 
-def search_for(ship_type: ShipType):
+def search_for(ship_type: ShipType, debug=False):
 
-    # Run in parallel
-    with mp.Pool(len(areas)) as pool:
-        pool.starmap(_do, [(loc, ship_type) for loc in areas])
+    if debug:
+        for loc in areas:
+            _do(loc, ship_type)
+    else:
+        # Run in parallel
+        with mp.Pool(len(areas)) as pool:
+            pool.starmap(_do, [(loc, ship_type) for loc in areas])
 
     # Check raw trajectories for overlapping trajectories
     # and save them in the './results/overlapping' directory
