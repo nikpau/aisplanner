@@ -135,16 +135,18 @@ def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
             return noreps(lorsp) == sol_seq_from_encounter(colrtype)
     return False
     
-def _encounter_pipeline(file: str):
+def _encounter_pipeline(file: str, fbscan: bool = False):
     out: set[OverlappingPair] = set()
     overlaps: list[OverlappingPair] = load_results(file)
     for vpair in overlaps:
         if vpair.same_mmsi():
             continue
         if has_encounter(*vpair()):
-            scanner = ForwardBackwardScan(*vpair(),interval=_SAMPLINGFREQ)
-            if scanner(_WINDOWWIDTH):
-                out.add(vpair)
+            if fbscan:
+                scanner = ForwardBackwardScan(*vpair(),interval=_SAMPLINGFREQ)
+                if scanner(_WINDOWWIDTH):
+                    out.add(vpair)
+            else: out.add(vpair)
     # Create "encounters" directory if it doesn't exist
     if not RESDIR.joinpath("encounters").exists():
         RESDIR.joinpath("encounters").mkdir()
