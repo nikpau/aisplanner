@@ -21,14 +21,14 @@ class LocationDatabase:
         LONMAX=7.7734,
         name="Elbe_approach"
     )
-    # Helsingor to Helsingborg
-    hel_hel: LatLonBoundingBox = LatLonBoundingBox(
-        LATMIN=55.998,
-        LATMAX=56.064,
-        LONMIN=12.560,
-        LONMAX=12.745,
-        name="Helsingor_to_Helsingborg"
-    )
+    # # Helsingor to Helsingborg
+    # hel_hel: LatLonBoundingBox = LatLonBoundingBox(
+    #     LATMIN=55.998,
+    #     LATMAX=56.064,
+    #     LONMIN=12.560,
+    #     LONMAX=12.745,
+    #     name="Helsingor_to_Helsingborg"
+    # )
     # Hirtsals to Kristiansand
     hir_krs: LatLonBoundingBox = LatLonBoundingBox(
         LATMIN=57.393,
