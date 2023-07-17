@@ -305,7 +305,7 @@ def noreps(seq):
     """
     out = []
     for i, val in enumerate(seq):
-        if i == 0 or i == len(seq)-1:
+        if i == 0:
             out.append(val)
         else: 
             if out[-1] != seq[i]:
