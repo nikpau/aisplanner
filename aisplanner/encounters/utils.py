@@ -142,6 +142,7 @@ def _encounter_pipeline(file: str, fbscan: bool = False):
         if vpair.same_mmsi():
             continue
         if has_encounter(*vpair()):
+            logger.info(f"Found encounter for {vpair.v1.mmsi} and {vpair.v2.mmsi}")
             if fbscan:
                 scanner = ForwardBackwardScan(*vpair(),interval=_SAMPLINGFREQ)
                 if scanner(_WINDOWWIDTH):
