@@ -21,6 +21,13 @@ class LocationDatabase:
         LONMAX=7.7734,
         name="Elbe_approach"
     )
+    german_bight: LatLonBoundingBox = LatLonBoundingBox(
+        LATMIN=53.7016,
+        LATMAX = 54.2652,
+        LONMIN=7.2455,
+        LONMAX=9.0739,
+        name="German_bight"
+    )
     # # Helsingor to Helsingborg
     # hel_hel: LatLonBoundingBox = LatLonBoundingBox(
     #     LATMIN=55.998,
