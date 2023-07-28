@@ -9,7 +9,7 @@ from typing import Any, Union
 from dataclasses import dataclass
 from aisplanner.encounters.filter import (
     ForwardBackwardScan, EncounterSituation,
-    Ship, Position,ColregsSituation, SideOfLine,
+    Ship, Position,ColregsSituation, contains_pattern,
     left_or_right, noreps, sol_seq_from_encounter
 )
 
@@ -130,9 +130,9 @@ def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
         colrtype = resset.pop()
         if colrtype == ColregsSituation.CROSSING:
             # Get the sequence of left/right with no consecutive repetitions
-            return noreps(lors) == sol_seq_from_encounter(colrtype)
+            return contains_pattern(lors, sol_seq_from_encounter(colrtype))
         else:
-            return noreps(lorsp) == sol_seq_from_encounter(colrtype)
+            return contains_pattern(lors,  sol_seq_from_encounter(colrtype))
     return False
     
 def _encounter_pipeline(file: str, fbscan: bool = False):

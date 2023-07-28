@@ -312,8 +312,9 @@ def noreps(seq):
                 out.append(val)
     return tuple(out)
 
-def contains_pattern(seq: List, pattern: List) -> bool:
+def contains_pattern(seq: List, pattern: Union[List,Tuple]) -> bool:
     """Check if a sequence contains a given pattern"""
+    pattern = list(pattern)
     return any(
         seq[i:i+len(pattern)] == pattern
         for i in range(len(seq)-len(pattern)+1)
