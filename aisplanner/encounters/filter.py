@@ -312,6 +312,13 @@ def noreps(seq):
                 out.append(val)
     return tuple(out)
 
+def contains_pattern(seq: List, pattern: List) -> bool:
+    """Check if a sequence contains a given pattern"""
+    return any(
+        seq[i:i+len(pattern)] == pattern
+        for i in range(len(seq)-len(pattern)+1)
+    )
+
 class EncounterSituation:
     """
     Classify COLREGS encounter situatios
