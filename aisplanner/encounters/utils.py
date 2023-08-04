@@ -64,7 +64,7 @@ def plot_encounter(v1: TargetVessel,v2: TargetVessel):
         tm = TrajectoryMatcher(v1,v2)
         if not tm.disjoint_trajectories and tm.overlapping_trajectories:
             print(f"Plotting encounter for {v1.mmsi} and {v2.mmsi}")
-            tm.observe_interval(_SAMPLINGFREQ).plot(every=6, path="out/plots/")
+            tm.observe_interval(_SAMPLINGFREQ).plot(every=10, path="out/plots/")
             return
         print(f"Disjoint trajectories for {v1.mmsi} and {v2.mmsi}")
         return
@@ -130,9 +130,9 @@ def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
         colrtype = resset.pop()
         if colrtype == ColregsSituation.CROSSING:
             # Get the sequence of left/right with no consecutive repetitions
-            return contains_pattern(lors, sol_seq_from_encounter(colrtype))
+            return noreps(lors) == sol_seq_from_encounter(colrtype)
         else:
-            return contains_pattern(lors,  sol_seq_from_encounter(colrtype))
+            return noreps(lors) ==  sol_seq_from_encounter(colrtype)
     return False
     
 def _encounter_pipeline(file: str, fbscan: bool = False):
