@@ -95,3 +95,49 @@ _FIELDS_MSG5 = (
     "destination",
     "dte", # 0=Data terminal ready, 1=Not ready (default).
 )
+
+class Fields12318(Enum):
+    """
+    Column descriptor class for assigning column indices of
+    decoded position report messages (types 1,2,3,18) to
+    human-understandable names.
+    """
+    repeat      = 0
+    status      = 1
+    turn        = 2
+    speed       = 3
+    accuracy    = 4
+    lon         = 5
+    lat         = 6
+    course      = 7
+    heading     = 8
+    second      = 9
+    maneuver    = 10
+    radio       = 11
+    MMSI        = 12
+    
+class Fields5(Enum):
+    """
+    Column descriptor class for assigning column indices of
+    decoded static/voyage related messages (type 5) to
+    human-understandable names.
+    """
+    repeat      = 0
+    ais_version = 1
+    imo         = 2
+    callsign    = 3
+    shipname    = 4
+    ship_type   = 5
+    to_bow      = 6
+    to_stern    = 7
+    to_port     = 8
+    to_starboard= 9
+    epfd        = 10
+    month       = 11
+    day         = 12
+    hour        = 13
+    minute      = 14
+    draught     = 15
+    destination = 16
+    dte         = 17
+    MMSI        = 18
