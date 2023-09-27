@@ -375,7 +375,7 @@ def TRE(data: pd.DataFrame, clusters: CLUSTERS):
     # Save the dictonary containing the routes
     # to the data folder  
     #with open(f'{GLOBALPATH}/routes/routes_{date!r}.pyo', 'wb') as fp:
-    with open(f'data/routes/10days/routes_{date.date()}.pyo', 'wb') as fp:
+    with open(f'routes.pyo', 'wb') as fp:
         pickle.dump(routes,fp)
 
     return
