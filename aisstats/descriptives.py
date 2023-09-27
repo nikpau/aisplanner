@@ -139,7 +139,7 @@ def static_extraction(statfile: Path,
         )
         # Add all destinations to the set
         cat.dests.update(
-            filtered[fd.Fields5.destination.name].unique()
+            filtered[fd.Fields5.destination.name].to_list()
         )
 
     return cats
