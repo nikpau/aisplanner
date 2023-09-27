@@ -1,6 +1,7 @@
 from __future__ import annotations
 import argparse
 from glob import glob
+import os
 import time
 
 import pickle
@@ -12,6 +13,7 @@ from itertools import pairwise
 from os import PathLike
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
+from aisplanner.misc import MemoryLoader
 
 import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
@@ -696,17 +698,7 @@ def run_tre(datapath: Union[Path,List[Path]], eps: List[float]):
 if __name__ == "__main__":
 
     #SOURCE = glob("data/oneweek/*.csv")
-    SOURCE = [
-        "data/10days/2021_06_20.csv",
-        "data/10days/2021_06_21.csv",
-        # "data/10days/2021_06_22.csv",
-        # "data/10days/2021_06_23.csv",
-        # "data/10days/2021_06_24.csv",
-        # "data/10days/2021_06_25.csv",
-        # "data/10days/2021_06_26.csv",
-    ]
-
-    # SOURCE = ["data/decoded/2021_07_03-calm.csv"]
+    SOURCE = glob(f"{os.environ['AISDECODED']}/*.csv")
 
     parser = argparse.ArgumentParser()
 
@@ -725,4 +717,6 @@ if __name__ == "__main__":
     if args.full:
         logger.info("TRE starting...")
         eps = [float(item) for item in args.full.split(',')]
-        run_tre(SOURCE,eps)
+        
+        with MemoryLoader():
+            run_tre(SOURCE,eps)
