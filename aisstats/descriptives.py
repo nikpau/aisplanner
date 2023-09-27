@@ -143,6 +143,14 @@ def static_extraction(statfile: Path,
 
     return cats
 
+def save_static_results(cats: list[ShipDims]) -> None:
+    """
+    Saves the results of the static extraction.
+    """
+    with open(f"aisstats/extracted/dims.pickle","wb") as f:
+        pickle.dump(cats,f)
+    return None
+
 def static_run() -> None:
     """
     Runs the static extraction.
@@ -158,6 +166,10 @@ def static_run() -> None:
             f"Done. Found {sum(len(c.dims) for c in cats)} ships in total "
             f"and {sum(len(c.dests) for c in cats)} destinations."
         )
+    # Save results
+    save_static_results(cats)
+    print("Done.")
+    return None
         
 def single_file_static_run(filename: str) -> None:
     """
