@@ -90,7 +90,7 @@ def get_static_filenames() -> list[Path]:
     return [Path(f) for f in _f]
     
 def static_extraction(statfile: Path, 
-                      cats: list[ShipDims] = []) -> list[ShipDims]:
+                      cats: list[ShipDims]) -> list[ShipDims]:
     """
     Main search loop, that iterates over the ais data set and extracts
     the length, width and speed of each ship, and stores them in their
@@ -106,6 +106,7 @@ def static_extraction(statfile: Path,
             fd.Fields5.to_stern.name,
             fd.Fields5.to_port.name,
             fd.Fields5.to_starboard.name,
+            fd.Fields5.destination.name
         ]
     )
     # Keep only unique MMSIs
