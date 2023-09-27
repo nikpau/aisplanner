@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 import geopandas as gpd
 from pathlib import Path
-from aisplanner.tread._tread import Route, AISMessage, ClusterType, Location
+from aisplanner.tread.tread import Route, AISMessage, ClusterType, Location
 from typing import Dict, List, Tuple
 
 # Path to the directory containing the geometry files
