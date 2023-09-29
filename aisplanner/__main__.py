@@ -16,6 +16,9 @@ def parse_args():
     parser.add_argument(
         "-e", "--encounters", action="store_true",
         help="Extract encounters from overlapping trajectories.")
+    parser.add_argument(
+        "-o", "--overlap", action="store_true",
+        help="Extract overlapping trajectories.")
     parser.add_argument("-v", "--version", action="version", version=f"{__version__}")
     parser.add_argument("-a", "--author", action="version", version=f"{__author__}")
     return parser.parse_args()
@@ -31,6 +34,9 @@ def main():
         search_for(ship_type)
     elif args.encounters:
         utils.encounters_from_overlapping()
+        sys.exit(0)
+    elif args.overlap:
+        utils.overlaps_from_raw()
         sys.exit(0)
     else:
         print("No ship type given. Searching for all ship types.")
