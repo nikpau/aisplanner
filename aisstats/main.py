@@ -12,11 +12,11 @@ from aisplanner.encounters._locdb import GriddedNorthSea, LatLonBoundingBox
 # in the LocationDatabase. Time frame is 2021-01-01 to 2021-12-31.
 areas = GriddedNorthSea(nrows=8, ncols=8, utm=True).cells
 
-def search_for(ship_type: ShipType, debug=False):
+def rawPSDextraction(debug=False):
 
     if debug:
         for loc in areas:
-            _do(loc, ship_type)
+            _do(loc)
     else:
         # Run in parallel
         with mp.Pool(len(areas)) as pool:
@@ -32,3 +32,6 @@ def _do(loc: LatLonBoundingBox):
     )
     s.search()
     s.save_results(f"{os.environ.get('RESPATH')}")
+    
+if __name__ == "__main__":
+    rawPSDextraction(debug=True)
