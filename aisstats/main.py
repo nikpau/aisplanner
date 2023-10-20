@@ -3,7 +3,7 @@ import os
 from glob import glob
 import multiprocessing as mp
 from pytsa import ShipType
-from .psd import PSDPointExtractor
+from psd import PSDPointExtractor
 from aisplanner.encounters._locdb import GriddedNorthSea, LatLonBoundingBox
 
 
