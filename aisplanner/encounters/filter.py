@@ -474,11 +474,11 @@ class TrajectoryExtractionAgent:
     Search agent for Trajectories in a
     stream of AIS messages.
 
-    Files are streamed from a remote server over ssh and
-    will be deleted after processing.
+    Files are streamed from a remote server over ssh, or
+    from a local folder.
     
-    Situations are saved in a list of EncounterSituations 
-    together with the file and timestamp of the encounter.
+    Extracted trajectories via the `search()` function
+    are stored in a list.
     
     """
     def __init__(self,*,
@@ -623,13 +623,13 @@ class TrajectoryExtractionAgent:
                 self.load_next_file()
                 if self.parallel:
                     with mp.Pool(len(self.search_areas)) as pool:
-                        encs = pool.map(self._search, self.search_areas)
+                        trajs = pool.map(self._search, self.search_areas)
                     # Flatten list of lists
-                    self.trajectories.extend([enc for sublist in encs for enc in sublist])
+                    self.trajectories.extend([traj for sublist in trajs for traj in sublist])
                 else:
                     for area in self.search_areas:
-                        enc = self._search(area)
-                        self.trajectories.extend(enc)
+                        trajs = self._search(area)
+                        self.trajectories.extend(trajs)
                 if self._using_remote:
                     self.delete_current_file()
             except StopIteration:
@@ -683,7 +683,11 @@ class TrajectoryExtractionAgent:
         # Scan the area every 30 minutes. 
         # During every scan, every ship is checked for a possible
         # encounter situation.
-        search_date = start_date
+        # We need to increment the search date by 30 minutes
+        # to avoid overlapping the search times.
+        # as the search agent will search around
+        # search_date +- time_delta
+        search_date = start_date + timedelta(minutes=self.time_delta)
 
         # Initialize the list of encounters
         found: List[TargetVessel] = []
@@ -718,7 +722,10 @@ class TrajectoryExtractionAgent:
                 found.extend(ships)
             
             # End of search for this time step
-            tpos = self._update_timeposition(tpos, self.time_delta)
+            # We need to move on in time twice the time delta
+            # as the search agent will search 
+            # search_date +- time_delta
+            tpos = self._update_timeposition(tpos, 2*self.time_delta)
             search_date = tpos.timestamp
         
         return found

@@ -118,16 +118,19 @@ class GriddedNorthSea:
         | ...  | ...  | ...  | ...  | ...  |             
                 
         """
+        boxnum = 0
         latbp, lonbp = self._breakpoints()
         latbp= sorted(latbp)[::-1] # Descending Latitudes
         lonbp = sorted(lonbp) # Ascending Longitudes
         for lat_max, lat_min in zip(latbp,latbp[1:]):
             for lon_min, lon_max in zip(lonbp,lonbp[1:]):
+                boxnum += 1
                 box = LatLonBoundingBox(
                     LATMIN=lat_min,LATMAX=lat_max,
                     LONMIN=lon_min,LONMAX=lon_max,
                 )
                 box.name = f"{box.LATMIN:.2f}°N-{box.LATMAX:.2f}°N_{box.LONMIN:.2f}°E-{box.LONMAX:.2f}°E"
+                box.number = boxnum # Assign ascending indices
                 if self.utm:
                     box = box.to_utm()
                 self.cells.append(box)

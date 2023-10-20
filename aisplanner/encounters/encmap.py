@@ -11,9 +11,11 @@ from glob import glob
 from pytsa.targetship import TargetVessel
 from aisplanner.encounters.utils import OverlappingPair, load_results
 import pickle
+from scipy.stats import gaussian_kde
+import matplotlib.cm as cm
 
 # Types
-Latitue = float
+Latitude = float
 Longitude = float
 
 GEODATA = Path("data/geometry")
@@ -34,7 +36,7 @@ def plot_coastline(ax: plt.Axes = None, save_plot: bool = False) -> None:
         plt.savefig("aisplanner/encounters/coastline.png", dpi=300)
     return None
 
-def closest_point(pair: OverlappingPair) -> tuple[Latitue,Longitude]:
+def closest_point(pair: OverlappingPair) -> tuple[Latitude,Longitude]:
     """
     Returns the closest point between two vessels.
     """
@@ -54,8 +56,7 @@ def closest_point(pair: OverlappingPair) -> tuple[Latitue,Longitude]:
 def map_region(
     single_region_path: Path, 
     ax: plt.Axes,
-    seen: set[OverlappingPair] = set()
-) -> set[OverlappingPair]:
+    seen: set[OverlappingPair] = set()) -> set[OverlappingPair]:
     """
     Adds encounters extracted from a single region to the plot.
     """
@@ -70,15 +71,60 @@ def map_region(
         closest = closest_point(pair)
         ax.scatter(*closest, color="#e76f51", s=10)
     return seen
-        
-if __name__ == "__main__":
-    # Create a map of the North Sea
+
+def plot_scatter():
     fig, ax = plt.subplots(figsize=(15,15))
     plot_coastline(ax=ax)
     # Plot encounters
     seen = set()
-    for file in ENCOUNTERS.glob("*.tr"):
-        seen = map_region(file, ax)
+    for region in ENCOUNTERS.glob("*.tr"):
+        seen = map_region(region, ax)
     plt.tight_layout()
     plt.savefig("aisplanner/encounters/map.png", dpi=300)
     plt.close()
+
+def extract_region(
+    single_region_path: Path,
+    seen: set[OverlappingPair] = set()) -> tuple[list[Longitude],list[Latitude]]:
+    """
+    Export the closest points between two vessels in a single region
+    as a list of longitude and latitude coordinates.
+    """
+    olpairs: list[OverlappingPair] = load_results(single_region_path)
+    lats, lons = np.empty_like(list(olpairs),dtype=np.float32), np.empty_like(list(olpairs),dtype=np.float32)
+    for i, pair in enumerate(olpairs):
+        if pair in seen:
+            continue
+        v1, v2 = pair()
+        seen.add(((v1.mmsi,v2.mmsi),(v2.mmsi,v1.mmsi)))
+        # Plot the closest point
+        closest = closest_point(pair)
+        lons[i], lats[i] = closest
+    return lons, lats, seen
+
+def plot_heat_map():
+    fig, ax = plt.subplots(figsize=(15,15))
+    # Plot encounters
+    seen = set()
+    lons, lats = [], []
+    for region in ENCOUNTERS.glob("*.tr"):
+        rlons, rlats, seen = extract_region(region, seen)
+        lons.append(rlons) 
+        lats.append(rlats)
+    # Flatten
+    lons = np.concatenate(lons)
+    lats = np.concatenate(lats)
+    x,y = np.arange(min(lons),max(lons)), np.arange(min(lats),max(lats))
+    xx,yy = np.mgrid[min(lons):max(lons):1000j, min(lats):max(lats):1000j]
+    vals = np.vstack([lons,lats])
+    kernel = gaussian_kde(vals)
+    z = kernel([xx.ravel(), yy.ravel()]).T.reshape(xx.shape)
+    ax.contourf(xx,yy,z, cmap=cm.inferno,levels=100)
+    cset = ax.contour(xx,yy,z, colors="k", levels=10)
+    ax.clabel(cset, inline=True, fontsize=10)
+    plot_coastline(ax=ax)
+    plt.savefig("aisplanner/encounters/heatmap.png", dpi=300)
+    
+if __name__ == "__main__":
+    plot_heat_map()
+    #plot_scatter()
