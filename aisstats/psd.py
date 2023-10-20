@@ -221,12 +221,12 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
                 logger.info(f"Skipping {search_date}. No ships found.")
                 continue
             
-            seen = set()
             
             # For all ship types we are interested in...
             for ship_type in self.ship_types:
                 # ...find the ships of that type...
-                for own_vessel, index in find_ship_type(ships, ship_type):
+                seen = set()
+                for own_vessel, index in find_by_type(ships, ship_type):
                     own_vessel: TargetVessel # make the type checker happy
                     other_vessels: list[TargetVessel] = ships.remove(ships[index])
                     # ...and get the minimum distance and bearing
@@ -322,7 +322,7 @@ def closest_point(own: TargetVessel,tgt: TargetVessel
             tgt_pos = (tgt_msg.lon,tgt_msg.lat)
     return mindist, own_pos, tgt_pos, speed
 
-def find_ship_type(
+def find_by_type(
     vessels: list[TargetVessel],
     ship_type: ShipType) -> Generator[tuple[TargetVessel,int],None,None]:
     """
