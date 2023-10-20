@@ -543,9 +543,9 @@ class TrajectoryExtractionAgent:
         try:
             self.current_file: Path = next(self.dynamic_filestream)
             self.current_static_file: Path = next(self.static_filestream)
-        except StopIteration:
+        except StopIteration as stop:
             logger.info("No more files to process")
-            raise
+            raise stop
 
     def delete_current_file(self) -> None:
         """
