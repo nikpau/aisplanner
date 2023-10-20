@@ -34,4 +34,4 @@ def _do(loc: LatLonBoundingBox):
     s.save_results(f"{os.environ.get('RESPATH')}")
     
 if __name__ == "__main__":
-    rawPSDextraction(debug=True)
+    rawPSDextraction(debug=False)
