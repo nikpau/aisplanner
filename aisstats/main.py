@@ -37,7 +37,7 @@ def _do(loc: LatLonBoundingBox):
             ]
     )
     s.search()
-    s.save_results(f"{os.environ.get('RESPATH')}")
+    s.save_results(f"{os.environ.get('RESPATH')}",loc.number)
     #s.save_results("psdresults",loc.number)
     
 if __name__ == "__main__":
