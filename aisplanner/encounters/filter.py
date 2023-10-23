@@ -319,6 +319,23 @@ def contains_pattern(seq: List, pattern: Union[List,Tuple]) -> bool:
         seq[i:i+len(pattern)] == pattern
         for i in range(len(seq)-len(pattern)+1)
     )
+    
+from math import radians, cos, sin, asin, sqrt
+def haversine(lon1, lat1, lon2, lat2, miles = True):
+    """
+    Calculate the great circle distance in kilometers between two points 
+    on the earth (specified in decimal degrees)
+    """
+    # convert decimal degrees to radians 
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # haversine formula 
+    dlon = lon2 - lon1 
+    dlat = lat2 - lat1 
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a)) 
+    r = 3956 if miles else 6371 # Radius of earth in kilometers or miles
+    return c * r
 
 class EncounterSituation:
     """
@@ -583,7 +600,16 @@ class TrajectoryExtractionAgent:
             (df[DecodedReport.speed.name] > 0)
         ]
         
-    def search_area_center(self, area: pytsa.UTMBoundingBox) -> pytsa.structs.UTMPosition:
+    def search_area_center(
+        self, 
+        area: Union[pytsa.UTMBoundingBox, pytsa.LatLonBoundingBox]
+        ) -> Union[pytsa.structs.UTMPosition,pytsa.structs.Position]:
+        if isinstance(area, pytsa.UTMBoundingBox):
+            return self._search_area_center_utm(area)
+        elif isinstance(area, pytsa.LatLonBoundingBox):
+            return self._search_area_center_latlon(area)
+        
+    def _search_area_center_utm(self, area: pytsa.UTMBoundingBox) -> pytsa.structs.UTMPosition:
         """
         Get the center of the search area.
         """
@@ -591,21 +617,51 @@ class TrajectoryExtractionAgent:
             (area.min_northing + area.max_northing)/2,
             (area.min_easting + area.max_easting)/2
         )
-    
-    def get_search_radius(self,area: pytsa.UTMBoundingBox) -> float:
+        
+    def _search_area_center_latlon(self, area: pytsa.LatLonBoundingBox) -> pytsa.structs.Position:
+        """
+        Get the center of the search area in UTM coordinates.
+        """
+        return pytsa.structs.Position(
+            (area.LATMIN + area.LATMAX)/2,
+            (area.LONMIN + area.LONMAX)/2
+        )
+        
+    def get_search_radius(
+        self,
+        area: Union[pytsa.UTMBoundingBox, pytsa.LatLonBoundingBox]
+        ) -> float:
         """
         Get the radius of the circle around the bounding box
         in nautical miles.
-        Due to the earth being a sphere, the radius is not
-        constant, therefore the error of this approximation
-        increases with the distance from the equator.
         """
-        center = self.search_area_center(area)
-        north_extent = abs(area.max_northing - area.min_northing)
-        r = np.sqrt(
-            (area.max_easting-center.easting)**2 + (north_extent/2)**2
+        if isinstance(area, pytsa.UTMBoundingBox):
+            return self._get_search_radius_utm(area)
+        elif isinstance(area, pytsa.LatLonBoundingBox):
+            return self._get_search_radius_latlon(area)
+    
+    def _get_search_radius_utm(self,area: pytsa.UTMBoundingBox) -> float:
+        """
+        Get the radius of the circle around the bounding box
+        in nautical miles for UTM coordinates.
+        """
+        d = np.sqrt(
+            (area.max_easting-area.min_easting)**2 + 
+            (area.max_northing-area.min_northing)**2
         )
-        return m2nm(r) # convert to nautical miles
+        return m2nm(d/2) # convert to nautical miles
+    
+    def _get_search_radius_latlon(self,area: pytsa.LatLonBoundingBox) -> float:
+        """
+        Get the radius of the circle around the bounding box
+        in nautical miles for latlon coordinates.
+        """
+        d = haversine(
+            area.LONMIN, area.LATMIN,
+            area.LONMAX, area.LATMAX
+        )
+        d = d * 1000 # convert to meters
+        return m2nm(d/2) # convert to nautical miles
     
     def save_results(self,dest: Union[str, Path]) -> None:
         """
