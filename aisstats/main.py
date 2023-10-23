@@ -26,9 +26,9 @@ def rawPSDextraction(debug=False):
 def _do(loc: LatLonBoundingBox):
     s = PSDPointExtractor(
         search_areas=loc,
-        msg12318files=glob(f"{os.environ.get('AISDECODED')}/20_*.csv"),
+        msg12318files=glob(f"{os.environ.get('AISDECODED')}/20*.csv"),
         # msg12318files=glob("data/aisrecords/*.csv"),
-        msg5files=glob(f"{os.environ.get('MSG5DECODED')}/20_*.csv"),
+        msg5files=glob(f"{os.environ.get('MSG5DECODED')}/20*.csv"),
         # msg5files=glob("data/aisrecords/msgtype5/*.csv"),
         ship_types=[
             ShipType.CARGO.value, 
