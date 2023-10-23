@@ -232,14 +232,14 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
                         (other_vessel.mmsi,own_vessel.mmsi) in seen:
                         continue
                     
-                    logger.info(
-                        f"Checking {own_vessel.mmsi} and {other_vessel.mmsi}"
-                        )
                     seen.add(((own_vessel.mmsi,other_vessel.mmsi),
                             (other_vessel.mmsi,own_vessel.mmsi)))
                     
                     # Find the closest point between the two trajectories
                     cp = closest_point(own_vessel,other_vessel)
+                    logger.info(
+                        f"Checking {own_vessel.mmsi} and {other_vessel.mmsi}"
+                        )
                     if cp is None:
                         continue # Skip if trajectories are disjoint
                     mindist, own_pos, other_pos, speed = cp
@@ -302,7 +302,7 @@ def closest_point(own: TargetVessel,
     mindist = np.inf
     
     # Init TrajectoryMatcher
-    tm = pytsa.TrajectoryMatcher(own, tgt, threshold=0)
+    tm = pytsa.TrajectoryMatcher(own, tgt, threshold=1)
     if tm.disjoint_trajectories:
         return None
     
