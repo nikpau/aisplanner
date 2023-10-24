@@ -320,6 +320,11 @@ def closest_point(own: TargetVessel,
             min_own_pos = own_pos # (lon,lat)
             min_tgt_pos = tgt_pos # (lon,lat)
     
+    # Check if all vars are defined
+    try: 
+        mindist, min_own_pos, min_tgt_pos, speed
+    except NameError:
+        return None
     return mindist, min_own_pos, min_tgt_pos, speed
 
 def find_by_type(
