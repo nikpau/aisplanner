@@ -312,6 +312,8 @@ def closest_point(own: TargetVessel,
         tgt_pos = (tgt.interpolation.lon(time), tgt.interpolation.lat(time))
         # Calculate the distance between the two positions
         dist = haversine(*own_pos, *tgt_pos, miles = True)
+        if np.isnan(dist):
+            return None
         if dist < mindist:
             mindist = dist # Distance in miles
             speed = own.interpolation.SOG(time) # Speed in knots
