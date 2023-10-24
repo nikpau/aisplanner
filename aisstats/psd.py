@@ -323,7 +323,7 @@ def closest_point(own: TargetVessel,
     # Check if all vars are defined
     try: 
         mindist, min_own_pos, min_tgt_pos, speed
-    except NameError:
+    except:
         return None
     return mindist, min_own_pos, min_tgt_pos, speed
 
