@@ -1,7 +1,8 @@
 """
 Database of suitable locations for for COLREGS-relevant encounters.
 """
-from pytsa.structs import LatLonBoundingBox
+from typing import Union
+from pytsa.structs import LatLonBoundingBox, UTMBoundingBox
 from dataclasses import dataclass, fields
 
 @dataclass
@@ -73,7 +74,7 @@ class GriddedNorthSea:
     def __init__(self,nrows,ncols, utm=True) -> None:
         self.nrows = nrows
         self.ncols = ncols
-        self.cells = []
+        self.cells: Union[list[LatLonBoundingBox],list[UTMBoundingBox]] = []
         self.utm = utm
         self._setup()
         

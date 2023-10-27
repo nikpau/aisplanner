@@ -30,6 +30,9 @@ Longitude = float
 # Value proxy for degernate cases
 DEGEN = "degen"
 
+# Global sampling rate
+SAMPLING_RATE = 30 # seconds
+
 # Bins for the lengths of the ships.
 # The PSD will be calculated for each bin.
 LBINS = np.arange(0, 250 + 25, 25) # 0-250m in 25m bins
@@ -123,7 +126,7 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
             self.static_filestream = [Path(file) for file in msg5files]
             self.static_filestream = iter(self.static_filestream)
             
-    def save_results(self, directory: Union[str, Path],boxnumber: int) -> None:
+    def save_results(self, directory: Union[str, Path]) -> None:
         """
         Saves the raw PSD points as pickled objects.
         """
@@ -136,11 +139,11 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
             directory.mkdir(parents=True)
             
         # Save the raw PSD points
-        with open(directory / f"{boxnumber}_cargo_raw.rpsd", "wb") as f:
+        with open(directory / "cargo_raw.rpsd", "wb") as f:
             pickle.dump(self.cargo_raw_psd, f)
-        with open(directory / f"{boxnumber}_passenger_raw.rpsd", "wb") as f:
+        with open(directory / "passenger_raw.rpsd", "wb") as f:
             pickle.dump(self.passenger_raw_psd, f)
-        with open(directory / f"{boxnumber}_tanker_raw.rpsd", "wb") as f:
+        with open(directory / "tanker_raw.rpsd", "wb") as f:
             pickle.dump(self.tanker_raw_psd, f)
 
     def _search(
@@ -210,7 +213,9 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
         
         # while start_date.day == search_date.day:
 
-        ships: List[TargetVessel] = search_agent.get_ships(tpos,overlap_tpos=False)
+        ships: List[TargetVessel] = search_agent.get_ships(
+            tpos,overlap_tpos=False,all_trajectories=True
+        )
         if not ships:
             logger.info(f"Skipping {self.current_file}. No ships found.")
             return
@@ -236,7 +241,7 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
                             (other_vessel.mmsi,own_vessel.mmsi)))
                     
                     # Find the closest point between the two trajectories
-                    cp = closest_point(own_vessel,other_vessel)
+                    cp = closest_points(own_vessel,other_vessel)
                     logger.info(
                         f"Checking {own_vessel.mmsi} and {other_vessel.mmsi}"
                         )
@@ -290,11 +295,12 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
         else:
             raise ValueError(f"Invalid ship type: {ship_type}")
     
-def closest_point(own: TargetVessel,
+def closest_points(own: TargetVessel,
                   tgt: TargetVessel,
     ) -> Union[tuple[float,tuple[Latitude,Longitude],tuple[Latitude,Longitude],float],None]:
     """
-    Returns the distance between the closest point of two vessels'
+    For each speed bin, returns the distance
+    between the closest point of two vessels'
     trajectories, the coordinates of that point,
     and the speed of the own vessel at that point.
     """
@@ -306,7 +312,7 @@ def closest_point(own: TargetVessel,
     if tm.disjoint_trajectories:
         return None
     
-    for time in time_range(int(tm.start),int(tm.end),30):
+    for time in time_range(int(tm.start),int(tm.end),SAMPLING_RATE):
         # Get the positions of the two vessels at the current time
         own_pos = (own.interpolation.lon(time), own.interpolation.lat(time))
         tgt_pos = (tgt.interpolation.lon(time), tgt.interpolation.lat(time))
@@ -349,3 +355,9 @@ def time_range(start: int,
     while current < end:
         yield current
         current += delta_seconds
+        
+def filter_by_speed(vessel: TargetVessel, speed: range) -> TargetVessel:
+    """
+    Returns only the portion of a trajectory where the vessel's
+    speed is in the given range.
+    """
