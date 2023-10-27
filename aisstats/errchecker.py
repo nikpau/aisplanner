@@ -183,24 +183,23 @@ def plot_trajectory_jitter(ships: dict[int,TargetVessel],
     plt.savefig(f"aisstats/out/trjitter_{sd:.2f}_{mode}.png", dpi=300)
     plt.close()
     
-def plot_trajectories_on_map(ships: dict[int,TargetVessel]):
+def plot_trajectories_on_map(ships: dict[int,TargetVessel], mode: str):
     """
     Plot all trajectories on a map.
     """
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(10,16))
     plot_coastline(ax=ax)
     for ship in ships.values():
         ax.plot(
             [p.lon for p in ship.track],
             [p.lat for p in ship.track],
-            alpha=0.5
+            alpha=0.5, linewidth=0.3
         )
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
-    plt.savefig("aisstats/out/trajmap.pdf")
+    plt.savefig(f"aisstats/out/trajmap_{mode}.pdf")
     plt.close()
 
-# Main functions ---------------------------------------------------------------
 def run_filter(ships: dict[int,TargetVessel], tpos: TimePosition):
     
     #for sd in np.arange(0.01,2,0.1):
@@ -229,60 +228,76 @@ def plot_histograms(ships: dict[int,TargetVessel],title: str):
     # Temporal gaps between messages
     # and lengths of trajectories
     MAXGAP = 900 # [s]
-    MAXLEN = 400 # [miles]
-    gaps = []
+    MAXLEN = 1000 # trajectory length [miles]
+    MAXDIST = 10 # dist between messages [miles]
+    tgaps = []
+    dgaps = []
     tlens = [] # FIlled with tuples of (tlen, n_messages)
     for ship in ships.values():
         tlen = 0
         for i in range(1,len(ship.track)):
-            gap = ship.track[i].timestamp - ship.track[i-1].timestamp
-            tlen += haversine(
+            tgap = ship.track[i].timestamp - ship.track[i-1].timestamp
+            d = haversine(
                 ship.track[i-1].lon,
                 ship.track[i-1].lat,
                 ship.track[i].lon,
                 ship.track[i].lat
             )
-            
-            if gap < MAXGAP:
-                gaps.append(gap)
+            tlen += d
+            if d < MAXDIST:
+                dgaps.append(d)
+            if tgap < MAXGAP:
+                tgaps.append(tgap)
         tlens.append((tlen,len(ship.track)))
                 
     # Vessel speeds for histogram
     speeds = SA.cell_data[fd.Fields12318.speed.name].values
     
-    fig, ((ax1,ax2),(ax3,ax4)) = plt.subplots(nrows=2,ncols=2,figsize=(16,10))
+    fig, ((ax1,ax2),(ax3,ax4),(ax5,ax6)) = plt.subplots(nrows=3,ncols=2,figsize=(16,10))
     
     ax1: plt.Axes
-    ax1.hist(gaps,bins=100,density=False)
-    ax1.set_xlabel("Time [s]")
-    ax1.set_ylabel("Count")
+    ax1.hist(tgaps,bins=100,density=False)
+    ax1.set_xlabel("Time [s]",size = 9)
+    ax1.set_ylabel("Count",size = 9)
     ax1.set_title(f"Histogram of Time Gaps\nbetween Messages [s]. Cut at {MAXGAP}s",size = 9)
     
     ax2: plt.Axes
     ax2.hist(speeds,bins=100,density=False)
-    ax2.set_xlabel("Speed [knots]")
-    ax2.set_ylabel("Count")
+    ax2.set_xlabel("Speed [knots]",size = 9)
+    ax2.set_ylabel("Count",size = 9)
     ax2.set_title("Histogram of Speeds [knots]",size = 9)
     
     ax3: plt.Axes
     ax3.hist([len for len,nobs in tlens if len < 400],bins=100,density=False)
-    ax3.set_xlabel("Trajectory length [miles]")
-    ax3.set_ylabel("Count")
+    ax3.set_xlabel("Trajectory length [miles]",size = 9)
+    ax3.set_ylabel("Count",size = 9)
+    ax3.set_yscale('log')
     ax3.set_title(f"Histogram of Trajectory Lengths [miles]\ncut at {MAXLEN} miles",size = 9)
     
+    ax4: plt.Axes
     ax4.scatter(
         [lens for lens,nobs in tlens],
         [nobs for lens,nobs in tlens],
         s=1
     )
-    ax4.set_xlabel("Trajectory length [miles]")
-    ax4.set_ylabel("Number of Messages per Trajectory")
+    ax4.set_xlabel("Trajectory length [miles]",size = 9)
+    ax4.set_ylabel("Number of Messages per Trajectory",size = 9)
+    ax4.set_yscale('log')
+    ax4.set_xscale('log')
     ax4.set_title("Trajectory Length vs. Number of Messages")
+    
+    ax5: plt.Axes
+    ax5.hist(dgaps,bins=100,density=False)
+    ax5.set_xlabel("Distance between messages [miles]",size = 9)
+    ax5.set_ylabel("Count",size = 9)
+    ax5.set_yscale('log')
+    ax5.set_title(f"Histogram of Distances between Messages [miles]\ncut at {MAXLEN} ",size = 9)
     
     # Title
     plt.suptitle(f"{title}",size=12)
     
     # Save figure with ascending number
+    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.savefig(f"aisstats/out/{title}.png",dpi=300)
     plt.close()
 if __name__ == "__main__":
@@ -294,7 +309,7 @@ if __name__ == "__main__":
         frame=SEARCHAREA,
         time_delta=60*24, # 24 hours
         n_cells=1,
-        filter=partial(speed_filter, speeds=SPEEDRANGE)
+        # filter=partial(speed_filter, speeds=SPEEDRANGE)
     )
 
     # Create starting positions for the search.
@@ -315,11 +330,15 @@ if __name__ == "__main__":
         targets=ships,
         tpos=tpos,
         overlap_tpos=False,
-        sd=0.05,
-        minlen=20
+        sd=0.1,
+        minlen=100
     )
     rejected = SA._construct_splines(rejected,"linear")
     accepted = SA._construct_splines(accepted,"linear")
+
+    plot_trajectories_on_map(ships, "all")
+    plot_trajectories_on_map(accepted,"accepted")
+    plot_trajectories_on_map(rejected,"rejected")
 
     plot_histograms(
         ships,
