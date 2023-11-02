@@ -13,10 +13,11 @@ from matplotlib import pyplot as plt
 from aisstats.psd import time_range
 import numpy as np
 from aisplanner.encounters.encmap import plot_coastline
+from scipy.stats import gaussian_kde
 
 TEST_FILE_DYN = 'data/aisrecords/2021_07_01.csv'
 TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_07_01.csv'
-SEARCHAREA, = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells
+SEARCHAREA = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells[0]
 SAMPLINGRATE = 30 # seconds
 # Sampling rate in hours
 SAMPLINGRATE_H = SAMPLINGRATE / 60 / 60
@@ -27,6 +28,12 @@ from aisplanner.dataprep import _file_descriptors as fd
 
 # Use matplotlib style `bmh`
 plt.style.use('bmh')
+
+def flatten(l: list[list]) -> list:
+    """
+    Flatten a list of lists.
+    """
+    return [item for sublist in l for item in sublist]  
 
 def speed_filter(df: pd.DataFrame, speeds: tuple[float,float]) -> pd.DataFrame:
     """
@@ -40,13 +47,13 @@ def speed_filter(df: pd.DataFrame, speeds: tuple[float,float]) -> pd.DataFrame:
     ]
 
 def area_center(area: pytsa.LatLonBoundingBox) -> pytsa.structs.Position:
-        """
-        Get the center of the search area in UTM coordinates.
-        """
-        return pytsa.structs.Position(
-            (area.LATMIN + area.LATMAX)/2,
-            (area.LONMIN + area.LONMAX)/2
-        )
+    """
+    Get the center of the search area in UTM coordinates.
+    """
+    return pytsa.structs.Position(
+        (area.LATMIN + area.LATMAX)/2,
+        (area.LONMIN + area.LONMAX)/2
+    )
 
 def plot_speeds_and_route(tv: TargetVessel, mode: str) -> None:
     """
@@ -55,41 +62,40 @@ def plot_speeds_and_route(tv: TargetVessel, mode: str) -> None:
     individual positions and the interpolated
     speeds.
     """
-    # Get start and end time of the trajectory
-    t0 = tv.track[0].timestamp
-    t1 = tv.track[-1].timestamp
-    
-    # Lon, lat, calculated speeds, interpolated speeds
-    lons, lats, i_speeds,c_speeds = [], [], [], [0]
-    
-    # Interpolate positions and speeds
-    for moment in time_range(int(t0),int(t1),SAMPLINGRATE):
-        # Get positions
-        lons.append(tv.interpolation.lon(moment))
-        lats.append(tv.interpolation.lat(moment))
-        i_speeds.append(tv.interpolation.SOG(moment))
-        if len(lons) > 1:
-            # Calculate speed
-            c_speeds.append(
-                haversine(
-                    lons[-2], lats[-2], lons[-1], lats[-1]
-                ) / (SAMPLINGRATE_H)
+    # Distance from first position to all others
+    # as histogram with kernel density estimate
+    distances = []
+    for track in tv.tracks:
+        for i in range(1,len(track)):
+            d = haversine(
+                track[0].lon,
+                track[0].lat,
+                track[i].lon,
+                track[i].lat
             )
+            distances.append(d)
+    if not distances:
+        return None
+
+    # KDE of distances
+    d_kde = gaussian_kde(distances)
+    d_xs = np.linspace(0,max(distances),1000)
+    d_ys = d_kde(d_xs)
     
     # Real positions and speeds
-    ts = []
-    rlons, rlats, rspeeds, rcspeeds = [], [], [], [0]
-    for msg in tv.track:
-        rlons.append(msg.lon)
-        rlats.append(msg.lat)
-        rspeeds.append(msg.SOG)
-        ts.append(msg.timestamp)
-        if len(rlons) > 1:
-            rcspeeds.append(
-                haversine(
-                    rlons[-2], rlats[-2], rlons[-1], rlats[-1]
-                ) / ((ts[-1] - ts[-2]) / 60 / 60)
-            )
+    tss = []
+    rlons, rlats, rspeeds = [], [], []
+    for track in tv.tracks:
+        lons, lats, speeds, ts = [], [], [], []
+        for msg in track:
+            lons.append(msg.lon)
+            lats.append(msg.lat)
+            speeds.append(msg.SOG)
+            ts.append(msg.timestamp)
+        rlons.append(lons)
+        rlats.append(lats)
+        rspeeds.append(speeds)
+        tss.append(ts)
     
     fig, axd = plt.subplot_mosaic(
         [
@@ -99,46 +105,32 @@ def plot_speeds_and_route(tv: TargetVessel, mode: str) -> None:
     )
     
     # Plot the trajectory
-    f = axd["left"].scatter(rlons,rlats,c=rspeeds,s=18,label='Trajectory',cmap='inferno')
-    axd["left"].plot(rlons,rlats,"k--",label='Trajectory', alpha = 0.5)
+    for lo,la, sp in zip(rlons,rlats,rspeeds):
+        f = axd["left"].scatter(lo,la,c=sp,s=18,label='Trajectory',cmap='inferno')
+        axd["left"].plot(lo,la,"k--",label='Trajectory', alpha = 0.5)
     
     # Colorbar
     fig.colorbar(f, ax=axd["left"], label="Speed [knots]")
     
-    # Plot the calculated speeds
-    axd["upper right"].plot(c_speeds,'r',label='Calculated speed')
+    # Plot the distances from first position
+    axd["upper right"].hist(distances,bins=20,density=True)
     
-    # Plot the interpolated speeds
-    axd["upper right"].plot(i_speeds,'b',label='Interpolated speed')
-    
-    # Calulate error
-    e = [c-i for c,i in zip(c_speeds,i_speeds)]
-    
-    # Plot error
-    axd["upper right"].plot(e,'g',label='Error (Calc. - Interp.)')
+    # Plot the KDE
+    axd["upper right"].plot(d_xs,d_ys,'r',label='KDE')
     
     # Plot the real speeds
-    axd["lower right"].plot(rspeeds,'r',label='Real speed')
-    
-    # Plot the calculated speeds
-    axd["lower right"].plot(rcspeeds,'b',label='Calculated speed', alpha = 0.5)
-    
-    # Plot the error
-    e = [r-c for r,c in zip(rspeeds,rcspeeds)]
-    axd["lower right"].plot(e,'g',label='Error (Real - Calc.)', alpha = 0.5)
+    axd["lower right"].plot(flatten(rspeeds),'r',label='Real speed')
     
     # Set labels
     axd["left"].set_xlabel('Longitude')
     axd["left"].set_ylabel('Latitude')
-    axd["upper right"].set_xlabel('Time')
+    axd["upper right"].set_xlabel('Distance to first message [miles]')
     axd["upper right"].set_ylabel('Speed [knots]')
     axd["lower right"].set_xlabel('Time')
     axd["lower right"].set_ylabel('Speed [knots]')
     
     # Set y lim
-    axd["lower right"].set_ylim(-30,30)
-    axd["upper right"].set_ylim(-30,30)
-    
+    axd["lower right"].set_ylim(-1,20)
     
     
     # Set legend
@@ -159,21 +151,23 @@ def plot_trajectory_jitter(ships: dict[int,TargetVessel],
     for ship in ships.values():
         # Center trajectory
         # Get mean of lat and lon
-        latmean = sum([p.lat for p in ship.track]) / len(ship.track)
-        lonmean = sum([p.lon for p in ship.track]) / len(ship.track)
-        # Subtract mean from all positions
-        for p in ship.track:
-            p.lat -= latmean
-            p.lon -= lonmean
+        for track in ship.tracks:
+            latmean = sum([p.lat for p in track]) / len(track)
+            lonmean = sum([p.lon for p in track]) / len(track)
+            # Subtract mean from all positions
+            for msg in track:
+                msg.lat -= latmean
+                msg.lon -= lonmean
             
     # Plot all trajectories
     fig, ax = plt.subplots(figsize=(16,10))
     for ship in ships.values():
-        ax.scatter(
-            [p.lon for p in ship.track],
-            [p.lat for p in ship.track],
-            alpha=0.5,s=0.5
-        )
+        for track in ship.tracks:
+            ax.scatter(
+                [p.lon for p in track],
+                [p.lat for p in track],
+                alpha=0.5,s=0.5
+            )
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     
@@ -183,21 +177,72 @@ def plot_trajectory_jitter(ships: dict[int,TargetVessel],
     plt.savefig(f"aisstats/out/trjitter_{sd:.2f}_{mode}.png", dpi=300)
     plt.close()
     
-def plot_trajectories_on_map(ships: dict[int,TargetVessel], mode: str):
+def plot_trajectories_on_map(ships: dict[int,TargetVessel], mode: str,specs: dict):
     """
     Plot all trajectories on a map.
     """
+    assert mode in ["all","accepted","rejected"]
     fig, ax = plt.subplots(figsize=(10,16))
     plot_coastline(ax=ax)
     for ship in ships.values():
-        ax.plot(
-            [p.lon for p in ship.track],
-            [p.lat for p in ship.track],
-            alpha=0.5, linewidth=0.3
-        )
+        for track in ship.tracks:
+            ax.plot(
+                [p.lon for p in track],
+                [p.lat for p in track],
+                alpha=0.5, linewidth=0.3, marker = "x", markersize = 0.5
+            )
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
-    plt.savefig(f"aisstats/out/trajmap_{mode}.pdf")
+    plt.title(f"Trajectories for {mode} vessels: {specs}", size = 8)
+    plt.tight_layout()
+    plt.savefig(f"aisstats/out/trajmap_{mode}_{specs['Min traj length [msg]']}.png",dpi=800)
+    plt.close()
+    
+def plot_latlon_kde(ships: dict[int,TargetVessel], mode: str):
+    """
+    Plot the kernel density estimate of
+    the latitude and longitude of all
+    trajectories.
+    """
+    assert mode in ["all","accepted","rejected"]
+    
+    # Get all latitudes and longitudes
+    lats = []
+    lons = []
+    for ship in ships.values():
+        for track in ship.tracks:
+            latmean = sum([p.lat for p in track]) / len(track)
+            lonmean = sum([p.lon for p in track]) / len(track)
+            # Subtract mean from all positions
+            for msg in track:
+                msg.lat -= latmean
+                msg.lon -= lonmean
+            lats += [p.lat for p in track]
+            lons += [p.lon for p in track]
+    
+    # Create KDEs
+    lat_kde = gaussian_kde(lats)
+    lon_kde = gaussian_kde(lons)
+    
+    # Plot KDEs
+    fig, (ax1,ax2) = plt.subplots(nrows=2,ncols=1,figsize=(16,10))
+    ax1.plot(
+        np.linspace(min(lats),max(lats),1000),
+        lat_kde(np.linspace(min(lats),max(lats),1000))
+    )
+    ax1.set_xlabel("Latitude")
+    ax1.set_ylabel("Density")
+    ax1.set_title(f"Kernel density estimate of latitudes for {mode} vessels")
+    
+    ax2.plot(
+        np.linspace(min(lons),max(lons),1000),
+        lon_kde(np.linspace(min(lons),max(lons),1000))
+    )
+    ax2.set_xlabel("Longitude")
+    ax2.set_ylabel("Density")
+    ax2.set_title(f"Kernel density estimate of longitudes for {mode} vessels")
+    
+    plt.savefig(f"aisstats/out/latlon_kde_{mode}.png",dpi=300)
     plt.close()
 
 def run_filter(ships: dict[int,TargetVessel], tpos: TimePosition):
@@ -221,95 +266,238 @@ def run_filter(ships: dict[int,TargetVessel], tpos: TimePosition):
 
     for i in range(80,100):
         plot_speeds_and_route(list(accepted.values())[i],"accepted")
+        
+def plot_trajectory_length_by_obscount(ships: dict[int,TargetVessel]):
+    
+    # n_obs bins
+    n_obs_bins = np.arange(5,75,5)
+    tlens = [[] for _ in range(len(n_obs_bins))]
+    
+    # Walk through all ships' tracks
+    # and append trajectory lengths to
+    # the correct bin
+    for ship in ships.values():
+        for track in ship.tracks:
+            n_obs = len(track)
+            for i in range(len(n_obs_bins)):
+                if n_obs <= n_obs_bins[i]:
+                    tlens[i].append(len(track))
+                    break
+                
+    # Set up KDEs for each bin
+    kdes = []
+    for tlen in tlens:
+        kdes.append(gaussian_kde(tlen))
+        
+    # Plot KDEs and names of bins
+    fig, ax = plt.subplots(figsize=(16,10))
+    max_tlen = max([max(tlen) for tlen in tlens])
+    for i in range(len(n_obs_bins)):
+        ax.plot(
+            np.linspace(0,max_tlen+50,1000),
+            kdes[i](np.linspace(0,max_tlen+50,1000)),
+            label=f"n_obs <= {n_obs_bins[i]}"
+        )
+    ax.set_xlabel("Trajectory length [miles]")
+    ax.set_ylabel("Density")
+    ax.set_title("Trajectory length by number of observations_1-30")
+    ax.legend()
+    plt.savefig("aisstats/out/trajlen_by_nobs_1-30.png",dpi=300)
+    plt.close()
+    
+def plot_latlon_shapes(good: list[TargetVessel],bad: list[TargetVessel]):
+    """
+    Plots the standardized distribution of latitudes and longitudes 
+    for good and bad trajectories.
+    """
+    
+    # Get all latitudes and longitudes
+    glats = []
+    glons = []
+    for ship in good:
+        for track in ship.tracks:
+            glats += [p.lat for p in track]
+            glons += [p.lon for p in track]
+
+    # Normalize
+    glats, glons = np.array(glats), np.array(glons)
+    glats = (glats - glats.mean()) / glats.std()
+    glons = (glons - glons.mean()) / glons.std()
+    
+     
+    blats = []
+    blons = []
+    for ship in bad:
+        for track in ship.tracks:
+            blats += [p.lat for p in track]
+            blons += [p.lon for p in track]
+
+    # Normalize
+    blats, blons = np.array(blats), np.array(blons)
+    blats = (blats - blats.mean()) / blats.std()
+    blons = (blons - blons.mean()) / blons.std()
+    
+    
+    # Create KDEs
+    glat_kde = gaussian_kde(glats)
+    glon_kde = gaussian_kde(glons)
+    blat_kde = gaussian_kde(blats)
+    blon_kde = gaussian_kde(blons)
+    
+    # Plot KDEs
+    fig, (ax1,ax2) = plt.subplots(nrows=2,ncols=1,figsize=(16,10))
+    ax1.plot(
+        np.linspace(min(glats),max(glats),1000),
+        glat_kde(np.linspace(min(glats),max(glats),1000)),
+        label="Good trajectories"
+    )
+    ax1.plot(
+        np.linspace(min(blats),max(blats),1000),
+        blat_kde(np.linspace(min(blats),max(blats),1000)),
+        label="Bad trajectories"
+    )
+    ax1.set_xlabel("Latitude")
+    ax1.set_ylabel("Density")
+    ax1.set_title(f"Kernel density estimate of latitudes")
+    ax1.legend()
+    
+    ax2.plot(
+        np.linspace(min(glons),max(glons),1000),
+        glon_kde(np.linspace(min(glons),max(glons),1000)),
+        label="Good trajectories"
+    )
+    ax2.plot(
+        np.linspace(min(blons),max(blons),1000),
+        blon_kde(np.linspace(min(blons),max(blons),1000)),
+        label="Bad trajectories"
+    )
+    ax2.set_xlabel("Longitude")
+    ax2.set_ylabel("Density")
+    ax2.set_title(f"Kernel density estimate of longitudes")
+    ax2.legend()
+    
+    plt.savefig(f"aisstats/out/latlon_kde.png",dpi=300)
+    plt.close()
+    
 
     
-def plot_histograms(ships: dict[int,TargetVessel],title: str):
+def plot_histograms(ships: dict[int,TargetVessel],title: str, specs: dict):
     
     # Temporal gaps between messages
     # and lengths of trajectories
-    MAXGAP = 900 # [s]
     MAXLEN = 1000 # trajectory length [miles]
-    MAXDIST = 10 # dist between messages [miles]
     tgaps = []
     dgaps = []
-    tlens = [] # FIlled with tuples of (tlen, n_messages)
+    tlens = [] # Filled with tuples of (tlen, n_messages)
     for ship in ships.values():
-        tlen = 0
-        for i in range(1,len(ship.track)):
-            tgap = ship.track[i].timestamp - ship.track[i-1].timestamp
-            d = haversine(
-                ship.track[i-1].lon,
-                ship.track[i-1].lat,
-                ship.track[i].lon,
-                ship.track[i].lat
-            )
-            tlen += d
-            if d < MAXDIST:
+        for track in ship.tracks:
+            tlen = 0
+            for i in range(1,len(track)):
+                tgap = track[i].timestamp - track[i-1].timestamp
+                d = haversine(
+                    track[i-1].lon,
+                    track[i-1].lat,
+                    track[i].lon,
+                    track[i].lat
+                )
+                tlen += d
+                
                 dgaps.append(d)
-            if tgap < MAXGAP:
                 tgaps.append(tgap)
-        tlens.append((tlen,len(ship.track)))
+            tlens.append((tlen,len(track)))
                 
     # Vessel speeds for histogram
     speeds = SA.cell_data[fd.Fields12318.speed.name].values
     
-    fig, ((ax1,ax2),(ax3,ax4),(ax5,ax6)) = plt.subplots(nrows=3,ncols=2,figsize=(16,10))
+    fig, ((ax1,ax2),(ax3,ax4),(ax5,ax6)) = plt.subplots(nrows=3,ncols=2,figsize=(32,20))
+    
+    # Font size
+    fs = 12
     
     ax1: plt.Axes
     ax1.hist(tgaps,bins=100,density=False)
-    ax1.set_xlabel("Time [s]",size = 9)
-    ax1.set_ylabel("Count",size = 9)
-    ax1.set_title(f"Histogram of Time Gaps\nbetween Messages [s]. Cut at {MAXGAP}s",size = 9)
+    ax1.set_xlabel("Time [s]",size = fs)
+    ax1.set_ylabel("Count",size = fs)
+    ax1.set_title(f"Histogram of Time Gaps\nbetween Messages [s]",size = fs)
     
     ax2: plt.Axes
     ax2.hist(speeds,bins=100,density=False)
-    ax2.set_xlabel("Speed [knots]",size = 9)
-    ax2.set_ylabel("Count",size = 9)
-    ax2.set_title("Histogram of Speeds [knots]",size = 9)
+    ax2.set_xlabel("Speed [knots]",size = fs)
+    ax2.set_yscale('log')
+    ax2.set_ylabel("Count",size = fs)
+    ax2.set_title("Histogram of Speeds [knots]",size = fs)
     
     ax3: plt.Axes
-    ax3.hist([len for len,nobs in tlens if len < 400],bins=100,density=False)
-    ax3.set_xlabel("Trajectory length [miles]",size = 9)
-    ax3.set_ylabel("Count",size = 9)
+    ax3.hist([len for len,nobs in tlens],bins=100,density=False)
+    ax3.set_xlabel("Trajectory length [miles]",size = fs)
+    ax3.set_ylabel("Count",size = fs)
     ax3.set_yscale('log')
-    ax3.set_title(f"Histogram of Trajectory Lengths [miles]\ncut at {MAXLEN} miles",size = 9)
+    ax3.set_title(f"Histogram of Trajectory Lengths [miles]\ncut at {MAXLEN} miles",size = fs)
     
     ax4: plt.Axes
     ax4.scatter(
         [lens for lens,nobs in tlens],
         [nobs for lens,nobs in tlens],
-        s=1
+        s=1.5
     )
-    ax4.set_xlabel("Trajectory length [miles]",size = 9)
-    ax4.set_ylabel("Number of Messages per Trajectory",size = 9)
+    ax4.set_xlabel("Trajectory length [miles]",size = fs)
+    ax4.set_ylabel("Number of Messages per Trajectory",size = fs)
     ax4.set_yscale('log')
     ax4.set_xscale('log')
-    ax4.set_title("Trajectory Length vs. Number of Messages")
+    ax4.set_title("Trajectory Length vs. Number of Messages",size = fs)
     
     ax5: plt.Axes
     ax5.hist(dgaps,bins=100,density=False)
-    ax5.set_xlabel("Distance between messages [miles]",size = 9)
-    ax5.set_ylabel("Count",size = 9)
+    ax5.set_xlabel("Distance between messages [miles]",size = fs)
+    ax5.set_ylabel("Count",size = fs)
     ax5.set_yscale('log')
-    ax5.set_title(f"Histogram of Distances between Messages [miles]\ncut at {MAXLEN} ",size = 9)
+    ax5.set_title(f"Histogram of Distances between Messages [miles]\ncut at {MAXLEN} ",size = fs)
+
+    # Turn off last subplot
+    ax6: plt.Axes
+    ax6.axis('off')
+    
+    # Annotate specs to plot
+    printed_specs = "\n".join([f"{k}: {v}" for k,v in specs.items()])
+    printed_specs = "Specifications:\n" + printed_specs
+    plt.annotate(
+        printed_specs,
+        xy=(0.75, 0.25),
+        xycoords='figure fraction',
+        fontsize=12,
+    )
     
     # Title
     plt.suptitle(f"{title}",size=12)
     
     # Save figure with ascending number
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.tight_layout()
     plt.savefig(f"aisstats/out/{title}.png",dpi=300)
     plt.close()
 if __name__ == "__main__":
     # Create a SearchAgent object --------------------------------------------------
     SPEEDRANGE = (1,30) # knots
+    MAX_TGAP = 400 # seconds
+    MAX_DGAP = 4 # miles
+    SD = 0.2 # standard deviation for trajectory jitter
+    MINLEN = 75 # minimum length of trajectory
+    
+    specs = {
+        "Speed range [kn]": SPEEDRANGE,
+        "Max time gap [s]": MAX_TGAP,
+        "Max distance gap [mi]": MAX_DGAP,
+        "SD [°]": SD,
+        "Min traj length [msg]": MINLEN
+    }
+    
+    
     SA = SearchAgent(
         msg12318file=TEST_FILE_DYN,
         msg5file=TEST_FILE_STA,
         frame=SEARCHAREA,
         time_delta=60*24, # 24 hours
         n_cells=1,
-        # filter=partial(speed_filter, speeds=SPEEDRANGE)
+        filter=partial(speed_filter, speeds=SPEEDRANGE)
     )
 
     # Create starting positions for the search.
@@ -324,31 +512,59 @@ if __name__ == "__main__":
     # Initialize the SearchAgent
     SA.init(tpos)
     
-    ships = SA.get_raw_ships(tpos,True)
+    ships = SA.get_raw_ships(tpos,True,max_tgap=MAX_TGAP,max_dgap=MAX_DGAP)
+    # ships = SA.get_raw_ships(tpos,True,max_tgap=np.inf,max_dgap=np.inf)
 
+    # Plot trajectory length by number of observations
+    plot_trajectory_length_by_obscount(ships)
+    # # Plot histograms of raw data ---------------------------------------------------
+    # plot_histograms(
+    #     ships,
+    #     title=f"Histograms of raw AIS Data for {SPEEDRANGE[0]}-{SPEEDRANGE[1]} knots",
+    #     specs={}
+    # )
+    # Split the ships into accepted and rejected ------------------------------------
     accepted, rejected = SA.split(
         targets=ships,
         tpos=tpos,
         overlap_tpos=False,
-        sd=0.1,
-        minlen=100
+        sd=SD,
+        minlen=MINLEN
     )
-    rejected = SA._construct_splines(rejected,"linear")
-    accepted = SA._construct_splines(accepted,"linear")
+    
+    # Plot routes and speeds for accepted and rejected ------------------------------
+    # for i in range(80,100):
+    #     plot_speeds_and_route(list(rejected.values())[i],"rejected")
+    #     plot_speeds_and_route(list(accepted.values())[i],"accepted")
+    
+    # # Latlon shape plots -----------------------------------------------------------
+    # # Get 100 random ships from each
+    # # accepted and rejected
+    # good = [accepted[k] for k in np.random.choice(list(accepted.keys()),500)]
+    # bad = [rejected[k] for k in np.random.choice(list(rejected.keys()),500)]
+    
+    # plot_latlon_shapes(good,bad)
+    # plot_latlon_kde(accepted,"accepted")
+    # plot_latlon_kde(rejected,"rejected")
+    
+    # # Construct splines ------------------------------------------------------------
+    # rejected = SA._construct_splines(rejected,"linear")
+    # accepted = SA._construct_splines(accepted,"linear")
 
-    plot_trajectories_on_map(ships, "all")
-    plot_trajectories_on_map(accepted,"accepted")
-    plot_trajectories_on_map(rejected,"rejected")
 
-    plot_histograms(
-        ships,
-        title=f"Histograms of raw AIS Data for {SPEEDRANGE[0]}-{SPEEDRANGE[1]} knots"
-    )
-    plot_histograms(
-        accepted,
-        title=f"Histograms of accepted AIS Data for {SPEEDRANGE[0]}-{SPEEDRANGE[1]} knots"
-    )
-    plot_histograms(
-        rejected,
-        title=f"Histograms of rejected AIS Data for {SPEEDRANGE[0]}-{SPEEDRANGE[1]} knots"
-    )   
+    # # Plot trajectories on map ------------------------------------------------------
+    #plot_trajectories_on_map(ships, "all",{})
+    plot_trajectories_on_map(accepted,"accepted",specs)
+    plot_trajectories_on_map(rejected,"rejected",specs)
+
+    # # Plot histograms of accepted and rejected --------------------------------------
+    # plot_histograms(
+    #     accepted,
+    #     title=f"Histograms of accepted AIS Data for {SPEEDRANGE[0]}-{SPEEDRANGE[1]} knots",
+    #     specs=specs
+    # )
+    # plot_histograms(
+    #     rejected,
+    #     title=f"Histograms of rejected AIS Data for {SPEEDRANGE[0]}-{SPEEDRANGE[1]} knots",
+    #     specs=specs
+    # )   
