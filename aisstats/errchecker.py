@@ -15,6 +15,7 @@ import numpy as np
 from aisplanner.encounters.encmap import plot_coastline
 from scipy.stats import gaussian_kde
 import multiprocessing as mp
+from aisplanner.misc import MemoryLoader
 
 TEST_FILE_DYN = 'data/aisrecords/2021_07_01.csv'
 TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_07_01.csv'
@@ -537,7 +538,8 @@ if __name__ == "__main__":
     ships = SA.get_raw_ships(tpos,True,max_tgap=MAX_TGAP,max_dgap=MAX_DGAP)
 
     # Plot trajectory jitter --------------------------------------------------------
-    plot_trajectory_jitter(SA,tpos,ships,np.arange(0.05,0.55,0.05),"rejected")
+    with MemoryLoader():
+        plot_trajectory_jitter(SA,tpos,ships,np.arange(0.05,0.55,0.05),"rejected")
     
     # Plot trajectory length by number of observations
     # plot_trajectory_length_by_obscount(ships)
