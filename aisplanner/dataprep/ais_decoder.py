@@ -6,7 +6,7 @@ The structures are specific to the EMSA dataset
 being analyzed with it. 
 """
 import os
-from typing import Callable, List, Tuple, Dict
+from typing import Any, Callable, List, Tuple, Dict
 from dotenv import load_dotenv
 
 import numpy as np
@@ -30,31 +30,43 @@ _DYNAMIC_TYPES = (1,2,3,18,)
 _NA = "NA"
 
 # Decoding plan
-def _decode_dynamic_messages(df: pd.DataFrame) -> List[ais.ANY_MESSAGE]:
-    """
-    Decode AIS messages of types 1,2,3,18 
-    supplied as a pandas Series object.
-    """
-    messages = df[DynamicReport.raw_message.name]
-    # Split at exclamation mark and take the last part
-    raw = messages.str.split("!",expand=True).iloc[:,-1:]
-    # Since we split on the exclamation mark we need to
-    # re-add it at the front of the message
-    raw = "!" + raw
-    return [ais.decode(val) for val in raw.values.ravel()]
+class DynamicDecoder:
+    type = "dynamic"
+    
+    def __call__(self, df: pd.DataFrame) -> Any:
+        return self._decode_dynamic_messages(df)
 
-def _decode_static_messages(df: pd.DataFrame):
-    """
-    Decode AIS messages of type 5 
-    supplied as a pandas DataFrame.
-    """
-    msg1 = df[StaticReport.raw_message1.name]
-    msg2 = df[StaticReport.raw_message2.name]
-    raw1 = msg1.str.split("!",expand=True).iloc[:,-1:]
-    raw2 = msg2.str.split("!",expand=True).iloc[:,-1:]
-    raw1, raw2 = "!" + raw1, "!" + raw2
-    return [ais.decode(*vals) for vals in 
-            zip(raw1.values.ravel(),raw2.values.ravel())]
+    def _decode_dynamic_messages(df: pd.DataFrame) -> List[ais.ANY_MESSAGE]:
+        """
+        Decode AIS messages of types 1,2,3,18 
+        supplied as a pandas Series object.
+        """
+        messages = df[DynamicReport.raw_message.name]
+        # Split at exclamation mark and take the last part
+        raw = messages.str.split("!",expand=True).iloc[:,-1:]
+        # Since we split on the exclamation mark we need to
+        # re-add it at the front of the message
+        raw = "!" + raw
+        return [ais.decode(val) for val in raw.values.ravel()]
+
+class StaticDecoder:
+    type = "static"
+    
+    def __call__(self, df: pd.DataFrame) -> Any:
+        return self._decode_static_messages(df)
+    
+    def _decode_static_messages(df: pd.DataFrame):
+        """
+        Decode AIS messages of type 5 
+        supplied as a pandas DataFrame.
+        """
+        msg1 = df[StaticReport.raw_message1.name]
+        msg2 = df[StaticReport.raw_message2.name]
+        raw1 = msg1.str.split("!",expand=True).iloc[:,-1:]
+        raw2 = msg2.str.split("!",expand=True).iloc[:,-1:]
+        raw1, raw2 = "!" + raw1, "!" + raw2
+        return [ais.decode(*vals) for vals in 
+                zip(raw1.values.ravel(),raw2.values.ravel())]
 
 
 def _extract_fields(messages: List[ais.ANY_MESSAGE],
@@ -66,7 +78,7 @@ def _extract_fields(messages: List[ais.ANY_MESSAGE],
 
 def _get_decoder(
         dataframe: pd.DataFrame
-    ) -> Tuple[Callable[[pd.DataFrame],List[ais.ANY_MESSAGE]],dict]:
+    ) -> Tuple[Callable[[pd.DataFrame],List[ais.ANY_MESSAGE]],tuple]:
     """
     Returns a message-specific decoding function
     based on message types present in the dataframe.
@@ -81,13 +93,13 @@ def _get_decoder(
         StaticReport.raw_message2.name)):
         # Maybe type 5 
         if all(b in _STATIC_TYPES for b in types.unique()):
-            return _decode_static_messages, _FIELDS_MSG5
+            return StaticDecoder, _FIELDS_MSG5
         else: raise StructuralError(
                 "Assumed type-5-only dataframe, but found "
                 f"messages of types {types.unique()}"
         )
     elif all(b in _DYNAMIC_TYPES for b in types.unique()):
-        return _decode_dynamic_messages, _FIELDS_MSG12318
+        return DynamicDecoder, _FIELDS_MSG12318
     else: raise StructuralError(
             "Found not processable combination "
             "of message types. Need either type-5-only dataframe "
@@ -105,8 +117,16 @@ def decode_from_file(source: str,
             dest: str) -> None:  
     df  = pd.read_csv(source,sep=",",quotechar='"',
                       encoding="utf-8",index_col=False)
-    df = df.drop(df[df[DynamicReport.raw_message.name].str.contains(r"\n")].index)
     decoder, fields = _get_decoder(df)
+    if decoder.type == "dynamic":
+        # Drop messages with newline characters
+        # since they are not valid AIS messages
+        df = df.drop(df[df[DynamicReport.raw_message.name].str.contains(r"\n")].index)
+    else:
+        # Drop messages with newline characters
+        # since they are not valid AIS messages
+        df = df.drop(df[df[StaticReport.raw_message1.name].str.contains(r"\n")].index)
+        df = df.drop(df[df[StaticReport.raw_message2.name].str.contains(r"\n")].index)
     decoded = decoder(df)
     df["DECODE_START"] = "||"
     df = df.assign(**_extract_fields(decoded,fields))
