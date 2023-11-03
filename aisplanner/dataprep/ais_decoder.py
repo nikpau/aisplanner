@@ -141,6 +141,7 @@ SOURCE = Path(os.environ["AISSOURCE"])
 DEST = Path(os.environ["DECODEDDEST"])
 
 for file in SOURCE.rglob("*.csv"):
+    print(f"Decoding {file.name}")
     decode_from_file(
         file,
         f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts):])}"
