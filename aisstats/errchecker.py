@@ -182,7 +182,7 @@ def plot_trajectory_jitter(sa: SearchAgent,
                 overlap_tpos=False,
                 sd=sds[row*ncols+col],
                 minlen=50,
-                njobs=2
+                njobs=16
             )
             to_process = acc if mode == "accepted" else rej
             sign = "<" if mode == "rejected" else ">"
