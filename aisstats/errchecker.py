@@ -17,8 +17,10 @@ from scipy.stats import gaussian_kde
 import multiprocessing as mp
 from aisplanner.misc import MemoryLoader
 
-TEST_FILE_DYN = 'data/aisrecords/2021_07_01.csv'
-TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_07_01.csv'
+# TEST_FILE_DYN = 'data/aisrecords/2021_07_01.csv'
+# TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_07_01.csv'
+TEST_FILE_DYN = '/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022/2021_07_01.csv'
+TEST_FILE_DYN = '/warm_archive/ws/s2075466-ais/decoded/msgtype5/2021_07_01.csv'
 SEARCHAREA = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells[0]
 SAMPLINGRATE = 30 # seconds
 # Sampling rate in hours
