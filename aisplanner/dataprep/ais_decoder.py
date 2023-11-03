@@ -93,13 +93,13 @@ def _get_decoder(
         StaticReport.raw_message2.name)):
         # Maybe type 5 
         if all(b in _STATIC_TYPES for b in types.unique()):
-            return StaticDecoder, _FIELDS_MSG5
+            return StaticDecoder(), _FIELDS_MSG5
         else: raise StructuralError(
                 "Assumed type-5-only dataframe, but found "
                 f"messages of types {types.unique()}"
         )
     elif all(b in _DYNAMIC_TYPES for b in types.unique()):
-        return DynamicDecoder, _FIELDS_MSG12318
+        return DynamicDecoder(), _FIELDS_MSG12318
     else: raise StructuralError(
             "Found not processable combination "
             "of message types. Need either type-5-only dataframe "
