@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
 import pyais as ais
-from ._file_descriptors import (
+from aisplanner.dataprep._file_descriptors import (
     StaticReport, DynamicReport, 
     AISFile, _FIELDS_MSG12318, _FIELDS_MSG5
 )
