@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 import numpy as np
 import pandas as pd
 import pyais as ais
+import multiprocessing as mp
 from aisplanner.dataprep._file_descriptors import (
     StaticReport, DynamicReport, 
     AISFile, _FIELDS_MSG12318, _FIELDS_MSG5
@@ -140,9 +141,13 @@ from pathlib import Path
 SOURCE = Path(os.environ["AISSOURCE"])
 DEST = Path(os.environ["DECODEDDEST"])
 
-for file in SOURCE.rglob("*.csv"):
-    print(f"Decoding {file.name}")
-    decode_from_file(
-        file,
-        f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts):])}"
-    )
+files = list(SOURCE.rglob("*.csv")) 
+
+# Split files into 16 batches
+# to be processed in parallel
+batches = np.array_split(files,16)
+
+with mp.Pool(processes=16) as pool:
+    pool.starmap(decode_from_file, 
+                 [(file, f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts):])}")
+                  for file in files])
