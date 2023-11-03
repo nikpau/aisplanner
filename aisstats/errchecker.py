@@ -14,6 +14,7 @@ from aisstats.psd import time_range
 import numpy as np
 from aisplanner.encounters.encmap import plot_coastline
 from scipy.stats import gaussian_kde
+import multiprocessing as mp
 
 TEST_FILE_DYN = 'data/aisrecords/2021_07_01.csv'
 TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_07_01.csv'
@@ -142,11 +143,14 @@ def plot_speeds_and_route(tv: TargetVessel, mode: str) -> None:
     plt.savefig(f"aisstats/out/errchecker/{tv.mmsi}_{mode}.png",dpi=300)
     plt.close()
 
-def plot_trajectory_jitter(ships: dict[int,TargetVessel],
-                           sd: float,
+def plot_trajectory_jitter(sa: SearchAgent,
+                           tpos: TimePosition,
+                           ships: dict[int,TargetVessel],
+                           sds: list | np.ndarray,
                            mode: str) -> None:
     
     assert mode in ["accepted","rejected"]
+    np.random.seed(424)
     
     for ship in ships.values():
         # Center trajectory
@@ -154,27 +158,46 @@ def plot_trajectory_jitter(ships: dict[int,TargetVessel],
         for track in ship.tracks:
             latmean = sum([p.lat for p in track]) / len(track)
             lonmean = sum([p.lon for p in track]) / len(track)
+            # Add random jitter
+            latmean += np.random.uniform(-0.5,0.5)
+            lonmean += np.random.uniform(-0.5,0.5)
             # Subtract mean from all positions
             for msg in track:
                 msg.lat -= latmean
                 msg.lon -= lonmean
             
-    # Plot all trajectories
-    fig, ax = plt.subplots(figsize=(16,10))
-    for ship in ships.values():
-        for track in ship.tracks:
-            ax.scatter(
-                [p.lon for p in track],
-                [p.lat for p in track],
-                alpha=0.5,s=0.5
+    # Plot trajectories for different sds
+    ncols = 3
+    div,mod = divmod(len(sds),ncols)
+    nrows = div + 1 if mod else div
+    fig, axs = plt.subplots(nrows=nrows,ncols=ncols,figsize=(16,5*nrows))
+    for row in range(nrows):
+        for col in range(ncols):
+            acc,rej = sa.split(
+                ships,
+                tpos,
+                overlap_tpos=False,
+                sd=sds[row*ncols+col],
+                minlen=50,
+                njobs=2
             )
-    ax.set_xlabel("Longitude")
-    ax.set_ylabel("Latitude")
+            to_process = acc if mode == "accepted" else rej
+            sign = "<" if mode == "rejected" else ">"
     
-    sign = "<" if mode == "rejected" else ">"
+            for ship in to_process.values():
+                for track in ship.tracks:
+                    axs[row,col].plot(
+                        [p.lon for p in track],
+                        [p.lat for p in track],
+                        alpha=0.5, marker = "x", markersize = 0.5, color = "k"
+                    )
+            axs[row,col].set_xlabel("Longitude")
+            axs[row,col].set_ylabel("Latitude")
+            axs[row,col].set_title(f"Trajectories with sd {sign} {sds[row*ncols+col]:.2f}")
     
-    plt.title(f"Trajectory jitter for {mode} vessels with sd{sign}{sd:.2f}")
-    plt.savefig(f"aisstats/out/trjitter_{sd:.2f}_{mode}.png", dpi=300)
+    
+    plt.title(f"Trajectory jitter for {mode} vessels.")
+    plt.savefig(f"aisstats/out/trjitter_{mode}.png", dpi=500)
     plt.close()
     
 def plot_trajectories_on_map(ships: dict[int,TargetVessel], mode: str,specs: dict):
@@ -496,8 +519,7 @@ if __name__ == "__main__":
         msg5file=TEST_FILE_STA,
         frame=SEARCHAREA,
         time_delta=60*24, # 24 hours
-        n_cells=1,
-        filter=partial(speed_filter, speeds=SPEEDRANGE)
+        preprocessor=partial(speed_filter, speeds=SPEEDRANGE)
     )
 
     # Create starting positions for the search.
@@ -513,10 +535,12 @@ if __name__ == "__main__":
     SA.init(tpos)
     
     ships = SA.get_raw_ships(tpos,True,max_tgap=MAX_TGAP,max_dgap=MAX_DGAP)
-    # ships = SA.get_raw_ships(tpos,True,max_tgap=np.inf,max_dgap=np.inf)
 
+    # Plot trajectory jitter --------------------------------------------------------
+    plot_trajectory_jitter(SA,tpos,ships,np.arange(0.05,0.55,0.05),"rejected")
+    
     # Plot trajectory length by number of observations
-    plot_trajectory_length_by_obscount(ships)
+    # plot_trajectory_length_by_obscount(ships)
     # # Plot histograms of raw data ---------------------------------------------------
     # plot_histograms(
     #     ships,
@@ -524,13 +548,13 @@ if __name__ == "__main__":
     #     specs={}
     # )
     # Split the ships into accepted and rejected ------------------------------------
-    accepted, rejected = SA.split(
-        targets=ships,
-        tpos=tpos,
-        overlap_tpos=False,
-        sd=SD,
-        minlen=MINLEN
-    )
+    # accepted, rejected = SA.split(
+    #     targets=ships,
+    #     tpos=tpos,
+    #     overlap_tpos=False,
+    #     sd=SD,
+    #     minlen=MINLEN
+    # )
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # for i in range(80,100):
@@ -554,8 +578,8 @@ if __name__ == "__main__":
 
     # # Plot trajectories on map ------------------------------------------------------
     #plot_trajectories_on_map(ships, "all",{})
-    plot_trajectories_on_map(accepted,"accepted",specs)
-    plot_trajectories_on_map(rejected,"rejected",specs)
+    # plot_trajectories_on_map(accepted,"accepted",specs)
+    # plot_trajectories_on_map(rejected,"rejected",specs)
 
     # # Plot histograms of accepted and rejected --------------------------------------
     # plot_histograms(

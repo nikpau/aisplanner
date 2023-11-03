@@ -30,7 +30,7 @@ def plot_coastline(ax: plt.Axes = None, save_plot: bool = False) -> None:
     coasts = glob(f"{GEODATA}/*.json")
     for coast in coasts:
         gdf = gpd.read_file(coast)
-        gdf.plot(ax=ax, color="#003049", alpha=0.8)
+        gdf.plot(ax=ax, color="#003049", alpha=0.8,linewidth=0.3)
     
     if save_plot:
         plt.savefig("aisplanner/encounters/coastline.png", dpi=300)
