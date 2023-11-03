@@ -36,7 +36,7 @@ class DynamicDecoder:
     def __call__(self, df: pd.DataFrame) -> Any:
         return self._decode_dynamic_messages(df)
 
-    def _decode_dynamic_messages(df: pd.DataFrame) -> List[ais.ANY_MESSAGE]:
+    def _decode_dynamic_messages(self, df: pd.DataFrame) -> List[ais.ANY_MESSAGE]:
         """
         Decode AIS messages of types 1,2,3,18 
         supplied as a pandas Series object.
@@ -55,7 +55,7 @@ class StaticDecoder:
     def __call__(self, df: pd.DataFrame) -> Any:
         return self._decode_static_messages(df)
     
-    def _decode_static_messages(df: pd.DataFrame):
+    def _decode_static_messages(self, df: pd.DataFrame):
         """
         Decode AIS messages of type 5 
         supplied as a pandas DataFrame.
