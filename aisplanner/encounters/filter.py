@@ -30,7 +30,8 @@ import numpy as np
 import pandas as pd
 import paramiko
 import pytsa
-from pytsa.search_agent import FileLoadingError
+from pytsa.tsea.search_agent import FileLoadingError
+from pytsa.structs import UTMPosition, Position
 from pytsa import ShipType, TargetVessel
 
 from aisplanner.dataprep._file_descriptors import DecodedReport
@@ -603,26 +604,26 @@ class TrajectoryExtractionAgent:
     def search_area_center(
         self, 
         area: Union[pytsa.UTMBoundingBox, pytsa.LatLonBoundingBox]
-        ) -> Union[pytsa.structs.UTMPosition,pytsa.structs.Position]:
+        ) -> Union[UTMPosition,Position]:
         if isinstance(area, pytsa.UTMBoundingBox):
             return self._search_area_center_utm(area)
         elif isinstance(area, pytsa.LatLonBoundingBox):
             return self._search_area_center_latlon(area)
         
-    def _search_area_center_utm(self, area: pytsa.UTMBoundingBox) -> pytsa.structs.UTMPosition:
+    def _search_area_center_utm(self, area: pytsa.UTMBoundingBox) -> UTMPosition:
         """
         Get the center of the search area.
         """
-        return pytsa.structs.UTMPosition(
+        return UTMPosition(
             (area.min_northing + area.max_northing)/2,
             (area.min_easting + area.max_easting)/2
         )
         
-    def _search_area_center_latlon(self, area: pytsa.LatLonBoundingBox) -> pytsa.structs.Position:
+    def _search_area_center_latlon(self, area: pytsa.LatLonBoundingBox) -> Position:
         """
         Get the center of the search area in UTM coordinates.
         """
-        return pytsa.structs.Position(
+        return Position(
             (area.LATMIN + area.LATMAX)/2,
             (area.LONMIN + area.LONMAX)/2
         )

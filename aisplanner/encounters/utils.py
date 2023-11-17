@@ -1,5 +1,4 @@
-from pytsa import TrajectoryMatcher
-from pytsa.targetship import TargetVessel
+from pytsa import TrajectoryMatcher, TargetVessel
 from itertools import permutations
 import pickle
 import os
