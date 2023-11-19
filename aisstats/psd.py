@@ -6,7 +6,7 @@ https://doi.org/10.1016/j.oceaneng.2019.106130
 from pathlib import Path
 import pickle
 import numpy as np
-from pytsa.structs import ShipType
+from pytsa import ShipType
 import pytsa
 from aisplanner.dataprep import _file_descriptors as fd
 from more_itertools import pairwise
