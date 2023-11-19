@@ -29,7 +29,7 @@ def spec_gen(id: str, path: os.PathLike) -> EnvSpec:
     # a module at `aisgail.__env__`
     module_spec = _il.spec_from_file_location("aisgail.__env__",path)
     mod = _il.module_from_spec(module_spec) # type: ignore
-    sys.modules["tud_rl.__currentenv__"] = mod
+    sys.modules["aisgail.__env__"] = mod
     module_spec.loader.exec_module(mod) # type: ignore
     # Walk over all module objects and filter for gym-like classes
     for _, obj in inspect.getmembers(mod):
