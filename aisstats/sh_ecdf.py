@@ -42,6 +42,8 @@ SEARCHAREA = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells[0]
 
 DYNAMIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("*.csv")
 STATIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("*.csv")
+print(len(list(DYNAMIC_MESSAGES)))
+print(len(list(STATIC_MESSAGES)))
 
 dynamic_chunks = np.array_split(list(DYNAMIC_MESSAGES), 30)
 static_chunks = np.array_split(list(STATIC_MESSAGES), 30)
