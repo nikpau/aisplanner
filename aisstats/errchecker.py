@@ -11,7 +11,6 @@ from pytsa.structs import Position
 from aisplanner.encounters.main import GriddedNorthSea
 from aisplanner.encounters.filter import haversine
 from matplotlib import patches, pyplot as plt
-from aisstats.psd import time_range
 import numpy as np
 from aisplanner.encounters.encmap import plot_coastline
 from scipy.stats import gaussian_kde
