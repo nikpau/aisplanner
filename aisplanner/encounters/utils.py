@@ -12,7 +12,7 @@ from aisplanner.encounters.filter import (
     left_or_right, noreps, sol_seq_from_encounter
 )
 
-RESDIR = Path(os.environ.get("RESPATH"))
+# RESDIR = Path(os.environ.get("RESPATH"))
 
 # Sampling frequency for the trajectories in seconds
 _SAMPLINGFREQ = 10
