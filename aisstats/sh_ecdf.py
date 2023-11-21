@@ -9,11 +9,11 @@ Script to generate the ECDF and its quantiles for two variables:
 Barnard (HPC) specific script.
 """
 from pathlib import Path
-from pytsa import SearchAgent
+from pytsa import SearchAgent, TimePosition
 from pytsa.tsea.search_agent import _heading_change, haversine
 import numpy as np
 from functools import partial
-from errchecker import speed_filter
+from errchecker import area_center, speed_filter
 from aisplanner.encounters.main import GriddedNorthSea
 import ciso8601
 import pickle
@@ -94,6 +94,7 @@ heading_changes = []
 speed_changes = []
 distances = []
 
+
 for dc,sc in zip(dynamic_chunks, static_chunks):
     SA = SearchAgent(
         msg12318file=list(dc),
@@ -101,6 +102,17 @@ for dc,sc in zip(dynamic_chunks, static_chunks):
         msg5file=list(sc),
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
+    
+    # Create starting positions for the search.
+    # This is just the center of the search area.
+    center = area_center(SEARCHAREA)
+    tpos = TimePosition(
+        timestamp=..., # not used
+        lat=center.lat,
+        lon=center.lon
+    )
+    SA.init(tpos)
+    
     ships = SA.get_all_ships(njobs=24,skip_filter=True)
     for ship in ships.values():
         for track in ship.tracks:
