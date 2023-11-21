@@ -15,6 +15,7 @@ import numpy as np
 from functools import partial
 from errchecker import speed_filter
 from aisplanner.encounters.main import GriddedNorthSea
+import ciso8601
 import pickle
 
 def quantiles(data, quantiles):
@@ -36,17 +37,39 @@ def quantiles(data, quantiles):
     quantiles = np.quantile(data, quantiles)
     return quantiles
 
+def _date_transformer(datefile: Path) -> float:
+    """
+    Transform a date string to a float.
+
+    Parameters
+    ----------
+    date : str
+        The date string to transform.
+
+    Returns
+    -------
+    float
+        The date as a float.
+    """
+    return ciso8601.parse_datetime(datefile.stem.replace("_", "-"))
+
 # MAIN MATTER ---------------------------------------------------------------    
 
 SEARCHAREA = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells[0]
 
-DYNAMIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv")
-STATIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv")
-print(len(list(DYNAMIC_MESSAGES)))
-print(len(list(STATIC_MESSAGES)))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("*.csv"))
+DYNAMIC_MESSAGES = sorted(DYNAMIC_MESSAGES, key=_date_transformer)
 
-dynamic_chunks = np.array_split(list(DYNAMIC_MESSAGES), 30)
-static_chunks = np.array_split(list(STATIC_MESSAGES), 30)
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("*.csv"))
+STATIC_MESSAGES = sorted(STATIC_MESSAGES, key=_date_transformer)
+
+assert len(DYNAMIC_MESSAGES) == len(STATIC_MESSAGES),\
+    "Number of dynamic and static messages do not match."
+assert all([d.stem == s.stem for d,s in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES)]),\
+    "Dynamic and static messages are not in the same order."
+
+dynamic_chunks = np.array_split(DYNAMIC_MESSAGES, 30)
+static_chunks = np.array_split(STATIC_MESSAGES, 30)
 
 heading_changes = []
 speed_changes = []
