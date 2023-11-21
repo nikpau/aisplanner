@@ -64,7 +64,8 @@ STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgty
 STATIC_MESSAGES = sorted(STATIC_MESSAGES, key=_date_transformer)
 
 assert len(DYNAMIC_MESSAGES) == len(STATIC_MESSAGES),\
-    "Number of dynamic and static messages do not match."
+    ("Number of dynamic and static messages do not match."
+     f"Dynamic: {len(DYNAMIC_MESSAGES)}, static: {len(STATIC_MESSAGES)}")
 assert all([d.stem == s.stem for d,s in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES)]),\
     "Dynamic and static messages are not in the same order."
 
