@@ -107,7 +107,7 @@ for dc,sc in zip(dynamic_chunks, static_chunks):
     # This is just the center of the search area.
     center = area_center(SEARCHAREA)
     tpos = TimePosition(
-        timestamp=..., # not used
+        timestamp="2021-07-01", # arbitrary date
         lat=center.lat,
         lon=center.lon
     )
