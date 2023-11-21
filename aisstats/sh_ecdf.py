@@ -58,14 +58,32 @@ def _date_transformer(datefile: Path) -> float:
 SEARCHAREA = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells[0]
 
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("*.csv"))
-DYNAMIC_MESSAGES = sorted(DYNAMIC_MESSAGES, key=_date_transformer)
 
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("*.csv"))
+
+if len(DYNAMIC_MESSAGES) != len(STATIC_MESSAGES):
+
+    print(
+        "Number of dynamic and static messages do not match."
+        f"Dynamic: {len(DYNAMIC_MESSAGES)}, static: {len(STATIC_MESSAGES)}\n"
+        "Processing only common files."
+    )
+    # Find the difference
+    d = set([f.stem for f in DYNAMIC_MESSAGES])
+    s = set([f.stem for f in STATIC_MESSAGES])
+    
+    # Find all files that are in d and s
+    common = d.intersection(s)
+    common = list(common)
+    
+    # Remove all files that are not in common
+    DYNAMIC_MESSAGES = [f for f in DYNAMIC_MESSAGES if f.stem in common]
+    STATIC_MESSAGES = [f for f in STATIC_MESSAGES if f.stem in common]
+    
+# Sort the files by date
+DYNAMIC_MESSAGES = sorted(DYNAMIC_MESSAGES, key=_date_transformer)
 STATIC_MESSAGES = sorted(STATIC_MESSAGES, key=_date_transformer)
 
-assert len(DYNAMIC_MESSAGES) == len(STATIC_MESSAGES),\
-    ("Number of dynamic and static messages do not match."
-     f"Dynamic: {len(DYNAMIC_MESSAGES)}, static: {len(STATIC_MESSAGES)}")
 assert all([d.stem == s.stem for d,s in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES)]),\
     "Dynamic and static messages are not in the same order."
 
