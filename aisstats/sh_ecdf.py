@@ -10,7 +10,7 @@ Barnard (HPC) specific script.
 """
 from pathlib import Path
 from pytsa import SearchAgent
-from pytsa.tsea.search_agent import _heading_change 
+from pytsa.tsea.search_agent import _heading_change, haversine
 import numpy as np
 from functools import partial
 from errchecker import speed_filter
@@ -73,6 +73,7 @@ static_chunks = np.array_split(STATIC_MESSAGES, 30)
 
 heading_changes = []
 speed_changes = []
+distances = []
 
 for dc,sc in zip(dynamic_chunks, static_chunks):
     SA = SearchAgent(
@@ -91,12 +92,19 @@ for dc,sc in zip(dynamic_chunks, static_chunks):
                         )
                 )
                 speed_changes.append(abs(track[i].SOG - track[i-1].SOG))
+                distances.append(haversine(
+                    track[i-1].lon, track[i-1].lat,
+                    track[i].lon, track[i].lat
+                ))
                 
 squants = quantiles(speed_changes, np.linspace(0,1,101))
 hquants = quantiles(heading_changes, np.linspace(0,1,101))
+dquants = quantiles(distances, np.linspace(0,1,101))
 
 # Save the quantiles
 with open('/home/s2075466/aisplanner/results/squants.pkl', 'wb') as f:
     pickle.dump(squants, f)
 with open('/home/s2075466/aisplanner/results/hquants.pkl', 'wb') as f:    
     pickle.dump(hquants, f)
+with open('/home/s2075466/aisplanner/results/dquants.pkl', 'wb') as f:
+    pickle.dump(dquants, f)
