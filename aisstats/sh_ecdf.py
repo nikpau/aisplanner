@@ -57,9 +57,9 @@ def _date_transformer(datefile: Path) -> float:
 
 SEARCHAREA = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells[0]
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("*.csv"))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
 
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
 
 if len(DYNAMIC_MESSAGES) != len(STATIC_MESSAGES):
 
@@ -95,13 +95,11 @@ speed_changes = []
 distances = []
 
 
-for dc,sc in zip(dynamic_chunks, static_chunks):
-    assert all([d.stem == s.stem for d,s in zip(dc, sc)]),\
-    "Dynamic and static messages are not in the same order."
+for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
     SA = SearchAgent(
-        msg12318file=list(dc),
+        msg12318file=dc,
         frame=SEARCHAREA,
-        msg5file=list(sc),
+        msg5file=sc,
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
     
@@ -115,8 +113,10 @@ for dc,sc in zip(dynamic_chunks, static_chunks):
     )
     SA.init(tpos)
     
-    ships = SA.get_all_ships(njobs=24,skip_filter=True)
-    for ship in ships.values():
+    ships = SA.get_all_ships(njobs=8,skip_filter=True)
+    l = len(ships)
+    for idx, ship in enumerate(ships.values()):
+        print(f"Processing ship {idx+1}/{l}")
         for track in ship.tracks:
             for i in range(1, len(track)):
                 heading_changes.append(
