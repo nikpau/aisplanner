@@ -87,8 +87,8 @@ STATIC_MESSAGES = sorted(STATIC_MESSAGES, key=_date_transformer)
 assert all([d.stem == s.stem for d,s in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES)]),\
     "Dynamic and static messages are not in the same order."
 
-dynamic_chunks = np.array_split(DYNAMIC_MESSAGES, 30)
-static_chunks = np.array_split(STATIC_MESSAGES, 30)
+dynamic_chunks = np.array_split(DYNAMIC_MESSAGES, 80)
+static_chunks = np.array_split(STATIC_MESSAGES, 80)
 
 heading_changes = []
 speed_changes = []
@@ -96,6 +96,8 @@ distances = []
 
 
 for dc,sc in zip(dynamic_chunks, static_chunks):
+    assert all([d.stem == s.stem for d,s in zip(dc, sc)]),\
+    "Dynamic and static messages are not in the same order."
     SA = SearchAgent(
         msg12318file=list(dc),
         frame=SEARCHAREA,
