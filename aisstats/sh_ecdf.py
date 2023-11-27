@@ -130,9 +130,9 @@ for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
                     track[i].lon, track[i].lat
                 ))
                 
-squants = quantiles(speed_changes, np.linspace(0,1,101))
-hquants = quantiles(heading_changes, np.linspace(0,1,101))
-dquants = quantiles(distances, np.linspace(0,1,101))
+squants = quantiles(speed_changes, np.linspace(0,1,1001))
+hquants = quantiles(heading_changes, np.linspace(0,1,1001))
+dquants = quantiles(distances, np.linspace(0,1,1001))
 
 # Save the quantiles
 with open('/home/s2075466/aisplanner/results/squants.pkl', 'wb') as f:
