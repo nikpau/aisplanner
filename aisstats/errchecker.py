@@ -19,6 +19,7 @@ import multiprocessing as mp
 from aisplanner.misc import MemoryLoader
 from pytsa.trajectories.rules import Recipe
 from KDEpy.bw_selection import improved_sheather_jones
+from pytsa.utils import mi2nm
 
 # Rules for inspection of trajectories
 from pytsa.trajectories.rules import too_few_obs,too_small_spatial_deviation
@@ -443,11 +444,11 @@ def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip]):
         total = rejected + accepted
         rejection_rate = rejected / total
         
-        ax.plot(sds,rejection_rate,label=f"tr. len > {minlen} obs",color=COLORWHEEL[idx])
+        ax.plot(sds,rejection_rate,label=f"{minlen} obs",color=COLORWHEEL[idx])
     ax.set_xlabel("Standard deviation")
     ax.set_ylabel("Rejection rate")
-    ax.legend()
-    ax.set_title("Rejection rate vs. standard deviation of trajectory")
+    ax.legend(title = "Minimum trajectory length", fontsize=10, fancybox=False)
+    # ax.set_title("Rejection rate vs. standard deviation of trajectory")
     plt.savefig("aisstats/out/sd_vs_rejection_rate.pdf")
     plt.close()
     
@@ -652,6 +653,34 @@ def plot_distance_between_messages(sa:SearchAgent):
     
     plt.tight_layout()
     plt.savefig("aisstats/out/distance_between_messages.pdf")
+    
+def plot_trajectory_length_vs_nobs(ships: dict[int,TargetShip]):
+    """
+    Plot the length of a trajectory against the number of
+    observations in it.
+    """
+    f,ax = plt.subplots(1,1,figsize=(6,6))
+    ll = len(ships)
+    nmsg = []
+    tlens = []
+    for idx,ship in enumerate(ships.values()):
+        for track in ship.tracks:
+            print(f"Working on ship {idx+1}/{ll}")
+            d = 0
+            for i in range(1,len(track)):
+                d += haversine(
+                    track[i-1].lon,
+                    track[i-1].lat,
+                    track[i].lon,
+                    track[i].lat
+                )
+            tlens.append(mi2nm(d))
+            nmsg.append(len(track))
+    ax.scatter(tlens,nmsg,color=COLORWHEEL[0],alpha=0.5,s=5)        
+    ax.set_xlabel("Trajectory length [nm]")
+    ax.set_ylabel("Number of messages per trajectory")
+    plt.savefig("aisstats/out/trajlen_vs_nobs_1-30.pdf")
+    plt.close()
     
 def plot_heading_and_speed_changes(sa:SearchAgent):
     """
@@ -992,15 +1021,17 @@ if __name__ == "__main__":
     # plot_reported_vs_calculated_speed(SA)
     # plot_time_diffs(SA)
     
-    ships = SA.get_all_ships(njobs=6)
+    ships = SA.get_all_ships(njobs=3)
 
     # Plot trajectory jitter --------------------------------------------------------
-    with MemoryLoader():
-        plot_sd_vs_rejection_rate(ships)
+    # with MemoryLoader():
+    #     plot_sd_vs_rejection_rate(ships)
     #     plot_trajectory_jitter(SA,tpos,ships,np.arange(0.05,0.55,0.05),"rejected")
     
     # Plot trajectory length by number of observations
     # plot_trajectory_length_by_obscount(ships)
+    plot_trajectory_length_vs_nobs(ships)
+    #
     # Plot histograms of raw data ---------------------------------------------------
     # plot_histograms(
     #     ships,

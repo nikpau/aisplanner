@@ -95,9 +95,8 @@ static_chunks = np.array_split(STATIC_MESSAGES, 80)
 
 heading_changes = []
 speed_changes = []
-distances = []
 diff_speeds = [] # Difference between reported speed and speed calculated from positions
-
+time_diffs = []
 
 for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
     SA = SearchAgent(
@@ -129,17 +128,14 @@ for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
                         )
                 )
                 speed_changes.append(abs(track[i].SOG - track[i-1].SOG))
-                distances.append(haversine(
-                    track[i-1].lon, track[i-1].lat,
-                    track[i].lon, track[i].lat
-                ))
                 rspeed = split.avg_speed(track[i-1],track[i])
                 cspeed = split.speed_from_position(track[i-1],track[i])
                 diff_speeds.append(rspeed - cspeed)
+                time_diffs.append(track[i].timestamp - track[i-1].timestamp)
                 
 squants = quantiles(speed_changes, np.linspace(0,1,1001))
 hquants = quantiles(heading_changes, np.linspace(0,1,1001))
-dquants = quantiles(distances, np.linspace(0,1,1001))
+tquants = quantiles(time_diffs, np.linspace(0,1,1001))
 diffquants = quantiles(diff_speeds, np.linspace(0,1,1001))
 
 # Save the quantiles
@@ -147,8 +143,8 @@ with open('/home/s2075466/aisplanner/results/squants.pkl', 'wb') as f:
     pickle.dump(squants, f)
 with open('/home/s2075466/aisplanner/results/hquants.pkl', 'wb') as f:    
     pickle.dump(hquants, f)
-with open('/home/s2075466/aisplanner/results/dquants.pkl', 'wb') as f:
-    pickle.dump(dquants, f)
+with open('/home/s2075466/aisplanner/results/tquants.pkl', 'wb') as f:
+    pickle.dump(tquants, f)
 with open('/home/s2075466/aisplanner/results/diffquants.pkl', 'wb') as f:
     pickle.dump(diffquants, f)
 
@@ -166,7 +162,7 @@ ax[0,0].set_ylabel("Speed [kn]")
 ax[0,1].boxplot(heading_change,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
 ax[0,1].set_title("Heading changes",fontsize = 10)
 ax[0,1].set_ylabel("Change [°]")
-ax[1,0].boxplot(distances,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
+ax[1,0].boxplot(time_diffs,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
 ax[1,0].set_title("Distances",fontsize = 10)
 ax[1,0].set_ylabel("Distance [nm]")
 ax[1,1].boxplot(diff_speeds,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
