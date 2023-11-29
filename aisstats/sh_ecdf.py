@@ -19,7 +19,7 @@ from aisplanner.encounters.main import GriddedNorthSea
 import ciso8601
 import pickle
 from matplotlib import pyplot as plt
-colorwheel = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"]
+COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
 
 def quantiles(data, quantiles):
     """
@@ -160,16 +160,16 @@ plt.style.use('bmh')
 plt.rcParams["font.family"] = "monospace"
 fig, ax = plt.subplots(2,2, figsize=(5,8))
 
-ax[0,0].boxplot(speed_changes,widths = 0.5,medianprops=dict(color=colorwheel[1]))
+ax[0,0].boxplot(speed_changes,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
 ax[0,0].set_title("Speed changes",fontsize = 10)
 ax[0,0].set_ylabel("Speed [kn]")
-ax[0,1].boxplot(heading_change,widths = 0.5,medianprops=dict(color=colorwheel[1]))
+ax[0,1].boxplot(heading_change,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
 ax[0,1].set_title("Heading changes",fontsize = 10)
 ax[0,1].set_ylabel("Change [°]")
-ax[1,0].boxplot(distances,widths = 0.5,medianprops=dict(color=colorwheel[1]))
+ax[1,0].boxplot(distances,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
 ax[1,0].set_title("Distances",fontsize = 10)
 ax[1,0].set_ylabel("Distance [nm]")
-ax[1,1].boxplot(diff_speeds,widths = 0.5,medianprops=dict(color=colorwheel[1]))
+ax[1,1].boxplot(diff_speeds,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
 ax[1,1].set_title("Difference between\nreported and\ncalculated speed",fontsize = 10)
 ax[1,1].set_ylabel("Difference [kn]")
 fig.tight_layout()

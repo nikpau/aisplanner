@@ -17,7 +17,12 @@ from aisplanner.encounters.encmap import plot_coastline
 from scipy.stats import gaussian_kde
 import multiprocessing as mp
 from aisplanner.misc import MemoryLoader
+from pytsa.trajectories.rules import Recipe
 from KDEpy.bw_selection import improved_sheather_jones
+
+# Rules for inspection of trajectories
+from pytsa.trajectories.rules import too_few_obs,too_small_spatial_deviation
+from functools import partial
 
 TEST_FILE_DYN = 'data/aisrecords/2021_07_01.csv'
 TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_07_01.csv'
@@ -35,6 +40,7 @@ from aisplanner.dataprep import _file_descriptors as fd
 # Use matplotlib style `bmh`
 plt.style.use('bmh')
 plt.rcParams["font.family"] = "monospace"
+COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
 
 def _bw_sel(kde: gaussian_kde) -> float:
     data = kde.dataset.reshape(-1,1)
@@ -409,7 +415,7 @@ def plot_latlon_shapes(good: list[TargetShip],bad: list[TargetShip]):
     plt.savefig(f"aisstats/out/latlon_kde.png",dpi=300)
     plt.close()
     
-def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip], tpos: TimePosition):
+def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip]):
     """
     Plot the standard deviation of the trajectory jitter
     against the rejection rate.
@@ -417,17 +423,19 @@ def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip], tpos: TimePosition):
     sds = np.array([0,0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3])
     minlens = np.array([0,2,5,10,20,30,40,50,60,70])
     fig, ax = plt.subplots(figsize=(8,5))
-    for minlen in minlens:
+    for idx, minlen in enumerate(minlens):
         rejected = []
         accepted = []
         for sd in sds:
-            acc,rej = SA.split(
-                targets=ships,
-                tpos=tpos,
-                overlap_tpos=False,
-                sd=sd,
-                minlen=minlen
+            recipe = Recipe(
+                partial(too_few_obs,n=minlen),
+                partial(too_small_spatial_deviation,sd=sd)
             )
+            inpsctr = pytsa.Inspector(
+                data=ships,
+                recipe=recipe
+            )
+            acc, rej = inpsctr.inspect(njobs=2)
             rejected.append(sum([len(r.tracks) for r in rej.values()]))
             accepted.append(sum([len(a.tracks) for a in acc.values()]))
         rejected = np.array(rejected)
@@ -435,7 +443,7 @@ def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip], tpos: TimePosition):
         total = rejected + accepted
         rejection_rate = rejected / total
         
-        ax.plot(sds,rejection_rate,label=f"tr. len > {minlen} obs")
+        ax.plot(sds,rejection_rate,label=f"tr. len > {minlen} obs",color=COLORWHEEL[idx])
     ax.set_xlabel("Standard deviation")
     ax.set_ylabel("Rejection rate")
     ax.legend()
@@ -456,14 +464,68 @@ def _heading_change(h1,h2):
         return diff
     else:
         return -diff
+    
+def plot_time_diffs(sa:SearchAgent):
+    """
+    Plot the time difference between two consecutive
+    messages.
+    """
+    f, ax = plt.subplots(1,1,figsize=(6,4))
+    ax: plt.Axes
+    ships = sa.get_all_ships(skip_filter=True)
+    time_diffs = []
+    it = 0
+    maxlen = len(ships)
+    for ship in ships.values():
+        it +=1
+        print(f"Working on ship {it}/{maxlen}")
+        for track in ship.tracks:
+            for i in range(1,len(track)):
+                time_diffs.append(track[i].timestamp - track[i-1].timestamp)
+    
+    # Quantiles of time diffs
+    qs = np.quantile(
+        time_diffs,
+        [0.99,0.95,0.90]
+    )
 
-def plot_reported_vs_calculated_spped(sa:SearchAgent):
+    # Boxplot of time diffs
+    ax.boxplot(
+        time_diffs,
+        vert=False,
+        showfliers=False,
+        patch_artist=True,
+        widths=0.5,
+        boxprops=dict(facecolor=COLORWHEEL[0], color=COLORWHEEL[0]),
+        medianprops=dict(color=COLORWHEEL[1]),
+        whiskerprops=dict(color=COLORWHEEL[1]),
+        capprops=dict(color=COLORWHEEL[1]),
+        flierprops=dict(color=COLORWHEEL[1], markeredgecolor=COLORWHEEL[1])
+    )
+    
+    # Legend with heading
+    ax.legend(handles=[
+        patches.Patch(color=COLORWHEEL[0],label=f"1% larger than {qs[0]:.2f} s"),
+        patches.Patch(color=COLORWHEEL[0],label=f"5% larger than {qs[1]:.2f} s"),
+        patches.Patch(color=COLORWHEEL[0],label=f"10% larger than {qs[2]:.2f} s")
+    ])
+    
+    ax.set_xlabel("Time difference [s]")
+    
+    ax.set_title(
+        "Time difference between two consecutive messages",fontsize=10
+    )
+    
+    plt.tight_layout()
+    plt.savefig("aisstats/out/time_diffs.pdf")
+
+def plot_reported_vs_calculated_speed(sa:SearchAgent):
     """
     Plot the reported speed against the
     calculated speed.
     """
-    colorwheel = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"]
-    f, ax = plt.subplots(1,1,figsize=(8,8))
+    COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"]
+    f, ax = plt.subplots(1,1,figsize=(6,4))
     ax: plt.Axes
     ships = sa.get_all_ships(skip_filter=True)
     speeds = []
@@ -477,18 +539,20 @@ def plot_reported_vs_calculated_spped(sa:SearchAgent):
                 rspeed = split.avg_speed(track[i-1],track[i])
                 cspeed = split.speed_from_position(track[i-1],track[i])
                 speeds.append(rspeed - cspeed)
-                
-    # KDE of speeds
-    kde = gaussian_kde(
+    
+    # Boxplot of speeds
+    ax.boxplot(
         speeds,
-        bw_method=_bw_sel
-    )
-    xs = np.linspace(-100,100,1000)
-    ax.plot(
-        xs,
-        kde(xs),
-        label=f"Kernel density estimate",
-        color=colorwheel[0]
+        vert=False,
+        labels=["Speed"],
+        showfliers=False,
+        patch_artist=True,
+        widths=0.5,
+        boxprops=dict(facecolor=COLORWHEEL[0], color=COLORWHEEL[0]),
+        medianprops=dict(color=COLORWHEEL[1]),
+        whiskerprops=dict(color=COLORWHEEL[1],width=1.5),
+        capprops=dict(color=COLORWHEEL[1]),
+        flierprops=dict(color=COLORWHEEL[1], markeredgecolor=COLORWHEEL[1])
     )
     
     # Quantiles of speeds
@@ -497,30 +561,19 @@ def plot_reported_vs_calculated_spped(sa:SearchAgent):
         [0.005,0.995,0.025,0.975,0.05,0.95]
     )
     q_labels_h = [
-        f"99% within [{s_qs[0]:.2f} m/s,{s_qs[1]:.2f} m/s]",
-        f"95% within [{s_qs[2]:.2f} m/s,{s_qs[3]:.2f} m/s]",
-        f"90% within [{s_qs[4]:.2f} m/s,{s_qs[5]:.2f} m/s]"
+        f"99% within [{s_qs[0]:.2f} kn,{s_qs[1]:.2f} kn]",
+        f"95% within [{s_qs[2]:.2f} kn,{s_qs[3]:.2f} kn]",
+        f"90% within [{s_qs[4]:.2f} kn,{s_qs[5]:.2f} kn]"
     ]
 
-
-    # Histogram of speeds
-    # ax.hist(
-    #     speeds,
-    #     bins=300,
-    #     density=True,
-    #     alpha=0.6,
-    #     color=colorwheel[0]
-    # )
-    
     # Legend with heading
     ax.legend(handles=[
-        patches.Patch(color=colorwheel[0],label=q_labels_h[0]),
-        patches.Patch(color=colorwheel[0],label=q_labels_h[1]),
-        patches.Patch(color=colorwheel[0],label=q_labels_h[2])
+        patches.Patch(color=COLORWHEEL[0],label=q_labels_h[0]),
+        patches.Patch(color=COLORWHEEL[0],label=q_labels_h[1]),
+        patches.Patch(color=COLORWHEEL[0],label=q_labels_h[2])
     ])
     
     ax.set_xlabel("Difference [kn]")
-    ax.set_ylabel("Density")
     
     ax.set_title(
         "Difference between reported and calculated speed [kn]",fontsize=10
@@ -533,7 +586,6 @@ def plot_distance_between_messages(sa:SearchAgent):
     """
     Plot the distance between two consecutive messages.
     """
-    colorwheel = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"]
     f, ax = plt.subplots(1,1,figsize=(8,8))
     ax: plt.Axes
     ships = sa.get_all_ships(skip_filter=True)
@@ -563,7 +615,7 @@ def plot_distance_between_messages(sa:SearchAgent):
         xs,
         kde(xs),
         label=f"Kernel density estimate",
-        color=colorwheel[0]
+        color=COLORWHEEL[0]
     )
     
     # Quantiles of distances
@@ -578,14 +630,14 @@ def plot_distance_between_messages(sa:SearchAgent):
         bins=300,
         density=True,
         alpha=0.6,
-        color=colorwheel[0]
+        color=COLORWHEEL[0]
     )
     
     # Legend with heading
     ax.legend(handles=[
-        patches.Patch(color=colorwheel[0],label=f"1% larger than {qs[0]:.2f} miles"),
-        patches.Patch(color=colorwheel[0],label=f"5% larger than {qs[1]:.2f} miles"),
-        patches.Patch(color=colorwheel[0],label=f"10% larger than {qs[2]:.2f} miles")
+        patches.Patch(color=COLORWHEEL[0],label=f"1% larger than {qs[0]:.2f} miles"),
+        patches.Patch(color=COLORWHEEL[0],label=f"5% larger than {qs[1]:.2f} miles"),
+        patches.Patch(color=COLORWHEEL[0],label=f"10% larger than {qs[2]:.2f} miles")
     ])
     
     ax.set_xlabel("Distance between two consecutive messages [miles]")
@@ -606,14 +658,9 @@ def plot_heading_and_speed_changes(sa:SearchAgent):
     Plot the changes in heading and speed between
     two consecutive messages.
     """
-    colorwheel = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"]
     f, ax = plt.subplots(2,1,figsize=(8,10))
-    sax1 = ax[0].twinx()
-    sax2 = ax[1].twinx()
     ax: list[plt.Axes]
-    tgaps = np.linspace(180,180*5,5)
 
-    labels = [f"tgap = {tgap} s" for tgap in tgaps]
     ships = sa.get_all_ships(skip_filter=True)
     heading_changes = []
     speed_changes = []
@@ -632,18 +679,6 @@ def plot_heading_and_speed_changes(sa:SearchAgent):
                 heading_changes.append(_chheading)
                 speed_changes.append(_chspeed)
                 
-    # KDE of heading changes
-    h_kde = gaussian_kde(
-        heading_changes,
-        bw_method=_bw_sel
-    )
-    h_xs = np.linspace(-180,180,1000)
-    ax[0].plot(
-        h_xs,
-        h_kde(h_xs),
-        label=f"Kernel density estimate",
-        color=colorwheel[0]
-    )
     # Quantiles of heading changes
     h_qs = np.quantile(
         heading_changes,
@@ -654,19 +689,21 @@ def plot_heading_and_speed_changes(sa:SearchAgent):
         f"95% within [{h_qs[2]:.2f}°,{h_qs[3]:.2f}°]",
         f"90% within [{h_qs[4]:.2f}°,{h_qs[5]:.2f}°]"
     ]
+    # Heading Quantiles as vertical lines
+    hl11 = ax[0].axvline(h_qs[0],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
+    hl12 = ax[0].axvline(h_qs[1],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
+    hl21 = ax[0].axvline(h_qs[2],color=COLORWHEEL[0],label=q_labels_h[1],ls="-.")
+    hl22 = ax[0].axvline(h_qs[3],color=COLORWHEEL[0],label=q_labels_h[1],ls="-.")
+    hl31 = ax[0].axvline(h_qs[4],color=COLORWHEEL[0],label=q_labels_h[2],ls=":")
+    hl32 = ax[0].axvline(h_qs[5],color=COLORWHEEL[0],label=q_labels_h[2],ls=":")
     
-    
-    # KDE of speed changes
-    s_kde = gaussian_kde(
-        speed_changes,
-        bw_method=_bw_sel
-    )
-    s_xs = np.linspace(0,4,1000)
-    ax[1].plot(
-        s_xs,
-        s_kde(s_xs),
-        label=f"Kernel density estimate",
-        color=colorwheel[0]
+    # Histogram of heading changes
+    ax[0].hist(
+        heading_changes,
+        bins=100,
+        density=True,
+        alpha=0.8,
+        color=COLORWHEEL[0]
     )
     
     # Quantiles of speed changes
@@ -681,49 +718,35 @@ def plot_heading_and_speed_changes(sa:SearchAgent):
         f"90% smaller than {s_qs[2]:.2f} kn"
     ]
     
+    # Speed Quantiles as vertical lines
+    sl1 = ax[1].axvline(s_qs[0],color=COLORWHEEL[0],label=q_labels_s[0],ls="--")
+    sl2 = ax[1].axvline(s_qs[1],color=COLORWHEEL[0],label=q_labels_s[1],ls="-.")
+    sl3 = ax[1].axvline(s_qs[2],color=COLORWHEEL[0],label=q_labels_s[2],ls=":")
+    
     # Histogram of speed changes
-    sax2.hist(
+    ax[1].hist(
         speed_changes,
         bins=200,
         density=True,
-        alpha=0.6,
-        color=colorwheel[0]
-    )
-    
-    # Histogram of heading changes
-    sax1.hist(
-        heading_changes,
-        bins=100,
-        density=True,
-        alpha=0.6,
-        color=colorwheel[0]
+        alpha=0.8,
+        color=COLORWHEEL[0]
     )
     
     # Legend with heading
-    ax[0].legend(handles=[
-        patches.Patch(color=colorwheel[0],label=q_labels_h[0]),
-        patches.Patch(color=colorwheel[0],label=q_labels_h[1]),
-        patches.Patch(color=colorwheel[0],label=q_labels_h[2])
-    ])
+    ax[0].legend(handles=[hl11,hl21,hl31])
     ax[0].set_xlabel("Change in heading [°]")
     ax[0].set_ylabel("Density")
     ax[0].set_title(
         "Change in heading between two consecutive messages",fontsize=10
     )
-    align_yaxis(ax[0], 0, sax1, 0)
     
-    ax[1].legend(handles=[
-        patches.Patch(color=colorwheel[0],label=q_labels_s[0]),
-        patches.Patch(color=colorwheel[0],label=q_labels_s[1]),
-        patches.Patch(color=colorwheel[0],label=q_labels_s[2])
-    ])
+    ax[1].legend(handles=[sl1,sl2,sl3])
     ax[1].set_xlabel("Absolute change in speed [knots]")
     ax[1].set_ylabel("Density")
     ax[1].set_title(
         "Change in speed between two consecutive messages",fontsize=10
     )
     ax[1].set_xlim(-0.2,4)
-    align_yaxis(ax[1], 0, sax2, 0)
     
     plt.tight_layout()
     plt.savefig("aisstats/out/heading_speed_changes_all.pdf")
@@ -738,7 +761,6 @@ def inspect_trajectory_splits(sa: SearchAgent):
     and speed between two consecutive messages, which have been determined
     to split a trajectory.
     """
-    colorwheel = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"]
     f, ax = plt.subplots(2,1,figsize=(8,10))
     sax1 = ax[0].twinx()
     sax2 = ax[1].twinx()
@@ -774,7 +796,7 @@ def inspect_trajectory_splits(sa: SearchAgent):
             h_xs,
             h_kde(h_xs),
             label=f"tgap = {tgap} s",
-            color=colorwheel[col]
+            color=COLORWHEEL[col]
         )
         
         # KDE of speed changes
@@ -784,7 +806,7 @@ def inspect_trajectory_splits(sa: SearchAgent):
             s_xs,
             s_kde(s_xs),
             label=f"tgap = {tgap} s",
-            color=colorwheel[col]
+            color=COLORWHEEL[col]
         )
         
         # Add to histogram
@@ -797,7 +819,7 @@ def inspect_trajectory_splits(sa: SearchAgent):
         bins=100,
         density=True,
         alpha=0.6,
-        color=colorwheel
+        color=COLORWHEEL
     )
     ax[1].set_xlim(-0.2,10)
 
@@ -807,7 +829,7 @@ def inspect_trajectory_splits(sa: SearchAgent):
         bins=100,
         density=True,
         alpha=0.6,
-        color=colorwheel
+        color=COLORWHEEL
     )
         
     # Legend with heading
@@ -967,13 +989,14 @@ if __name__ == "__main__":
     # inspect_trajectory_splits(SA)
     # plot_heading_and_speed_changes(SA)
     # plot_distance_between_messages(SA)
-    plot_reported_vs_calculated_spped(SA)
+    # plot_reported_vs_calculated_speed(SA)
+    # plot_time_diffs(SA)
     
-    # ships = SA.get_all_ships(njobs=6)
+    ships = SA.get_all_ships(njobs=6)
 
     # Plot trajectory jitter --------------------------------------------------------
-    # with MemoryLoader():
-    #     plot_sd_vs_rejection_rate(ships,tpos)
+    with MemoryLoader():
+        plot_sd_vs_rejection_rate(ships)
     #     plot_trajectory_jitter(SA,tpos,ships,np.arange(0.05,0.55,0.05),"rejected")
     
     # Plot trajectory length by number of observations
@@ -990,12 +1013,12 @@ if __name__ == "__main__":
     #     partial(too_few_obs, n=MINLEN),
     #     partial(too_small_spatial_deviation, sd=SD)
     # )
-    # from pytsa.trajectories import TrajectorySplitter
-    # trsp = TrajectorySplitter(
+    # from pytsa.trajectories import Inspector
+    # inspctr = Inspector(
     #     data=ships,
     #     recipe=ExampleRecipe
     # )
-    # accepted, rejected = trsp.split(njobs=2)
+    # accepted, rejected = inspctr.inspect(njobs=2)
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # Random indices
