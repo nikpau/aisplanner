@@ -2,27 +2,27 @@
 Database of suitable locations for for COLREGS-relevant encounters.
 """
 from typing import Union
-from pytsa.structs import LatLonBoundingBox, UTMBoundingBox
+from pytsa.structs import BoundingBox
 from dataclasses import dataclass, fields
 
 @dataclass
 class LocationDatabase:
     # Frederikshavn to Gothenburg
-    fre_got: LatLonBoundingBox = LatLonBoundingBox(
+    fre_got: BoundingBox = BoundingBox(
         LATMIN=57.378,
         LATMAX=57.778,
         LONMIN=10.446,
         LONMAX=11.872,
         name="Frederikshavn_to_Gothenburg"
     )
-    elbe_approach: LatLonBoundingBox = LatLonBoundingBox(
+    elbe_approach: BoundingBox = BoundingBox(
         LATMIN=53.9807,
         LATMAX = 54.049,
         LONMIN=7.487,
         LONMAX=7.7734,
         name="Elbe_approach"
     )
-    german_bight: LatLonBoundingBox = LatLonBoundingBox(
+    german_bight: BoundingBox = BoundingBox(
         LATMIN=53.7016,
         LATMAX = 54.2652,
         LONMIN=7.2455,
@@ -38,7 +38,7 @@ class LocationDatabase:
     #     name="Helsingor_to_Helsingborg"
     # )
     # Hirtsals to Kristiansand
-    hir_krs: LatLonBoundingBox = LatLonBoundingBox(
+    hir_krs: BoundingBox = BoundingBox(
         LATMIN=57.393,
         LATMAX=58.240,
         LONMIN=7.280,
@@ -46,7 +46,7 @@ class LocationDatabase:
         name="Hirtsals_to_Kristiansand"
     )
     # North north-sea
-    nns: LatLonBoundingBox = LatLonBoundingBox(
+    nns: BoundingBox = BoundingBox(
         LATMIN=57.88,
         LATMAX=58.34,
         LONMIN=9.80,
@@ -74,7 +74,7 @@ class GriddedNorthSea:
     def __init__(self,nrows,ncols, utm=True) -> None:
         self.nrows = nrows
         self.ncols = ncols
-        self.cells: Union[list[LatLonBoundingBox],list[UTMBoundingBox]] = []
+        self.cells: list[BoundingBox] = []
         self.utm = utm
         self._setup()
         
@@ -126,12 +126,10 @@ class GriddedNorthSea:
         for lat_max, lat_min in zip(latbp,latbp[1:]):
             for lon_min, lon_max in zip(lonbp,lonbp[1:]):
                 boxnum += 1
-                box = LatLonBoundingBox(
+                box = BoundingBox(
                     LATMIN=lat_min,LATMAX=lat_max,
                     LONMIN=lon_min,LONMAX=lon_max,
                 )
                 box.name = f"{box.LATMIN:.2f}°N-{box.LATMAX:.2f}°N_{box.LONMIN:.2f}°E-{box.LONMAX:.2f}°E"
                 box.number = boxnum # Assign ascending indices
-                if self.utm:
-                    box = box.to_utm()
                 self.cells.append(box)
