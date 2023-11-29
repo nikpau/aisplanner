@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 from glob import glob
-from pytsa import TargetVessel
+from pytsa import TargetShip
 from aisplanner.encounters.utils import OverlappingPair, load_results
 import pickle
 from scipy.stats import gaussian_kde

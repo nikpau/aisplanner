@@ -6,10 +6,10 @@ from pytsa import ShipType
 from aisplanner.encounters.filter import (
     TrajectoryExtractionAgent
 )
-from aisplanner.encounters._locdb import GriddedNorthSea, LatLonBoundingBox
+from aisplanner.encounters._locdb import GriddedNorthSea, BoundingBox
 
 
-# Extract a list of TargetVessel objects from raw AIS messages
+# Extract a list of TargetShip objects from raw AIS messages
 # by scanning through 30 minute intervals over all search areas
 # in the LocationDatabase. Time frame is 2021-01-01 to 2021-12-31.
 areas = GriddedNorthSea(nrows=8, ncols=8, utm=True).cells
@@ -32,7 +32,7 @@ def search_for(ship_type: ShipType, debug=False):
     # and save them in the './results/encounters' directory
     utils.encounters_from_overlapping()
 
-def _do(loc: LatLonBoundingBox, ship_type: ShipType):
+def _do(loc: BoundingBox, ship_type: ShipType):
     s = TrajectoryExtractionAgent(
         search_areas=loc,
         msg12318files=glob(f"{os.environ.get('AISDECODED')}/2021_*.csv"),
@@ -41,5 +41,5 @@ def _do(loc: LatLonBoundingBox, ship_type: ShipType):
         time_delta=30
     )
     s.search()
-    # Saved object's type is list[TargetVessel]
+    # Saved object's type is list[TargetShip]
     s.save_results(f"{os.environ.get('RESPATH')}/2021_{loc.name}.tr")

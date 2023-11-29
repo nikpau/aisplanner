@@ -1,4 +1,4 @@
-from pytsa import TrajectoryMatcher, TargetVessel
+from pytsa import TrajectoryMatcher, TargetShip
 from itertools import permutations
 import pickle
 import os
@@ -22,10 +22,10 @@ _WINDOWWIDTH = 30
 
 @dataclass
 class OverlappingPair:
-    v1: TargetVessel
-    v2: TargetVessel
+    v1: TargetShip
+    v2: TargetShip
 
-    def __call__(self, *args: Any, **kwds: Any) -> tuple[TargetVessel, TargetVessel]:
+    def __call__(self, *args: Any, **kwds: Any) -> tuple[TargetShip, TargetShip]:
         return self.v1, self.v2
 
     def __hash__(self) -> int:
@@ -43,7 +43,7 @@ def load_results(filename: Union[str, Path]):
         results = pickle.load(f)
     return results
 
-def save_overlapping_trajectories(tgts: list[TargetVessel], filename: Path):
+def save_overlapping_trajectories(tgts: list[TargetShip], filename: Path):
     out = set()
     found = 0
     for v1, v2 in permutations(tgts, 2):
@@ -59,7 +59,7 @@ def save_overlapping_trajectories(tgts: list[TargetVessel], filename: Path):
         pickle.dump(out, f)
     return
 
-def plot_encounter(v1: TargetVessel,v2: TargetVessel):
+def plot_encounter(v1: TargetShip,v2: TargetShip):
         tm = TrajectoryMatcher(v1,v2)
         if not tm.disjoint_trajectories and tm.overlapping_trajectories:
             print(f"Plotting encounter for {v1.mmsi} and {v2.mmsi}")
@@ -99,7 +99,7 @@ def overlaps_from_raw():
 
     return
 
-def has_encounter(v1: TargetVessel, v2: TargetVessel) -> bool:
+def has_encounter(v1: TargetShip, v2: TargetShip) -> bool:
     """
     Check if any message-pair in the trajectories of
     v1 and v2 has a COLREGS relevant encounter.

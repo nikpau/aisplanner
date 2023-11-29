@@ -6,8 +6,9 @@ the distance between two consecutive
 positions and the time between them.
 """
 import pytsa
-from pytsa import SearchAgent, TargetVessel, TimePosition
+from pytsa import SearchAgent, TargetShip, TimePosition
 from pytsa.structs import Position
+import pytsa.tsea.split as split 
 from aisplanner.encounters.main import GriddedNorthSea
 from aisplanner.encounters.filter import haversine
 from matplotlib import patches, pyplot as plt
@@ -65,7 +66,7 @@ def speed_filter(df: pd.DataFrame, speeds: tuple[float,float]) -> pd.DataFrame:
         (df[fd.Fields12318.speed.name] <= speeds[1])
     ]
 
-def area_center(area: pytsa.LatLonBoundingBox) -> Position:
+def area_center(area: pytsa.BoundingBox) -> Position:
     """
     Get the center of the search area in UTM coordinates.
     """
@@ -74,7 +75,7 @@ def area_center(area: pytsa.LatLonBoundingBox) -> Position:
         (area.LONMIN + area.LONMAX)/2
     )
 
-def plot_speeds_and_route(tv: TargetVessel, mode: str) -> None:
+def plot_speeds_and_route(tv: TargetShip, mode: str) -> None:
     """
     Plot the trajectory of a target vessel
     as well as the speeds calculated from
@@ -141,7 +142,7 @@ def plot_speeds_and_route(tv: TargetVessel, mode: str) -> None:
 
 def plot_trajectory_jitter(sa: SearchAgent,
                            tpos: TimePosition,
-                           ships: dict[int,TargetVessel],
+                           ships: dict[int,TargetShip],
                            sds: list | np.ndarray,
                            mode: str) -> None:
     
@@ -196,7 +197,7 @@ def plot_trajectory_jitter(sa: SearchAgent,
     plt.savefig(f"aisstats/out/trjitter_{mode}.png", dpi=500)
     plt.close()
     
-def plot_trajectories_on_map(ships: dict[int,TargetVessel], mode: str,specs: dict):
+def plot_trajectories_on_map(ships: dict[int,TargetShip], mode: str,specs: dict):
     """
     Plot all trajectories on a map.
     """
@@ -227,7 +228,7 @@ def _maxmin_norm(arr:np.ndarray) -> np.ndarray:
     """
     return (arr - arr.min()) / (arr.max() - arr.min())
     
-def plot_latlon_kde(ships: dict[int,TargetVessel], mode: str):
+def plot_latlon_kde(ships: dict[int,TargetShip], mode: str):
     """
     Plot the kernel density estimate of
     the latitude and longitude of all
@@ -274,7 +275,7 @@ def plot_latlon_kde(ships: dict[int,TargetVessel], mode: str):
     plt.savefig(f"aisstats/out/latlon_kde_{mode}.png",dpi=300)
     plt.close()
 
-def run_filter(ships: dict[int,TargetVessel], tpos: TimePosition):
+def run_filter(ships: dict[int,TargetShip], tpos: TimePosition):
     
     #for sd in np.arange(0.01,2,0.1):
     sd = 0.05
@@ -296,7 +297,7 @@ def run_filter(ships: dict[int,TargetVessel], tpos: TimePosition):
     for i in range(80,100):
         plot_speeds_and_route(list(accepted.values())[i],"accepted")
         
-def plot_trajectory_length_by_obscount(ships: dict[int,TargetVessel]):
+def plot_trajectory_length_by_obscount(ships: dict[int,TargetShip]):
     
     # n_obs bins
     n_obs_bins = np.arange(5,75,5)
@@ -334,7 +335,7 @@ def plot_trajectory_length_by_obscount(ships: dict[int,TargetVessel]):
     plt.savefig("aisstats/out/trajlen_by_nobs_1-30.png",dpi=300)
     plt.close()
     
-def plot_latlon_shapes(good: list[TargetVessel],bad: list[TargetVessel]):
+def plot_latlon_shapes(good: list[TargetShip],bad: list[TargetShip]):
     """
     Plots the standardized distribution of latitudes and longitudes 
     for good and bad trajectories.
@@ -408,7 +409,7 @@ def plot_latlon_shapes(good: list[TargetVessel],bad: list[TargetVessel]):
     plt.savefig(f"aisstats/out/latlon_kde.png",dpi=300)
     plt.close()
     
-def plot_sd_vs_rejection_rate(ships: dict[int,TargetVessel], tpos: TimePosition):
+def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip], tpos: TimePosition):
     """
     Plot the standard deviation of the trajectory jitter
     against the rejection rate.
@@ -455,6 +456,150 @@ def _heading_change(h1,h2):
         return diff
     else:
         return -diff
+
+def plot_reported_vs_calculated_spped(sa:SearchAgent):
+    """
+    Plot the reported speed against the
+    calculated speed.
+    """
+    colorwheel = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"]
+    f, ax = plt.subplots(1,1,figsize=(8,8))
+    ax: plt.Axes
+    ships = sa.get_all_ships(skip_filter=True)
+    speeds = []
+    it = 0
+    maxlen = len(ships)
+    for ship in ships.values():
+        it +=1
+        print(f"Working on ship {it}/{maxlen}")
+        for track in ship.tracks:
+            for i in range(1,len(track)):
+                rspeed = split.avg_speed(track[i-1],track[i])
+                cspeed = split.speed_from_position(track[i-1],track[i])
+                speeds.append(rspeed - cspeed)
+                
+    # KDE of speeds
+    kde = gaussian_kde(
+        speeds,
+        bw_method=_bw_sel
+    )
+    xs = np.linspace(-100,100,1000)
+    ax.plot(
+        xs,
+        kde(xs),
+        label=f"Kernel density estimate",
+        color=colorwheel[0]
+    )
+    
+    # Quantiles of speeds
+    s_qs = np.quantile(
+        speeds,
+        [0.005,0.995,0.025,0.975,0.05,0.95]
+    )
+    q_labels_h = [
+        f"99% within [{s_qs[0]:.2f} m/s,{s_qs[1]:.2f} m/s]",
+        f"95% within [{s_qs[2]:.2f} m/s,{s_qs[3]:.2f} m/s]",
+        f"90% within [{s_qs[4]:.2f} m/s,{s_qs[5]:.2f} m/s]"
+    ]
+
+
+    # Histogram of speeds
+    # ax.hist(
+    #     speeds,
+    #     bins=300,
+    #     density=True,
+    #     alpha=0.6,
+    #     color=colorwheel[0]
+    # )
+    
+    # Legend with heading
+    ax.legend(handles=[
+        patches.Patch(color=colorwheel[0],label=q_labels_h[0]),
+        patches.Patch(color=colorwheel[0],label=q_labels_h[1]),
+        patches.Patch(color=colorwheel[0],label=q_labels_h[2])
+    ])
+    
+    ax.set_xlabel("Difference [kn]")
+    ax.set_ylabel("Density")
+    
+    ax.set_title(
+        "Difference between reported and calculated speed [kn]",fontsize=10
+    )
+    
+    plt.tight_layout()
+    plt.savefig("aisstats/out/speed_reported.pdf")
+    
+def plot_distance_between_messages(sa:SearchAgent):
+    """
+    Plot the distance between two consecutive messages.
+    """
+    colorwheel = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"]
+    f, ax = plt.subplots(1,1,figsize=(8,8))
+    ax: plt.Axes
+    ships = sa.get_all_ships(skip_filter=True)
+    distances = []
+    it = 0
+    maxlen = len(ships)
+    for ship in ships.values():
+        it +=1
+        print(f"Working on ship {it}/{maxlen}")
+        for track in ship.tracks:
+            for i in range(1,len(track)):
+                d = haversine(
+                    track[i-1].lon,
+                    track[i-1].lat,
+                    track[i].lon,
+                    track[i].lat
+                )
+                distances.append(d)
+                
+    # KDE of distances
+    kde = gaussian_kde(
+        distances,
+        bw_method=_bw_sel
+    )
+    xs = np.linspace(0,max(distances),1000)
+    ax.plot(
+        xs,
+        kde(xs),
+        label=f"Kernel density estimate",
+        color=colorwheel[0]
+    )
+    
+    # Quantiles of distances
+    qs = np.quantile(
+        distances,
+        [0.99,0.95,0.90]
+    )
+
+    # Histogram of distances
+    ax.hist(
+        distances,
+        bins=300,
+        density=True,
+        alpha=0.6,
+        color=colorwheel[0]
+    )
+    
+    # Legend with heading
+    ax.legend(handles=[
+        patches.Patch(color=colorwheel[0],label=f"1% larger than {qs[0]:.2f} miles"),
+        patches.Patch(color=colorwheel[0],label=f"5% larger than {qs[1]:.2f} miles"),
+        patches.Patch(color=colorwheel[0],label=f"10% larger than {qs[2]:.2f} miles")
+    ])
+    
+    ax.set_xlabel("Distance between two consecutive messages [miles]")
+    ax.set_ylabel("Density")
+    
+    # Log scale
+    ax.set_xscale('log')
+    
+    ax.set_title(
+        "Distance between two consecutive messages",fontsize=10
+    )
+    
+    plt.tight_layout()
+    plt.savefig("aisstats/out/distance_between_messages.pdf")
     
 def plot_heading_and_speed_changes(sa:SearchAgent):
     """
@@ -469,7 +614,7 @@ def plot_heading_and_speed_changes(sa:SearchAgent):
     tgaps = np.linspace(180,180*5,5)
 
     labels = [f"tgap = {tgap} s" for tgap in tgaps]
-    ships = sa.get_all_ships()
+    ships = sa.get_all_ships(skip_filter=True)
     heading_changes = []
     speed_changes = []
     it = 0
@@ -688,7 +833,7 @@ def inspect_trajectory_splits(sa: SearchAgent):
     plt.savefig("aisstats/out/heading_speed_changes.pdf")
             
     
-def plot_histograms(ships: dict[int,TargetVessel],title: str, specs: dict):
+def plot_histograms(ships: dict[int,TargetShip],title: str, specs: dict):
     
     # Temporal gaps between messages
     # and lengths of trajectories
@@ -821,8 +966,10 @@ if __name__ == "__main__":
     # Heading changes and speed changes --------------------------------------------
     # inspect_trajectory_splits(SA)
     # plot_heading_and_speed_changes(SA)
+    # plot_distance_between_messages(SA)
+    plot_reported_vs_calculated_spped(SA)
     
-    ships = SA.get_all_ships(njobs=6)
+    # ships = SA.get_all_ships(njobs=6)
 
     # Plot trajectory jitter --------------------------------------------------------
     # with MemoryLoader():
@@ -838,23 +985,23 @@ if __name__ == "__main__":
     #     specs={}
     # )
     # Split the ships into accepted and rejected ------------------------------------
-    from pytsa.trajectories.rules import *
-    ExampleRecipe = Recipe(
-        partial(too_few_obs, n=MINLEN),
-        partial(too_small_spatial_deviation, sd=SD)
-    )
-    from pytsa.trajectories import TrajectorySplitter
-    trsp = TrajectorySplitter(
-        data=ships,
-        recipe=ExampleRecipe
-    )
-    accepted, rejected = trsp.split(njobs=2)
+    # from pytsa.trajectories.rules import *
+    # ExampleRecipe = Recipe(
+    #     partial(too_few_obs, n=MINLEN),
+    #     partial(too_small_spatial_deviation, sd=SD)
+    # )
+    # from pytsa.trajectories import TrajectorySplitter
+    # trsp = TrajectorySplitter(
+    #     data=ships,
+    #     recipe=ExampleRecipe
+    # )
+    # accepted, rejected = trsp.split(njobs=2)
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # Random indices
-    for i in range(80,120):
-        plot_speeds_and_route(list(rejected.values())[i],"rejected")
-        plot_speeds_and_route(list(accepted.values())[i],"accepted")
+    # for i in range(23,60):
+    #     plot_speeds_and_route(list(rejected.values())[i],"rejected")
+    #     plot_speeds_and_route(list(accepted.values())[i],"accepted")
     
     # Latlon shape plots -----------------------------------------------------------
     # Get 100 random ships from each
@@ -872,9 +1019,9 @@ if __name__ == "__main__":
 
 
     # Plot trajectories on map ------------------------------------------------------
-    plot_trajectories_on_map(ships, "all",{})
-    plot_trajectories_on_map(accepted,"accepted",specs)
-    plot_trajectories_on_map(rejected,"rejected",specs)
+    # plot_trajectories_on_map(ships, "all",{})
+    # plot_trajectories_on_map(accepted,"accepted",specs)
+    # plot_trajectories_on_map(rejected,"rejected",specs)
 
     # # Plot histograms of accepted and rejected --------------------------------------
     # plot_histograms(

@@ -12,7 +12,7 @@ from aisplanner.dataprep import _file_descriptors as fd
 from more_itertools import pairwise
 from aisplanner.encounters import (
     TrajectoryExtractionAgent, 
-    true_bearing, TargetVessel, 
+    true_bearing, TargetShip, 
     ALL_SHIPS, FileLoadingError,
     Position, haversine
 )
@@ -148,7 +148,7 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
 
     def _search(
         self,
-        area: Union[pytsa.LatLonBoundingBox,pytsa.UTMBoundingBox] ) -> List[TargetVessel]:
+        area: Union[pytsa.LatLonBoundingBox,pytsa.UTMBoundingBox] ) -> List[TargetShip]:
         """
         Search for valid trajectories in a given area.
         """
@@ -213,7 +213,7 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
         
         # while start_date.day == search_date.day:
 
-        ships: List[TargetVessel] = search_agent.get_ships(
+        ships: List[TargetShip] = search_agent.get_ships(
             tpos,overlap_tpos=False,all_trajectories=True
         )
         if not ships:
@@ -226,8 +226,8 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
             # ...find the ships of that type...
             seen = set()
             for own_vessel in find_by_type(ships, ship_type):
-                own_vessel: TargetVessel # make the type checker happy
-                other_vessels: list[TargetVessel] = [s for s in ships if s is not own_vessel]
+                own_vessel: TargetShip # make the type checker happy
+                other_vessels: list[TargetShip] = [s for s in ships if s is not own_vessel]
                 # ...and get the minimum distance and bearing
                 # to all other ships of all other types
                 for other_vessel in other_vessels:
@@ -295,8 +295,8 @@ class PSDPointExtractor(TrajectoryExtractionAgent):
         else:
             raise ValueError(f"Invalid ship type: {ship_type}")
     
-def closest_points(own: TargetVessel,
-                  tgt: TargetVessel,
+def closest_points(own: TargetShip,
+                  tgt: TargetShip,
     ) -> Union[tuple[float,tuple[Latitude,Longitude],tuple[Latitude,Longitude],float],None]:
     """
     For each speed bin, returns the distance
@@ -334,11 +334,11 @@ def closest_points(own: TargetVessel,
     return mindist, min_own_pos, min_tgt_pos, speed
 
 def find_by_type(
-    vessels: list[TargetVessel],
-    ship_type: ShipType) -> Generator[tuple[TargetVessel,int],None,None]:
+    vessels: list[TargetShip],
+    ship_type: ShipType) -> Generator[tuple[TargetShip,int],None,None]:
     """
-    Given a list of TargetVessel objects, returns a generator
-    of tuples containing the TargetVessel object of the requested
+    Given a list of TargetShip objects, returns a generator
+    of tuples containing the TargetShip object of the requested
     ship type and the index of the vessel in the list.
     """
     for vessel in vessels:
@@ -356,7 +356,7 @@ def time_range(start: int,
         yield current
         current += delta_seconds
         
-def filter_by_speed(vessel: TargetVessel, speed: range) -> TargetVessel:
+def filter_by_speed(vessel: TargetShip, speed: range) -> TargetShip:
     """
     Returns only the portion of a trajectory where the vessel's
     speed is in the given range.

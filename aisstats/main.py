@@ -8,7 +8,7 @@ from psd import PSDPointExtractor
 from aisplanner.encounters._locdb import GriddedNorthSea, LatLonBoundingBox
 
 
-# Extract a list of TargetVessel objects from raw AIS messages
+# Extract a list of TargetShip objects from raw AIS messages
 # by scanning through 30 minute intervals over all search areas
 # in the LocationDatabase. Time frame is 2021-01-01 to 2021-12-31.
 north_sea, = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells

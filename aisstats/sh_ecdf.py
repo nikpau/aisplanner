@@ -10,7 +10,8 @@ Barnard (HPC) specific script.
 """
 from pathlib import Path
 from pytsa import SearchAgent, TimePosition
-from pytsa.tsea.search_agent import _heading_change, haversine
+from pytsa.utils import heading_change, haversine
+import pytsa.tsea.split as split
 import numpy as np
 from functools import partial
 from errchecker import area_center, speed_filter
@@ -93,6 +94,7 @@ static_chunks = np.array_split(STATIC_MESSAGES, 80)
 heading_changes = []
 speed_changes = []
 distances = []
+diff_speeds = [] # Difference between reported speed and speed calculated from positions
 
 
 for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
@@ -120,7 +122,7 @@ for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
         for track in ship.tracks:
             for i in range(1, len(track)):
                 heading_changes.append(
-                    _heading_change(
+                    heading_change(
                         track[i-1].COG, track[i].COG
                         )
                 )
@@ -129,10 +131,14 @@ for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
                     track[i-1].lon, track[i-1].lat,
                     track[i].lon, track[i].lat
                 ))
+                rspeed = split.avg_speed(track[i-1],track[i])
+                cspeed = split.speed_from_position(track[i-1],track[i])
+                diff_speeds.append(rspeed - cspeed)
                 
 squants = quantiles(speed_changes, np.linspace(0,1,1001))
 hquants = quantiles(heading_changes, np.linspace(0,1,1001))
 dquants = quantiles(distances, np.linspace(0,1,1001))
+diffquants = quantiles(diff_speeds, np.linspace(0,1,1001))
 
 # Save the quantiles
 with open('/home/s2075466/aisplanner/results/squants.pkl', 'wb') as f:
@@ -141,3 +147,5 @@ with open('/home/s2075466/aisplanner/results/hquants.pkl', 'wb') as f:
     pickle.dump(hquants, f)
 with open('/home/s2075466/aisplanner/results/dquants.pkl', 'wb') as f:
     pickle.dump(dquants, f)
+with open('/home/s2075466/aisplanner/results/diffquants.pkl', 'wb') as f:
+    pickle.dump(diffquants, f)

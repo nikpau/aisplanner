@@ -31,8 +31,8 @@ import pandas as pd
 import paramiko
 import pytsa
 from pytsa.tsea.search_agent import FileLoadingError
-from pytsa.structs import UTMPosition, Position
-from pytsa import ShipType, TargetVessel
+from pytsa.structs import Position
+from pytsa import ShipType, TargetShip
 
 from aisplanner.dataprep._file_descriptors import DecodedReport
 from aisplanner.misc import logger
@@ -408,7 +408,7 @@ class EncounterResult:
     file: str
     timestamp: Union[str, datetime]
     mmsi: List[int] # MMSIs of the ships involved in the encounter
-    area: pytsa.LatLonBoundingBox
+    area: pytsa.BoundingBox
 
     def __post_init__(self) -> None:
         self.encounter_names = self.encounter.name
@@ -500,7 +500,7 @@ class TrajectoryExtractionAgent:
     
     """
     def __init__(self,*,
-            search_areas: List[pytsa.UTMBoundingBox],
+            search_areas: List[pytsa.BoundingBox],
             ship_types: list[ShipType],
             time_delta: int = 30,
             msg12318files: List[Union[Path, str]] = None,
@@ -530,10 +530,10 @@ class TrajectoryExtractionAgent:
         self.time_delta = time_delta # in minutes
 
 
-        # List of Trajectories will be a list of TargetVessels
+        # List of Trajectories will be a list of TargetShips
         # which are dataclasses containing the trajectory of raw 
         # AIS messages as well as their interpolated metrics.
-        self.trajectories: List[TargetVessel] = []
+        self.trajectories: List[TargetShip] = []
 
         # Check if filelist is given or if files should be streamed
         self._using_remote = False
@@ -603,23 +603,13 @@ class TrajectoryExtractionAgent:
         
     def search_area_center(
         self, 
-        area: Union[pytsa.UTMBoundingBox, pytsa.LatLonBoundingBox]
-        ) -> Union[UTMPosition,Position]:
-        if isinstance(area, pytsa.UTMBoundingBox):
-            return self._search_area_center_utm(area)
-        elif isinstance(area, pytsa.LatLonBoundingBox):
-            return self._search_area_center_latlon(area)
+        area: pytsa.BoundingBox
+        ) -> Position:
         
-    def _search_area_center_utm(self, area: pytsa.UTMBoundingBox) -> UTMPosition:
-        """
-        Get the center of the search area.
-        """
-        return UTMPosition(
-            (area.min_northing + area.max_northing)/2,
-            (area.min_easting + area.max_easting)/2
-        )
+        return self._search_area_center_latlon(area)
         
-    def _search_area_center_latlon(self, area: pytsa.LatLonBoundingBox) -> Position:
+        
+    def _search_area_center_latlon(self, area: pytsa.BoundingBox) -> Position:
         """
         Get the center of the search area in UTM coordinates.
         """
@@ -630,29 +620,15 @@ class TrajectoryExtractionAgent:
         
     def get_search_radius(
         self,
-        area: Union[pytsa.UTMBoundingBox, pytsa.LatLonBoundingBox]
+        area: pytsa.BoundingBox
         ) -> float:
         """
         Get the radius of the circle around the bounding box
         in nautical miles.
         """
-        if isinstance(area, pytsa.UTMBoundingBox):
-            return self._get_search_radius_utm(area)
-        elif isinstance(area, pytsa.LatLonBoundingBox):
-            return self._get_search_radius_latlon(area)
+        return self._get_search_radius_latlon(area)
     
-    def _get_search_radius_utm(self,area: pytsa.UTMBoundingBox) -> float:
-        """
-        Get the radius of the circle around the bounding box
-        in nautical miles for UTM coordinates.
-        """
-        d = np.sqrt(
-            (area.max_easting-area.min_easting)**2 + 
-            (area.max_northing-area.min_northing)**2
-        )
-        return m2nm(d/2) # convert to nautical miles
-    
-    def _get_search_radius_latlon(self,area: pytsa.LatLonBoundingBox) -> float:
+    def _get_search_radius_latlon(self,area: pytsa.BoundingBox) -> float:
         """
         Get the radius of the circle around the bounding box
         in nautical miles for latlon coordinates.
@@ -693,8 +669,8 @@ class TrajectoryExtractionAgent:
                 return
             
     def _search(self,
-        area: pytsa.UTMBoundingBox,
-        override_file: Path = None) -> List[TargetVessel]:
+        area: pytsa.BoundingBox,
+        override_file: Path = None) -> List[TargetShip]:
         """
         Search for valid trajectories in a given area.
         """
@@ -747,7 +723,7 @@ class TrajectoryExtractionAgent:
         search_date = start_date + timedelta(minutes=self.time_delta)
 
         # Initialize the list of encounters
-        found: List[TargetVessel] = []
+        found: List[TargetShip] = []
 
         # Increment the search date until the date of search is
         # greater than the date of the current file.
@@ -761,7 +737,7 @@ class TrajectoryExtractionAgent:
         
         while start_date.day == search_date.day:
 
-            ships: List[TargetVessel] = search_agent.get_ships(tpos)
+            ships: List[TargetShip] = search_agent.get_ships(tpos)
             
             # Skip if there are not enough ships in the area
             if len(ships) < 2:
@@ -800,7 +776,7 @@ class TrajectoryExtractionAgent:
             as_utm=True
         )
     
-def unique_2_permuts(ships: List[TargetVessel]) -> List[Tuple[TargetVessel,TargetVessel]]:
+def unique_2_permuts(ships: List[TargetShip]) -> List[Tuple[TargetShip,TargetShip]]:
     """
     Get all unique permutations of the ships.
     """
@@ -850,7 +826,7 @@ class ForwardBackwardScan:
             the first message in the interval is the same with sign(δ)
     """
 
-    def __init__(self, t1: TargetVessel, t2: TargetVessel, interval: int = 10) -> None:
+    def __init__(self, t1: TargetShip, t2: TargetShip, interval: int = 10) -> None:
 
 
         matcher = pytsa.TrajectoryMatcher(t1, t2)
