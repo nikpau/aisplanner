@@ -6,12 +6,13 @@ the distance between two consecutive
 positions and the time between them.
 """
 import pytsa
-from pytsa import SearchAgent, TargetShip, TimePosition
+from pytsa import SearchAgent, TargetShip, TimePosition, BoundingBox
 from pytsa.structs import Position
 import pytsa.tsea.split as split 
 from aisplanner.encounters.main import GriddedNorthSea
 from aisplanner.encounters.filter import haversine
 from matplotlib import patches, pyplot as plt
+from matplotlib import cm
 import numpy as np
 from aisplanner.encounters.encmap import plot_coastline
 from scipy.stats import gaussian_kde
@@ -525,7 +526,6 @@ def plot_reported_vs_calculated_speed(sa:SearchAgent):
     Plot the reported speed against the
     calculated speed.
     """
-    COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51"]
     f, ax = plt.subplots(1,1,figsize=(6,4))
     ax: plt.Axes
     ships = sa.get_all_ships(skip_filter=True)
@@ -882,7 +882,60 @@ def inspect_trajectory_splits(sa: SearchAgent):
     
     plt.tight_layout()
     plt.savefig("aisstats/out/heading_speed_changes.pdf")
-            
+
+def binned_heatmap(targets: dict[int,TargetShip], 
+                   bb: BoundingBox,
+                   savename: str) -> None:
+    """
+    Split the bounding box into the closest
+    amount of square pixels fitting in the 
+    resolution. Then count the number of 
+    messages in each pixel and plot a heatmap.
+    """
+    # Find the closest amount of pixels
+    # fitting in the resolution         
+    bbar = f = 1.0/np.cos(60*np.pi/180)
+    
+    lonpx = 500
+    latpx = int(lonpx * bbar)
+        
+    # Create a grid of pixels
+    x = np.linspace(bb.LONMIN,bb.LONMAX,lonpx)
+    y = np.linspace(bb.LATMIN,bb.LATMAX,latpx)
+    xx, yy = np.meshgrid(x,y)
+    
+    # Count the number of messages in each pixel
+    counts = np.zeros((latpx,lonpx))
+    for ship in targets.values():
+        for track in ship.tracks:
+            for msg in track:
+                # Find the closest pixel
+                i = np.argmin(np.abs(x - msg.lon))
+                j = np.argmin(np.abs(y - msg.lat))
+                counts[j,i] += 1
+    
+    # Plot the heatmap
+    fig, ax = plt.subplots(figsize=(10,10*1.5))
+    ax: plt.Axes
+    
+    # Mask the pixels with no messages
+    counts = np.ma.masked_where(counts == 0,counts)
+
+    # Log transform of counts to avoid
+    # spots with many messages to dominate
+    # the plot
+    counts = np.vectorize(lambda x: np.log(np.log(x+1)+1))(counts)
+    
+    cmap = cm.get_cmap("OrRd").copy()
+    cmap.set_bad(color='white')
+    ax.grid(False)
+    ax.pcolormesh(xx,yy,counts,cmap=cmap)#,shading="gouraud")
+    ax.set_xlabel("Longitude")
+    ax.set_ylabel("Latitude")
+    ax.set_title("Heatmap of messages")
+    plt.tight_layout()
+    plt.savefig(savename,dpi=300)
+    
     
 def plot_histograms(ships: dict[int,TargetShip],title: str, specs: dict):
     
@@ -1030,7 +1083,7 @@ if __name__ == "__main__":
     
     # Plot trajectory length by number of observations
     # plot_trajectory_length_by_obscount(ships)
-    plot_trajectory_length_vs_nobs(ships)
+    # plot_trajectory_length_vs_nobs(ships)
     #
     # Plot histograms of raw data ---------------------------------------------------
     # plot_histograms(
@@ -1039,17 +1092,20 @@ if __name__ == "__main__":
     #     specs={}
     # )
     # Split the ships into accepted and rejected ------------------------------------
-    # from pytsa.trajectories.rules import *
-    # ExampleRecipe = Recipe(
-    #     partial(too_few_obs, n=MINLEN),
-    #     partial(too_small_spatial_deviation, sd=SD)
-    # )
-    # from pytsa.trajectories import Inspector
-    # inspctr = Inspector(
-    #     data=ships,
-    #     recipe=ExampleRecipe
-    # )
-    # accepted, rejected = inspctr.inspect(njobs=2)
+    from pytsa.trajectories.rules import *
+    ExampleRecipe = Recipe(
+        partial(too_few_obs, n=MINLEN),
+        partial(too_small_spatial_deviation, sd=SD)
+    )
+    from pytsa.trajectories import Inspector
+    inspctr = Inspector(
+        data=ships,
+        recipe=ExampleRecipe
+    )
+    accepted, rejected = inspctr.inspect(njobs=2)
+    
+    # Plot heatmap -----------------------------------------------------------------
+    binned_heatmap(ships,SEARCHAREA)
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # Random indices
