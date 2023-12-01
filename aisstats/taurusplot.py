@@ -38,7 +38,7 @@ inspctr = Inspector(
     data=ships,
     recipe=ExampleRecipe
 )
-accepted, rejected = inspctr.inspect(njobs=8)
+accepted, rejected = inspctr.inspect(njobs=1)
 
 binned_heatmap(accepted, SEARCHAREA, savename="/home/s2075466/aisplanner/results/acceped.png")
 binned_heatmap(rejected, SEARCHAREA, savename="/home/s2075466/aisplanner/results/rejected.png")
