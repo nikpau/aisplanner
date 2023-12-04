@@ -5,7 +5,9 @@ deviates from the the speed calulated from
 the distance between two consecutive
 positions and the time between them.
 """
+from datetime import datetime
 import pytsa
+import gc
 from pytsa import SearchAgent, TargetShip, TimePosition, BoundingBox
 from pytsa.structs import Position
 import pytsa.tsea.split as split 
@@ -13,6 +15,7 @@ from aisplanner.encounters.main import GriddedNorthSea
 from aisplanner.encounters.filter import haversine
 from matplotlib import patches, pyplot as plt
 from matplotlib import cm
+from matplotlib import dates as mdates
 import numpy as np
 from aisplanner.encounters.encmap import plot_coastline
 from scipy.stats import gaussian_kde
@@ -26,8 +29,8 @@ from pytsa.utils import mi2nm
 from pytsa.trajectories.rules import too_few_obs,too_small_spatial_deviation
 from functools import partial
 
-TEST_FILE_DYN = 'data/aisrecords/2021_07_01.csv'
-TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_07_01.csv'
+TEST_FILE_DYN = 'data/aisrecords/2021_08_02.csv'
+TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_08_02.csv'
 # TEST_FILE_DYN = '/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022/2021_07_01.csv'
 # TEST_FILE_STA = '/warm_archive/ws/s2075466-ais/decoded/msgtype5/2021_07_01.csv'
 SEARCHAREA = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells[0]
@@ -91,44 +94,65 @@ def plot_speeds_and_route(tv: TargetShip, mode: str) -> None:
     speeds.
     """
     
-    # Real positions and speeds
     tss = []
-    rlons, rlats, rspeeds = [], [], []
+    # Real positions and speeds
+    rlons, rlats, rspeeds, rcog = [], [], [], []
     for track in tv.tracks:
-        lons, lats, speeds, ts = [], [], [], []
+        lons, lats, speeds, cog, ts = [], [], [], [], []
         for msg in track:
             lons.append(msg.lon)
             lats.append(msg.lat)
             speeds.append(msg.SOG)
+            cog.append(msg.COG)
             ts.append(msg.timestamp)
         rlons.append(lons)
         rlats.append(lats)
         rspeeds.append(speeds)
+        rcog.append(cog)
         tss.append(ts)
     
     fig, axd = plt.subplot_mosaic(
         [
             ['left', 'upper right'],
             ['left', 'lower right']
-        ], layout="constrained", figsize=(16,10)
+        ], layout="constrained", figsize=(10,6)
     )
     
     # Plot the trajectory
-    for lo,la, sp in zip(rlons,rlats,rspeeds):
-        f = axd["left"].scatter(lo,la,c=sp,s=18,cmap='inferno')
-        axd["left"].plot(lo,la,"k--", alpha = 0.5)
+    for i, (lo,la, sp) in enumerate(zip(rlons,rlats,rspeeds)):
+        f = axd["left"].scatter(lo,la,c=sp,s=8,cmap='inferno')
+        axd["left"].plot(lo,la,color=COLORWHEEL[i%len(COLORWHEEL)],ls="--", alpha = 0.9)
     
     # Colorbar
     fig.colorbar(f, ax=axd["left"], label="Speed [knots]")
     
     # Plot the real speeds
-    axd["lower right"].plot(flatten(rspeeds),'r',label='Real speed')
+    axd["lower right"].xaxis.set_major_locator(mdates.AutoDateLocator())
+    for nr, (time,speed) in enumerate(zip(tss,rspeeds)):
+        axd["lower right"].plot(
+            [datetime.fromtimestamp(t) for t in time],
+            speed,
+            color=COLORWHEEL[nr%len(COLORWHEEL)])
+        
+    # Plot course over ground
+    axd["upper right"].xaxis.set_major_locator(mdates.AutoDateLocator())
+    for nr, (time,cog) in enumerate(zip(tss,rcog)):
+        axd["upper right"].plot(
+            [datetime.fromtimestamp(t) for t in time],
+            cog,
+            color=COLORWHEEL[nr%len(COLORWHEEL)])
     
     # Set labels
     axd["left"].set_xlabel('Longitude')
     axd["left"].set_ylabel('Latitude')
-    axd["upper right"].set_xlabel('Distance to first message [miles]')
-    axd["upper right"].set_ylabel('Speed [knots]')
+    
+    
+    axd["upper right"].set_title(f"Course over ground [°]")
+    axd["upper right"].set_xlabel('Time')
+    axd["upper right"].set_ylabel('Course over ground [°]')
+    
+    
+    axd["lower right"].set_title(f"Speed [knots]")
     axd["lower right"].set_xlabel('Time')
     axd["lower right"].set_ylabel('Speed [knots]')
     
@@ -145,7 +169,41 @@ def plot_speeds_and_route(tv: TargetShip, mode: str) -> None:
     axd["lower right"].legend()
     
     # Save figure
+    fig.autofmt_xdate()
     plt.savefig(f"aisstats/out/errchecker/{tv.mmsi}_{mode}.png",dpi=300)
+    plt.close()
+    
+def plot_speed_scatter(sa: SearchAgent) -> None:
+    """
+    Plot the speeds calculated from
+    individual positions against the
+    calculated speeds.
+    """
+    rspeeds = []
+    cspeeds = []
+    ships = sa.get_all_ships(skip_filter=True)
+    fig, ax = plt.subplots(figsize=(6,6))
+    for ship in ships.values():
+        for track in ship.tracks:
+            for i in range(1,len(track)):
+                rspeed = split.avg_speed(track[i-1],track[i])
+                cspeed = split.speed_from_position(track[i-1],track[i])
+                rspeeds.append(rspeed)
+                cspeeds.append(cspeed)
+    ax.scatter(
+        rspeeds,
+        cspeeds,
+        color=COLORWHEEL[0],
+        alpha=0.5,
+        s=5
+    )
+    # Log scale for y axis
+    ax.set_yscale('log')
+    
+    ax.set_ylabel("Average speed as reported [kn]")
+    ax.set_ylabel("Speed calculated from positions [kn]")
+    ax.set_title("Speed calculated from positions vs. interpolated speed")
+    plt.savefig("aisstats/out/speed_scatter.png",dpi=300)
     plt.close()
 
 def plot_trajectory_jitter(sa: SearchAgent,
@@ -205,19 +263,25 @@ def plot_trajectory_jitter(sa: SearchAgent,
     plt.savefig(f"aisstats/out/trjitter_{mode}.png", dpi=500)
     plt.close()
     
-def plot_trajectories_on_map(ships: dict[int,TargetShip], mode: str,specs: dict):
+def plot_trajectories_on_map(ships: dict[int,TargetShip], 
+                             mode: str,
+                             specs: dict,
+                             extent: BoundingBox):
     """
     Plot all trajectories on a map.
     """
     assert mode in ["all","accepted","rejected"]
     fig, ax = plt.subplots(figsize=(10,16))
-    plot_coastline(ax=ax)
+    idx = 0
+    plot_coastline(extent=extent,ax=ax)
     for ship in ships.values():
         for track in ship.tracks:
+            idx += 1
             ax.plot(
                 [p.lon for p in track],
                 [p.lat for p in track],
-                alpha=0.5, linewidth=0.3, marker = "x", markersize = 0.5
+                alpha=0.5, linewidth=0.3, marker = "x", markersize = 0.5,
+                color = COLORWHEEL[idx % len(COLORWHEEL)]
             )
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
@@ -282,28 +346,6 @@ def plot_latlon_kde(ships: dict[int,TargetShip], mode: str):
     
     plt.savefig(f"aisstats/out/latlon_kde_{mode}.png",dpi=300)
     plt.close()
-
-def run_filter(ships: dict[int,TargetShip], tpos: TimePosition):
-    
-    #for sd in np.arange(0.01,2,0.1):
-    sd = 0.05
-    accepted, rejected = SA.split(
-        targets=ships,
-        tpos=tpos,
-        overlap_tpos=False,
-        sd=sd,
-        minlen=20
-    )
-    rejected = SA._construct_splines(rejected,"linear")
-    accepted = SA._construct_splines(accepted,"linear")
-    plot_trajectory_jitter(rejected,sd,"rejected")
-    plot_trajectory_jitter(accepted,sd,"accepted")
-
-    for i in range(80,100):
-        plot_speeds_and_route(list(rejected.values())[i],"rejected")
-
-    for i in range(80,100):
-        plot_speeds_and_route(list(accepted.values())[i],"accepted")
         
 def plot_trajectory_length_by_obscount(ships: dict[int,TargetShip]):
     
@@ -446,6 +488,10 @@ def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip]):
         rejection_rate = rejected / total
         
         ax.plot(sds,rejection_rate,label=f"{minlen} obs",color=COLORWHEEL[idx])
+        
+        # does this free up memory?
+        del acc, rej, inpsctr, rejected, accepted, total, rejection_rate
+        gc.collect()
     ax.set_xlabel("Standard deviation")
     ax.set_ylabel("Rejection rate")
     ax.legend(title = "Minimum trajectory length", fontsize=10, fancybox=False)
@@ -926,7 +972,7 @@ def binned_heatmap(targets: dict[int,TargetShip],
     # the plot
     counts = np.vectorize(lambda x: np.log(np.log(x+1)+1))(counts)
     
-    cmap = cm.get_cmap("OrRd").copy()
+    cmap = cm.get_cmap("Reds").copy()
     cmap.set_bad(color='white')
     ax.grid(False)
     ax.pcolormesh(xx,yy,counts,cmap=cmap)#,shading="gouraud")
@@ -1075,10 +1121,13 @@ if __name__ == "__main__":
     # plot_time_diffs(SA)
     
     ships = SA.get_all_ships(njobs=3)
+    
+    # Plot calculated vs reported speed --------------------------------------------
+    # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    # with MemoryLoader():
-    #     plot_sd_vs_rejection_rate(ships)
+    with MemoryLoader():
+        plot_sd_vs_rejection_rate(ships)
     #     plot_trajectory_jitter(SA,tpos,ships,np.arange(0.05,0.55,0.05),"rejected")
     
     # Plot trajectory length by number of observations
@@ -1092,20 +1141,20 @@ if __name__ == "__main__":
     #     specs={}
     # )
     # Split the ships into accepted and rejected ------------------------------------
-    from pytsa.trajectories.rules import *
-    ExampleRecipe = Recipe(
-        partial(too_few_obs, n=MINLEN),
-        partial(too_small_spatial_deviation, sd=SD)
-    )
-    from pytsa.trajectories import Inspector
-    inspctr = Inspector(
-        data=ships,
-        recipe=ExampleRecipe
-    )
-    accepted, rejected = inspctr.inspect(njobs=2)
+    # from pytsa.trajectories.rules import *
+    # ExampleRecipe = Recipe(
+    #     partial(too_few_obs, n=MINLEN),
+    #     partial(too_small_spatial_deviation, sd=SD)
+    # )
+    # from pytsa.trajectories import Inspector
+    # inspctr = Inspector(
+    #     data=ships,
+    #     recipe=ExampleRecipe
+    # )
+    # accepted, rejected = inspctr.inspect(njobs=2)
     
     # Plot heatmap -----------------------------------------------------------------
-    binned_heatmap(ships,SEARCHAREA)
+    # binned_heatmap(accepted,SEARCHAREA,"aisstats/out/heatmap.png")
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # Random indices
@@ -1129,9 +1178,9 @@ if __name__ == "__main__":
 
 
     # Plot trajectories on map ------------------------------------------------------
-    # plot_trajectories_on_map(ships, "all",{})
-    # plot_trajectories_on_map(accepted,"accepted",specs)
-    # plot_trajectories_on_map(rejected,"rejected",specs)
+    # plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
+    # plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
+    # plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
 
     # # Plot histograms of accepted and rejected --------------------------------------
     # plot_histograms(
