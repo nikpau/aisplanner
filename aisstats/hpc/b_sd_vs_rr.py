@@ -4,7 +4,7 @@ values for the minimum number of observation per trajectory,
 and the spatial standard deviation threshold.
 """
 from aisplanner.encounters.main import NorthSea
-from errchecker import binned_heatmap, speed_filter
+from errchecker import plot_sd_vs_rejection_rate, speed_filter
 from pathlib import Path
 from pytsa import SearchAgent, TimePosition
 from functools import partial
@@ -33,3 +33,5 @@ tpos = TimePosition(
 SA.init(tpos)
 
 ships = SA.get_all_ships(njobs=16,skip_filter=True)
+
+plot_sd_vs_rejection_rate(ships, savename="/home/s2075466/aisplanner/results/sd_vs_rejection_rate_1m.pdf")

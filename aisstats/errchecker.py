@@ -46,6 +46,7 @@ from aisplanner.dataprep import _file_descriptors as fd
 plt.style.use('bmh')
 plt.rcParams["font.family"] = "monospace"
 COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
+COLORWHEEL2 = ["#386641", "#6a994e", "#a7c957", "#f2e8cf", "#bc4749"]
 
 def _bw_sel(kde: gaussian_kde) -> float:
     data = kde.dataset.reshape(-1,1)
@@ -459,11 +460,13 @@ def plot_latlon_shapes(good: list[TargetShip],bad: list[TargetShip]):
     plt.savefig(f"aisstats/out/latlon_kde.png",dpi=300)
     plt.close()
     
-def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip]):
+def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip],
+                              savename: str):
     """
     Plot the standard deviation of the trajectory jitter
     against the rejection rate.
     """
+    cw = COLORWHEEL + COLORWHEEL2
     sds = np.array([0,0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3])
     minlens = np.array([0,2,5,10,20,30,40,50,60,70])
     fig, ax = plt.subplots(figsize=(8,5))
@@ -482,23 +485,22 @@ def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip]):
             acc, rej = inpsctr.inspect(njobs=2)
             rejected.append(sum([len(r.tracks) for r in rej.values()]))
             accepted.append(sum([len(a.tracks) for a in acc.values()]))
-            break
         rejected = np.array(rejected)
         accepted = np.array(accepted)
         total = rejected + accepted
         rejection_rate = rejected / total
         
-        ax.plot(sds,rejection_rate,label=f"{minlen} obs",color=COLORWHEEL[idx])
+        ax.plot(sds,
+                rejection_rate,
+                label=f"{minlen} obs",
+                color=cw[idx]
+            )
         
-        # does this free up memory?
-        del acc, rej, inpsctr, rejected, accepted, total, rejection_rate
-        gc.collect()
-        break
     ax.set_xlabel("Standard deviation")
     ax.set_ylabel("Rejection rate")
-    ax.legend(title = "Minimum trajectory length", fontsize=10, fancybox=False)
+    ax.legend(loc="lower right" ,title = "Min. trajectory\nlength", fontsize=9, fancybox=False)
     # ax.set_title("Rejection rate vs. standard deviation of trajectory")
-    plt.savefig("aisstats/out/sd_vs_rejection_rate.pdf")
+    plt.savefig(savename)
     plt.close()
     
 def _heading_change(h1,h2):
@@ -1122,14 +1124,15 @@ if __name__ == "__main__":
     # plot_reported_vs_calculated_speed(SA)
     # plot_time_diffs(SA)
     
-    ships = SA.get_all_ships(njobs=3)
+    # ships = SA.get_all_ships(njobs=3)
+    ships = None
     
     # Plot calculated vs reported speed --------------------------------------------
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
     with MemoryLoader():
-        plot_sd_vs_rejection_rate(ships)
+        plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate.pdf")
     #     plot_trajectory_jitter(SA,tpos,ships,np.arange(0.05,0.55,0.05),"rejected")
     
     # Plot trajectory length by number of observations
