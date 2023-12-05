@@ -52,7 +52,7 @@ for t in types:
     else:
         expanded.extend(list(t.value))
 for i,t in enumerate(expanded):
-    a = [s for s in accepted.values() if s.ship_type in t]
-    r = [s for s in rejected.values() if s.ship_type in t]
+    a = {mmsi:s for mmsi,s in accepted.items() if s.ship_type in t}
+    r = {mmsi:s for mmsi,s in rejected.items() if s.ship_type in t}
     binned_heatmap(a, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/acceped_{names[i]}_07/21.png")
     binned_heatmap(r, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/rejected_{names[i]}_07/21.png")
