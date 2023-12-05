@@ -6,13 +6,13 @@ from pytsa import ShipType
 from aisplanner.encounters.filter import (
     TrajectoryExtractionAgent
 )
-from aisplanner.encounters._locdb import GriddedNorthSea, BoundingBox
+from aisplanner.encounters._locdb import NorthSea, BoundingBox
 
 
 # Extract a list of TargetShip objects from raw AIS messages
 # by scanning through 30 minute intervals over all search areas
 # in the LocationDatabase. Time frame is 2021-01-01 to 2021-12-31.
-areas = GriddedNorthSea(nrows=8, ncols=8, utm=True).cells
+areas = NorthSea
 
 def search_for(ship_type: ShipType, debug=False):
 

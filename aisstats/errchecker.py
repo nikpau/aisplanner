@@ -11,7 +11,7 @@ import gc
 from pytsa import SearchAgent, TargetShip, TimePosition, BoundingBox
 from pytsa.structs import Position
 import pytsa.tsea.split as split 
-from aisplanner.encounters.main import GriddedNorthSea
+from aisplanner.encounters.main import NorthSea
 from aisplanner.encounters.filter import haversine
 from matplotlib import patches, pyplot as plt
 from matplotlib import cm
@@ -33,7 +33,7 @@ TEST_FILE_DYN = 'data/aisrecords/2021_08_02.csv'
 TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_08_02.csv'
 # TEST_FILE_DYN = '/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022/2021_07_01.csv'
 # TEST_FILE_STA = '/warm_archive/ws/s2075466-ais/decoded/msgtype5/2021_07_01.csv'
-SEARCHAREA = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells[0]
+SEARCHAREA = NorthSea
 SAMPLINGRATE = 30 # seconds
 # Sampling rate in hours
 SAMPLINGRATE_H = SAMPLINGRATE / 60 / 60
@@ -482,6 +482,7 @@ def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip]):
             acc, rej = inpsctr.inspect(njobs=2)
             rejected.append(sum([len(r.tracks) for r in rej.values()]))
             accepted.append(sum([len(a.tracks) for a in acc.values()]))
+            break
         rejected = np.array(rejected)
         accepted = np.array(accepted)
         total = rejected + accepted
@@ -492,6 +493,7 @@ def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip]):
         # does this free up memory?
         del acc, rej, inpsctr, rejected, accepted, total, rejection_rate
         gc.collect()
+        break
     ax.set_xlabel("Standard deviation")
     ax.set_ylabel("Rejection rate")
     ax.legend(title = "Minimum trajectory length", fontsize=10, fancybox=False)

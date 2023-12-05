@@ -5,13 +5,13 @@ from glob import glob
 import multiprocessing as mp
 from pytsa import ShipType
 from psd import PSDPointExtractor
-from aisplanner.encounters._locdb import GriddedNorthSea, LatLonBoundingBox
+from aisplanner.encounters._locdb import NorthSea, LatLonBoundingBox
 
 
 # Extract a list of TargetShip objects from raw AIS messages
 # by scanning through 30 minute intervals over all search areas
 # in the LocationDatabase. Time frame is 2021-01-01 to 2021-12-31.
-north_sea, = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells
+north_sea = NorthSea
 
 # Files to search through
 # msg12318files=glob(f"{os.environ.get('AISDECODED')}/2021*.csv"),

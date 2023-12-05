@@ -15,7 +15,7 @@ import pytsa.tsea.split as split
 import numpy as np
 from functools import partial
 from errchecker import area_center, speed_filter
-from aisplanner.encounters.main import GriddedNorthSea
+from aisplanner.encounters.main import NorthSea
 import ciso8601
 import pickle
 from matplotlib import pyplot as plt
@@ -58,7 +58,7 @@ def _date_transformer(datefile: Path) -> float:
 
 # MAIN MATTER ---------------------------------------------------------------    
 
-SEARCHAREA = GriddedNorthSea(nrows=1, ncols=1, utm=False).cells[0]
+SEARCHAREA = NorthSea(nrows=1, ncols=1, utm=False).cells[0]
 
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
 
