@@ -45,7 +45,13 @@ accepted, rejected = inspctr.inspect(njobs=1)
 # PASSENGER and FISHING
 types = [ShipType.CARGO, ShipType.TANKER, ShipType.PASSENGER, ShipType.FISHING]
 names = [t.name for t in types]
-for i,t in enumerate([list(t.value) for t in types]):
+expanded = []
+for t in types:
+    if isinstance(t, int):
+        expanded.append(t.value)
+    else:
+        expanded.extend(list(t.value))
+for i,t in enumerate(expanded):
     a = [s for s in accepted.values() if s.ship_type in t]
     r = [s for s in rejected.values() if s.ship_type in t]
     binned_heatmap(a, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/acceped_{names[i]}_07/21.png")
