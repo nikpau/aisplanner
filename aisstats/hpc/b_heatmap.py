@@ -47,7 +47,7 @@ types = [ShipType.CARGO, ShipType.TANKER, ShipType.PASSENGER, ShipType.FISHING]
 names = [t.name for t in types]
 expanded = []
 for t in types:
-    if isinstance(t, int):
+    if isinstance(t.value, int):
         expanded.append(t.value)
     else:
         expanded.extend(list(t.value))
