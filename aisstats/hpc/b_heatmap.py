@@ -1,5 +1,5 @@
 from aisplanner.encounters.main import NorthSea
-from errchecker import binned_heatmap, speed_filter
+from aisstats.errchecker import binned_heatmap, speed_filter
 from pathlib import Path
 from pytsa import SearchAgent, TimePosition, ShipType
 from functools import partial
