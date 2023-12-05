@@ -48,7 +48,7 @@ names = [t.name for t in types]
 expanded = []
 for t in types:
     if isinstance(t.value, int):
-        expanded.append(t.value)
+        expanded.append([t.value])
     else:
         expanded.extend(list(t.value))
 for i,t in enumerate(expanded):
