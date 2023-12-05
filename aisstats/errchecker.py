@@ -482,7 +482,7 @@ def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip],
                 data=ships,
                 recipe=recipe
             )
-            acc, rej = inpsctr.inspect(njobs=2)
+            acc, rej = inpsctr.inspect(njobs=1)
             rejected.append(sum([len(r.tracks) for r in rej.values()]))
             accepted.append(sum([len(a.tracks) for a in acc.values()]))
         rejected = np.array(rejected)
