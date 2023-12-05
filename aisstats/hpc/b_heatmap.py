@@ -1,7 +1,7 @@
 from aisplanner.encounters.main import NorthSea
 from errchecker import binned_heatmap, speed_filter
 from pathlib import Path
-from pytsa import SearchAgent, TimePosition
+from pytsa import SearchAgent, TimePosition, ShipType
 from functools import partial
 from pytsa.trajectories.rules import *
 
@@ -40,5 +40,13 @@ inspctr = Inspector(
 )
 accepted, rejected = inspctr.inspect(njobs=1)
 
-binned_heatmap(accepted, SEARCHAREA, savename="/home/s2075466/aisplanner/results/acceped.png")
-binned_heatmap(rejected, SEARCHAREA, savename="/home/s2075466/aisplanner/results/rejected.png")
+# Split up accepted and rejected trajectories
+# to only contain ships of type CARGO, TANKER,
+# PASSENGER and FISHING
+types = [ShipType.CARGO, ShipType.TANKER, ShipType.PASSENGER, ShipType.FISHING]
+names = [t.name for t in types]
+for i,t in enumerate([list(t.value) for t in types]):
+    a = [s for s in accepted.values() if s.ship_type in t]
+    r = [s for s in rejected.values() if s.ship_type in t]
+    binned_heatmap(a, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/acceped_{names[i]}_07/21.png")
+    binned_heatmap(r, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/rejected_{names[i]}_07/21.png")
