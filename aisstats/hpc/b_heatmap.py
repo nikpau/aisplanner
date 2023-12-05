@@ -10,10 +10,13 @@ SEARCHAREA = NorthSea
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07*.csv"))
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
 
+TEST_FILE_DYN = 'data/aisrecords/2021_08_02.csv'
+TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_08_02.csv'
+
 SA = SearchAgent(
-        msg12318file=DYNAMIC_MESSAGES,
+        msg12318file=TEST_FILE_DYN,
         frame=SEARCHAREA,
-        msg5file=STATIC_MESSAGES,
+        msg5file=TEST_FILE_STA,
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
     
@@ -27,7 +30,7 @@ tpos = TimePosition(
 )
 SA.init(tpos)
 
-ships = SA.get_all_ships(njobs=16,skip_filter=True)
+ships = SA.get_all_ships(njobs=4,skip_filter=True)
 
 ExampleRecipe = Recipe(
     partial(too_few_obs, n=50),
@@ -50,7 +53,7 @@ for t in types:
     if isinstance(t.value, int):
         expanded.append([t.value])
     else:
-        expanded.extend(list(t.value))
+        expanded.append(list(t.value))
 for i,t in enumerate(expanded):
     a = {mmsi:s for mmsi,s in accepted.items() if any(st in t for st in s.ship_type)}
     r = {mmsi:s for mmsi,s in rejected.items() if any(st in t for st in s.ship_type)}
