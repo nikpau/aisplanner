@@ -5,7 +5,7 @@ version = "0.2.0"
 description = ""
 authors = ["Niklas Paulig <niklas-paulig@tu-dresden.de>"]
 readme = "README.md"
-packages = [{include = "aisplanner"}]
+packages = [{include = "aisplanner"},{include = "aisstats"}]
 
 [tool.poetry.dependencies]
 python = "^3.7"
