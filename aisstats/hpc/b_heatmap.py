@@ -39,7 +39,8 @@ inspctr = Inspector(
     recipe=ExampleRecipe
 )
 accepted, rejected = inspctr.inspect(njobs=1)
-
+binned_heatmap(accepted, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/accepted_all_07_21.png")
+binned_heatmap(rejected, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/rejected_all_07_21.png")
 # Split up accepted and rejected trajectories
 # to only contain ships of type CARGO, TANKER,
 # PASSENGER and FISHING
