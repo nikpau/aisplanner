@@ -13,6 +13,7 @@ from aisplanner.encounters.utils import OverlappingPair, load_results
 import pickle
 from scipy.stats import gaussian_kde
 import matplotlib.cm as cm
+from pytsa import BoundingBox
 
 # Types
 Latitude = float
@@ -21,7 +22,8 @@ Longitude = float
 GEODATA = Path("data/geometry")
 ENCOUNTERS = Path("results/encounters")
 
-def plot_coastline(ax: plt.Axes = None, save_plot: bool = False) -> None:
+def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
+                   save_plot: bool = False) -> None:
     """
     Plots the coastline of the North-Sea area.
     """
@@ -30,7 +32,11 @@ def plot_coastline(ax: plt.Axes = None, save_plot: bool = False) -> None:
     coasts = glob(f"{GEODATA}/*.json")
     for coast in coasts:
         gdf = gpd.read_file(coast)
-        gdf.plot(ax=ax, color="#003049", alpha=0.8,linewidth=0.3)
+        gdf.plot(ax=ax, color="#003049", alpha=0.8,linewidth=0.6)
+        
+    # Crop the plot to the extent
+    ax.set_xlim(extent.LONMIN, extent.LONMAX)
+    ax.set_ylim(extent.LATMIN, extent.LATMAX)
     
     if save_plot:
         plt.savefig("aisplanner/encounters/coastline.png", dpi=300)
