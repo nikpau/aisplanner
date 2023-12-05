@@ -4,7 +4,7 @@ values for the minimum number of observation per trajectory,
 and the spatial standard deviation threshold.
 """
 from aisplanner.encounters.main import NorthSea
-from errchecker import plot_sd_vs_rejection_rate, speed_filter
+from aisstats.errchecker import plot_sd_vs_rejection_rate, speed_filter
 from pathlib import Path
 from pytsa import SearchAgent, TimePosition
 from functools import partial
