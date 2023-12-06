@@ -32,7 +32,10 @@ def routine(file: Path) -> np.ndarray:
     # First, make a column with the hour of the day.
     df["hour"] = df[fd.BaseColumns.TIMESTAMP.value].dt.hour
     # Then, group by hour and count the number of observations in each bin.
-    hcounts = df.groupby("hour")[fd.BaseColumns.TIMESTAMP.value].count().values
+    hcounts = df.groupby("hour")[fd.BaseColumns.TIMESTAMP.value].count()
+    
+    # Generate a list of hour counts with 0 for hours with no observations.
+    hcounts = hcounts.reindex(range(24), fill_value=0).values
     
     # Make a bin for every month in the year
     # and count the number of observations in each bin.
