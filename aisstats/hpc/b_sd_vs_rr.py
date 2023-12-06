@@ -34,4 +34,4 @@ SA.init(tpos)
 
 ships = SA.get_all_ships(njobs=16,skip_filter=True)
 
-plot_sd_vs_rejection_rate(ships, savename="/home/s2075466/aisplanner/results/sd_vs_rejection_rate_07/21.pdf")
+plot_sd_vs_rejection_rate(ships, savename="/home/s2075466/aisplanner/results/sd_vs_rejection_rate_07_21.pdf")
