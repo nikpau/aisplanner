@@ -5,9 +5,10 @@ deviates from the the speed calulated from
 the distance between two consecutive
 positions and the time between them.
 """
+import io
 from datetime import datetime
 import pytsa
-import gc
+from PIL import Image
 from pytsa import SearchAgent, TargetShip, TimePosition, BoundingBox
 from pytsa.structs import Position
 import pytsa.tsea.split as split 
@@ -932,6 +933,43 @@ def inspect_trajectory_splits(sa: SearchAgent):
     
     plt.tight_layout()
     plt.savefig("aisstats/out/heading_speed_changes.pdf")
+    
+def plot_average_complexity(ships: dict[int,TargetShip]):
+    """
+    Calulates the mean of the cosine of the angles
+    enclosed between three consecutive messages 
+    for several standard deviations.
+    """
+    sds = np.array([0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3])
+    avg_cosines = []
+    for sd in sds:
+        recipe = Recipe(
+                # partial(too_few_obs,n=50),
+                partial(too_small_spatial_deviation,sd=sd)
+            )
+        inpsctr = pytsa.Inspector(
+                data=ships,
+                recipe=recipe
+            )
+        acc, rej = inpsctr.inspect(njobs=1)
+        tcosines = []
+        for ship in rej.values():
+            for track in ship.tracks:
+                for i in range(1,len(track)-1):
+                    a = track[i-1]
+                    b = track[i]
+                    c = track[i+1]
+                    tcosines.append(
+                        split.cosine_of_angle_between(a,b,c)
+                    )
+        avg_cosines.append(np.nanmean(np.abs(tcosines)))
+        
+    fig, ax = plt.subplots(figsize=(8,5))
+    ax.plot(sds,avg_cosines,color=COLORWHEEL[0])
+    ax.set_xlabel("Standard deviation")
+    ax.set_ylabel(r"Average complexity $\bar{\cos(\theta)}$")
+    ax.set_title("Average cosine of the angle between three consecutive messages")
+    plt.savefig("aisstats/out/avg_cosine.pdf")
 
 def binned_heatmap(targets: dict[int,TargetShip], 
                    bb: BoundingBox,
@@ -942,12 +980,11 @@ def binned_heatmap(targets: dict[int,TargetShip],
     resolution. Then count the number of 
     messages in each pixel and plot a heatmap.
     """
-    # Find the closest amount of pixels
-    # fitting in the resolution         
-    bbar = f = 1.0/np.cos(60*np.pi/180)
+    # Find aspect ratio of bounding box         
+    aspect = 1.0/np.cos(60*np.pi/180)
     
     lonpx = 500
-    latpx = int(lonpx * bbar)
+    latpx = int(lonpx * aspect)
         
     # Create a grid of pixels
     x = np.linspace(bb.LONMIN,bb.LONMAX,lonpx)
@@ -983,6 +1020,17 @@ def binned_heatmap(targets: dict[int,TargetShip],
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     ax.set_title("Heatmap of messages")
+    
+    # Add coastline redered to an image
+    # and plot it on top of the heatmap
+    coastline: plt.Figure = plot_coastline(bb,return_figure=True)
+    buf = io.BytesIO()
+    coastline.savefig(buf)
+    buf.seek(0)
+    img = Image.open(buf)
+    img = img.resize((lonpx,latpx))
+    ax.imshow(img,alpha=0.5)
+    
     plt.tight_layout()
     plt.savefig(savename,dpi=300)
     
@@ -1124,15 +1172,17 @@ if __name__ == "__main__":
     # plot_reported_vs_calculated_speed(SA)
     # plot_time_diffs(SA)
     
-    # ships = SA.get_all_ships(njobs=3)
-    ships = None
+    ships = SA.get_all_ships(njobs=4)
+    
+    # Plot average complexity ------------------------------------------------------
+    # plot_average_complexity(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    with MemoryLoader():
-        plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate.pdf")
+    # with MemoryLoader():
+    #     plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate.pdf")
     #     plot_trajectory_jitter(SA,tpos,ships,np.arange(0.05,0.55,0.05),"rejected")
     
     # Plot trajectory length by number of observations
@@ -1146,20 +1196,20 @@ if __name__ == "__main__":
     #     specs={}
     # )
     # Split the ships into accepted and rejected ------------------------------------
-    # from pytsa.trajectories.rules import *
-    # ExampleRecipe = Recipe(
-    #     partial(too_few_obs, n=MINLEN),
-    #     partial(too_small_spatial_deviation, sd=SD)
-    # )
-    # from pytsa.trajectories import Inspector
-    # inspctr = Inspector(
-    #     data=ships,
-    #     recipe=ExampleRecipe
-    # )
-    # accepted, rejected = inspctr.inspect(njobs=2)
+    from pytsa.trajectories.rules import *
+    ExampleRecipe = Recipe(
+        partial(too_few_obs, n=MINLEN),
+        partial(too_small_spatial_deviation, sd=SD)
+    )
+    from pytsa.trajectories import Inspector
+    inspctr = Inspector(
+        data=ships,
+        recipe=ExampleRecipe
+    )
+    accepted, rejected = inspctr.inspect(njobs=2)
     
     # Plot heatmap -----------------------------------------------------------------
-    # binned_heatmap(accepted,SEARCHAREA,"aisstats/out/heatmap.png")
+    binned_heatmap(accepted,SEARCHAREA,"aisstats/out/heatmap.png")
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # Random indices
