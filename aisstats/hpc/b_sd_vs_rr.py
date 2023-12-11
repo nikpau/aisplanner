@@ -12,8 +12,8 @@ from pytsa.trajectories.rules import *
 
 SEARCHAREA = NorthSea
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_15.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_15.csv"))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
 
 SA = SearchAgent(
         msg12318file=DYNAMIC_MESSAGES,
@@ -34,4 +34,4 @@ SA.init(tpos)
 
 ships = SA.get_all_ships(njobs=16,skip_filter=True)
 
-plot_sd_vs_rejection_rate(ships, savename="/home/s2075466/aisplanner/results/sd_vs_rejection_rate_07_15_21.pdf")
+plot_sd_vs_rejection_rate(ships, savename="/home/s2075466/aisplanner/results/sd_vs_rejection_rate_21.pdf")
