@@ -83,7 +83,7 @@ def scale_lightness(rgb, scale_l):
 plt.style.use('bmh')
 plt.rcParams["font.family"] = "monospace"
 COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
-COLORWHEEL3 = ["#355070","#6d597a","#b56576","#e88c7d","#eaac8b"]
+COLORWHEEL3 = ["#335c67","#fff3b0","#e09f3e","#9e2a2b","#540b0e"]
 COLORWHEEL_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL]
 COLORWHEEL2 = ["#386641", "#6a994e", "#a7c957", "#f2e8cf", "#bc4749"]
 COLORWHEEL2_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL2]
@@ -236,14 +236,22 @@ def plot_speed_scatter(sa: SearchAgent) -> None:
         cspeeds,
         color=COLORWHEEL[0],
         alpha=0.5,
-        s=5
+        s=2
     )
+    
+    # Plot line y = x
+    ax.plot(
+        np.linspace(1,30,100),
+        np.linspace(1,30,100),
+        color=COLORWHEEL3[3],
+        lw=0.5
+    )
+    
     # Log scale for y axis
     ax.set_yscale('log')
     
-    ax.set_ylabel("Average speed as reported [kn]")
+    ax.set_xlabel("Average speed as reported [kn]")
     ax.set_ylabel("Speed calculated from positions [kn]")
-    ax.set_title("Speed calculated from positions vs. interpolated speed")
     plt.savefig("aisstats/out/speed_scatter.png",dpi=300)
     plt.close()
 
@@ -480,44 +488,6 @@ def plot_latlon_kde(ships: dict[int,TargetShip], mode: str):
     ax2.set_title(f"Kernel density estimate of longitudes for {mode} vessels")
     
     plt.savefig(f"aisstats/out/latlon_kde_{mode}.png",dpi=300)
-    plt.close()
-        
-def plot_trajectory_length_by_obscount(ships: dict[int,TargetShip]):
-    
-    # n_obs bins
-    n_obs_bins = np.arange(5,75,5)
-    tlens = [[] for _ in range(len(n_obs_bins))]
-    
-    # Walk through all ships' tracks
-    # and append trajectory lengths to
-    # the correct bin
-    for ship in ships.values():
-        for track in ship.tracks:
-            n_obs = len(track)
-            for i in range(len(n_obs_bins)):
-                if n_obs <= n_obs_bins[i]:
-                    tlens[i].append(len(track))
-                    break
-                
-    # Set up KDEs for each bin
-    kdes = []
-    for tlen in tlens:
-        kdes.append(gaussian_kde(tlen))
-        
-    # Plot KDEs and names of bins
-    fig, ax = plt.subplots(figsize=(16,10))
-    max_tlen = max([max(tlen) for tlen in tlens])
-    for i in range(len(n_obs_bins)):
-        ax.plot(
-            np.linspace(0,max_tlen+50,1000),
-            kdes[i](np.linspace(0,max_tlen+50,1000)),
-            label=f"n_obs <= {n_obs_bins[i]}"
-        )
-    ax.set_xlabel("Trajectory length [miles]")
-    ax.set_ylabel("Density")
-    ax.set_title("Trajectory length by number of observations_1-30")
-    ax.legend()
-    plt.savefig("aisstats/out/trajlen_by_nobs_1-30.png",dpi=300)
     plt.close()
     
 def plot_latlon_shapes(good: list[TargetShip],bad: list[TargetShip]):
@@ -838,34 +808,6 @@ def plot_distance_between_messages(sa:SearchAgent):
     plt.tight_layout()
     plt.savefig("aisstats/out/distance_between_messages.pdf")
     
-def plot_trajectory_length_vs_nobs(ships: dict[int,TargetShip]):
-    """
-    Plot the length of a trajectory against the number of
-    observations in it.
-    """
-    f,ax = plt.subplots(1,1,figsize=(6,6))
-    ll = len(ships)
-    nmsg = []
-    tlens = []
-    for idx,ship in enumerate(ships.values()):
-        for track in ship.tracks:
-            print(f"Working on ship {idx+1}/{ll}")
-            d = 0
-            for i in range(1,len(track)):
-                d += haversine(
-                    track[i-1].lon,
-                    track[i-1].lat,
-                    track[i].lon,
-                    track[i].lat
-                )
-            tlens.append(mi2nm(d))
-            nmsg.append(len(track))
-    ax.scatter(tlens,nmsg,color=COLORWHEEL[0],alpha=0.5,s=5)        
-    ax.set_xlabel("Trajectory length [nm]")
-    ax.set_ylabel("Number of messages per trajectory")
-    plt.savefig("aisstats/out/trajlen_vs_nobs_1-30.pdf")
-    plt.close()
-    
 def plot_heading_and_speed_changes(sa:SearchAgent):
     """
     Plot the changes in heading and speed between
@@ -1168,6 +1110,36 @@ def binned_heatmap(targets: dict[int,TargetShip],
     plt.tight_layout()
     plt.savefig(savename,dpi=300)
     
+def plot_trlen_vs_nmsg(ships: dict[int,TargetShip],
+                       savename: str):
+    """
+    Plot the length of a trajectory against the number of
+    messages in it.
+    """
+    f,ax = plt.subplots(1,1,figsize=(6,6))
+    ll = len(ships)
+    nmsg = []
+    tlens = []
+    for idx,ship in enumerate(ships.values()):
+        for track in ship.tracks:
+            print(f"Working on ship {idx+1}/{ll}")
+            d = 0
+            for i in range(1,len(track)):
+                d += haversine(
+                    track[i-1].lon,
+                    track[i-1].lat,
+                    track[i].lon,
+                    track[i].lat
+                )
+            tlens.append(mi2nm(d))
+            nmsg.append(len(track))
+    ax.scatter(nmsg,tlens,color=COLORWHEEL[0],alpha=0.5,s=2)        
+    ax.set_xlabel("Number of messages per trajectory")
+    ax.set_yscale('log')
+    ax.set_xscale('log')
+    ax.set_ylabel("Trajectory length [nm]")
+    plt.savefig(savename)
+    plt.close()
     
 def plot_histograms(ships: dict[int,TargetShip],title: str, specs: dict):
     
@@ -1306,7 +1278,7 @@ if __name__ == "__main__":
     # plot_reported_vs_calculated_speed(SA)
     # plot_time_diffs(SA)
     
-    ships = SA.get_all_ships(njobs=2)
+    ships = SA.get_all_ships(njobs=2, skip_filter=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1315,13 +1287,12 @@ if __name__ == "__main__":
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    with MemoryLoader():
-        plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
+    # with MemoryLoader():
+    #     plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
     #     plot_trajectory_jitter(ships,"accepted")
     
     # Plot trajectory length by number of observations
-    # plot_trajectory_length_by_obscount(ships)
-    # plot_trajectory_length_vs_nobs(ships)
+    plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
     #
     # Plot histograms of raw data ---------------------------------------------------
     # plot_histograms(
