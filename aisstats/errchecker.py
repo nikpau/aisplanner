@@ -5,8 +5,12 @@ deviates from the the speed calulated from
 the distance between two consecutive
 positions and the time between them.
 """
+import colorsys
 import io
 from datetime import datetime
+import matplotlib
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+from matplotlib.collections import LineCollection
 import pytsa
 from PIL import Image
 from pytsa import SearchAgent, TargetShip, TimePosition, BoundingBox
@@ -25,6 +29,7 @@ from aisplanner.misc import MemoryLoader
 from pytsa.trajectories.rules import Recipe
 from KDEpy.bw_selection import improved_sheather_jones
 from pytsa.utils import mi2nm
+import matplotlib.lines as lines
 
 # Rules for inspection of trajectories
 from pytsa.trajectories.rules import too_few_obs,too_small_spatial_deviation
@@ -43,11 +48,45 @@ import pandas as pd
 from functools import partial
 from aisplanner.dataprep import _file_descriptors as fd
 
+def add_subplot_axes(ax,rect):
+    fig = plt.gcf()
+    box = ax.get_position()
+    width = box.width
+    height = box.height
+    inax_position  = ax.transAxes.transform(rect[0:2])
+    transFigure = fig.transFigure.inverted()
+    infig_position = transFigure.transform(inax_position)    
+    x = infig_position[0]
+    y = infig_position[1]
+    width *= rect[2]
+    height *= rect[3]  # <= Typo was here
+    #subax = fig.add_axes([x,y,width,height],facecolor=facecolor)  # matplotlib 2.0+
+    subax = fig.add_axes([x,y,width,height])
+    x_labelsize = subax.get_xticklabels()[0].get_size()
+    y_labelsize = subax.get_yticklabels()[0].get_size()
+    x_labelsize *= rect[2]**0.5
+    y_labelsize *= rect[3]**0.5
+    subax.xaxis.set_tick_params(labelsize=x_labelsize)
+    subax.yaxis.set_tick_params(labelsize=y_labelsize)
+    return subax
+
+# Color converter
+cc = matplotlib.colors.ColorConverter.to_rgb
+def scale_lightness(rgb, scale_l):
+    # convert rgb to hls
+    h, l, s = colorsys.rgb_to_hls(*rgb)
+    # manipulate h, l, s values and return as rgb
+    return colorsys.hls_to_rgb(h, min(1, l * scale_l), s = s)
+
+
 # Use matplotlib style `bmh`
 plt.style.use('bmh')
 plt.rcParams["font.family"] = "monospace"
 COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
+COLORWHEEL3 = ["#355070","#6d597a","#b56576","#e88c7d","#eaac8b"]
+COLORWHEEL_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL]
 COLORWHEEL2 = ["#386641", "#6a994e", "#a7c957", "#f2e8cf", "#bc4749"]
+COLORWHEEL2_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL2]
 
 def _bw_sel(kde: gaussian_kde) -> float:
     data = kde.dataset.reshape(-1,1)
@@ -208,21 +247,21 @@ def plot_speed_scatter(sa: SearchAgent) -> None:
     plt.savefig("aisstats/out/speed_scatter.png",dpi=300)
     plt.close()
 
-def plot_trajectory_jitter(sa: SearchAgent,
-                           tpos: TimePosition,
-                           ships: dict[int,TargetShip],
-                           sds: list | np.ndarray,
+def plot_trajectory_jitter(ships: dict[int,TargetShip],
                            mode: str) -> None:
     
     assert mode in ["accepted","rejected"]
     np.random.seed(424)
+    allcolors = COLORWHEEL + COLORWHEEL_DARK + COLORWHEEL2 + COLORWHEEL2_DARK
+    
+    sds = np.array([0,0.01,0.02,0.03,0.04,0.05,0.1,0.2,0.3])
     
     for ship in ships.values():
         # Center trajectory
         # Get mean of lat and lon
         for track in ship.tracks:
-            latmean = sum([p.lat for p in track]) / len(track)
-            lonmean = sum([p.lon for p in track]) / len(track)
+            latmean = sum(p.lat for p in track) / len(track)
+            lonmean = sum(p.lon for p in track) / len(track)
             # Subtract mean from all positions
             for msg in track:
                 msg.lat -= latmean
@@ -233,36 +272,130 @@ def plot_trajectory_jitter(sa: SearchAgent,
     div,mod = divmod(len(sds),ncols)
     nrows = div + 1 if mod else div
     fig, axs = plt.subplots(nrows=nrows,ncols=ncols,figsize=(16,5*nrows))
+    subpos = [0.55,0.55,0.4,0.4]
+    axs: dict[int,plt.Axes] # type hint
+    niter = 0
     for row in range(nrows):
         for col in range(ncols):
             try:
-                acc,rej = sa.split(
-                    ships,
-                    tpos,
-                    overlap_tpos=False,
-                    sd=sds[row*ncols+col],
-                    minlen=50,
-                    njobs=1
+                recipe = Recipe(
+                    # partial(too_few_obs,n=50),
+                    partial(too_small_spatial_deviation,sd=sds[row*ncols+col])
                 )
+                inpsctr = pytsa.Inspector(
+                        data=ships,
+                        recipe=recipe
+                    )
+                acc, rej = inpsctr.inspect(njobs=1)
+
             except IndexError:
                 break
             to_process = acc if mode == "accepted" else rej
             sign = "<" if mode == "rejected" else ">"
-    
+
+            inset = axs[row,col].inset_axes(subpos)
+            
+            # Add lines for x and y axes
+            inset.axhline(0, color='k', linewidth=0.5)
+            inset.axvline(0, color='k', linewidth=0.5)
+            
+            axs[row,col].axhline(0, color='k', linewidth=0.5)
+            axs[row,col].axvline(0, color='k', linewidth=0.5)
+            
+            # Randomly select 100 ships
+            # to plot trajectories for
+            rndms = np.random.choice(list(to_process.keys()), size=100, replace=False)
+            to_process = {k:to_process[k] for k in rndms}
+            
             for ship in to_process.values():
+                lats,lons = [],[]
                 for track in ship.tracks:
+                    niter += 1
+                    lats.append([p.lat for p in track])
+                    lons.append([p.lon for p in track])
+                
+
+                for la, lo in zip(lats,lons):
                     axs[row,col].plot(
-                        [p.lon for p in track],
-                        [p.lat for p in track],
-                        alpha=0.2, marker = "x", markersize = 0.15, color = "k", linewidth = 0.1
+                        lo,
+                        la,
+                        alpha=0.5, 
+                        marker = "x", 
+                        markersize = 0.65, 
+                        color = allcolors[niter % len(allcolors)],
+                        linewidth = 0.6
                     )
+                
+                    # Plot center region in inset
+                    inset.plot(    
+                        lo,la,
+                        color = allcolors[niter % len(allcolors)],
+                        linewidth = 1,
+                        marker = "x",
+                        markersize = 1
+                    )
+                    
+                    
+                # inset.set_axes_locator(ip)
+                inset.set_xlim(-0.1,0.1)
+                inset.set_ylim(-0.1,0.1)
+                
             axs[row,col].set_xlabel("Longitude")
             axs[row,col].set_ylabel("Latitude")
             axs[row,col].set_title(f"Trajectories with sd {sign} {sds[row*ncols+col]:.2f}")
-    
-    
-    plt.title(f"Trajectory jitter for {mode} vessels.")
+
+            # Set limits
+            axs[row,col].set_xlim(-0.5,1.5)
+            axs[row,col].set_ylim(-0.5,1.5)
+        
     plt.savefig(f"aisstats/out/trjitter_{mode}.png", dpi=500)
+    plt.close()
+    
+def plot_simple_route(tv: TargetShip, mode: str) -> None:
+    """
+    Plot the trajectory of a target vessel
+    """
+    
+    # Positions and speeds
+    rlons, rlats = [], []
+    for track in tv.tracks:
+        for msg in track:
+            rlons.append(msg.lon)
+            rlats.append(msg.lat)       
+        # De-mean
+    latmean = sum(lats) / len(lats)
+    lonmean = sum(lons) / len(lons)
+        # Subtract mean from all positions
+    lons, lats = [], []
+    for track in tv.tracks:
+        for msg in track:
+            msg.lat -= latmean
+            msg.lon -= lonmean
+            lons.append(msg.lon)
+            lats.append(msg.lat)
+        
+        rlons.append(lons)
+        rlats.append(lats)
+
+    
+    fig, ax = plt.subplots(figsize=(8,6))
+    
+    # Plot the trajectory
+    for i, (lo,la) in enumerate(zip(rlons,rlats)):
+        ax.plot(lo,la,color=COLORWHEEL[i%len(COLORWHEEL)],ls="-", alpha = 0.9)
+        
+    # Set labels
+    ax.set_xlabel('Longitude')
+    ax.set_ylabel('Latitude')
+    
+    # Set legend
+    ax.legend(handles=[
+        patches.Patch(color='k',label=f"{len(rlons)} trajectories"),
+    ]
+    )
+    
+    # Save figure
+    plt.savefig(f"aisstats/out/errchecker/{tv.mmsi}_{mode}.png",dpi=300)
     plt.close()
     
 def plot_trajectories_on_map(ships: dict[int,TargetShip], 
@@ -934,7 +1067,8 @@ def inspect_trajectory_splits(sa: SearchAgent):
     plt.tight_layout()
     plt.savefig("aisstats/out/heading_speed_changes.pdf")
     
-def plot_average_complexity(ships: dict[int,TargetShip]):
+def plot_average_complexity(ships: dict[int,TargetShip],
+                            savename: str):
     """
     Calulates the mean of the cosine of the angles
     enclosed between three consecutive messages 
@@ -969,7 +1103,7 @@ def plot_average_complexity(ships: dict[int,TargetShip]):
     ax.set_xlabel("Standard deviation")
     ax.set_ylabel(r"Average complexity $\bar{\cos(\theta)}$")
     ax.set_title("Average cosine of the angle between three consecutive messages")
-    plt.savefig("aisstats/out/avg_cosine.pdf")
+    plt.savefig(savename)
 
 def binned_heatmap(targets: dict[int,TargetShip], 
                    bb: BoundingBox,
@@ -1172,7 +1306,7 @@ if __name__ == "__main__":
     # plot_reported_vs_calculated_speed(SA)
     # plot_time_diffs(SA)
     
-    ships = SA.get_all_ships(njobs=4)
+    ships = SA.get_all_ships(njobs=2)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1181,9 +1315,9 @@ if __name__ == "__main__":
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    # with MemoryLoader():
-    #     plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate.pdf")
-    #     plot_trajectory_jitter(SA,tpos,ships,np.arange(0.05,0.55,0.05),"rejected")
+    with MemoryLoader():
+        plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
+    #     plot_trajectory_jitter(ships,"accepted")
     
     # Plot trajectory length by number of observations
     # plot_trajectory_length_by_obscount(ships)
@@ -1196,24 +1330,25 @@ if __name__ == "__main__":
     #     specs={}
     # )
     # Split the ships into accepted and rejected ------------------------------------
-    from pytsa.trajectories.rules import *
-    ExampleRecipe = Recipe(
-        partial(too_few_obs, n=MINLEN),
-        partial(too_small_spatial_deviation, sd=SD)
-    )
-    from pytsa.trajectories import Inspector
-    inspctr = Inspector(
-        data=ships,
-        recipe=ExampleRecipe
-    )
-    accepted, rejected = inspctr.inspect(njobs=2)
+    # from pytsa.trajectories.rules import *
+    # ExampleRecipe = Recipe(
+    #     partial(too_few_obs, n=MINLEN),
+    #     partial(too_small_spatial_deviation, sd=SD)
+    # )
+    # from pytsa.trajectories import Inspector
+    # inspctr = Inspector(
+    #     data=ships,
+    #     recipe=ExampleRecipe
+    # )
+    # accepted, rejected = inspctr.inspect(njobs=1)
     
     # Plot heatmap -----------------------------------------------------------------
-    binned_heatmap(accepted,SEARCHAREA,"aisstats/out/heatmap.png")
+    # binned_heatmap(accepted,SEARCHAREA,"aisstats/out/heatmap.png")
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # Random indices
-    # for i in range(23,60):
+    # for i in range(60,100):
+    #     plot_simple_route(list(rejected.values())[i],"rejected")
     #     plot_speeds_and_route(list(rejected.values())[i],"rejected")
     #     plot_speeds_and_route(list(accepted.values())[i],"accepted")
     
