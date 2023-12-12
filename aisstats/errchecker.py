@@ -1133,7 +1133,7 @@ def plot_trlen_vs_nmsg(ships: dict[int,TargetShip],
                 )
             tlens.append(mi2nm(d))
             nmsg.append(len(track))
-    ax.scatter(nmsg,tlens,color=COLORWHEEL[0],alpha=0.5,s=2)        
+    ax.scatter(tlens,nmsg,color=COLORWHEEL[0],alpha=0.5,s=0.5)        
     ax.set_xlabel("Number of messages per trajectory")
     ax.set_yscale('log')
     ax.set_xscale('log')
