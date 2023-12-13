@@ -28,32 +28,16 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
     """
     Plot the trajectory of a target vessel
     """
-    
-    # Positions and speeds
-    rlons, rlats = [], []
+    lons,lats = [],[]
     for track in tv.tracks:
         for msg in track:
-            rlons.append(msg.lon)
-            rlats.append(msg.lat)       
-        # De-mean
-    latmean = sum(rlats) / len(rlats)
-    lonmean = sum(rlons) / len(rlons)
-        # Subtract mean from all positions
-    lons, lats = [], []
-    for track in tv.tracks:
-        for msg in track:
-            msg.lat -= latmean
-            msg.lon -= lonmean
             lons.append(msg.lon)
             lats.append(msg.lat)
-        
-        rlons.append(lons)
-        rlats.append(lats)
     
     fig, ax = plt.subplots(figsize=(8,6))
     
     # Plot the trajectory
-    for i, (lo,la) in enumerate(zip(rlons,rlats)):
+    for i, (lo,la) in enumerate(zip(lons,lats)):
         ax.plot(lo,la,color=COLORWHEEL[i%len(COLORWHEEL)],ls="-", alpha = 0.9)
         ax.scatter(lo,la,color=COLORWHEEL[i%len(COLORWHEEL)],s=1)
         
