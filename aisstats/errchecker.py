@@ -255,10 +255,8 @@ def plot_speed_scatter(sa: SearchAgent) -> None:
     plt.savefig("aisstats/out/speed_scatter.png",dpi=300)
     plt.close()
 
-def plot_trajectory_jitter(ships: dict[int,TargetShip],
-                           mode: str) -> None:
+def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
     
-    assert mode in ["accepted","rejected"]
     np.random.seed(424)
     allcolors = COLORWHEEL + COLORWHEEL_DARK + COLORWHEEL2 + COLORWHEEL2_DARK
     
@@ -274,32 +272,42 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip],
             for msg in track:
                 msg.lat -= latmean
                 msg.lon -= lonmean
+    
+    ships: list[TargetShip] = list(ships.values())
             
     # Plot trajectories for different sds
-    ncols = 3
-    div,mod = divmod(len(sds),ncols)
+    ncols = 4
+    div,mod = divmod(len(sds)-1,ncols)
     nrows = div + 1 if mod else div
-    fig, axs = plt.subplots(nrows=nrows,ncols=ncols,figsize=(16,5*nrows))
+    fig, axs = plt.subplots(nrows=nrows,ncols=ncols,figsize=(4*ncols,8))
     subpos = [0.55,0.55,0.4,0.4]
     axs: dict[int,plt.Axes] # type hint
     niter = 0
+    idx = 0
     for row in range(nrows):
         for col in range(ncols):
-            try:
-                recipe = Recipe(
-                    # partial(too_few_obs,n=50),
-                    partial(too_small_spatial_deviation,sd=sds[row*ncols+col])
-                )
-                inpsctr = pytsa.Inspector(
-                        data=ships,
-                        recipe=recipe
-                    )
-                acc, rej = inpsctr.inspect(njobs=1)
-
-            except IndexError:
-                break
-            to_process = acc if mode == "accepted" else rej
-            sign = "<" if mode == "rejected" else ">"
+            
+            trnr = 0
+            # Find trajectories whose standard deviation
+            # is within the current range
+            lons, lats = [], []
+            
+            np.random.shuffle(ships)
+            for ship in ships:
+                # Get standard deviation of lat and lon
+                for track in ship.tracks:
+                    lo = [p.lon for p in track]
+                    la = [p.lat for p in track]
+                    latstd = np.std(la)
+                    lonstd = np.std(lo)
+                    # Check if within range
+                    if sds[idx] <= (latstd + lonstd) <= sds[idx+1]:
+                        if trnr == 100:
+                            break
+                        trnr += 1
+                        lons.append(lo)
+                        lats.append(la)
+                        
 
             inset = axs[row,col].inset_axes(subpos)
             
@@ -312,51 +320,52 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip],
             
             # Randomly select 100 ships
             # to plot trajectories for
-            rndms = np.random.choice(list(to_process.keys()), size=100, replace=False)
-            to_process = {k:to_process[k] for k in rndms}
-            
-            for ship in to_process.values():
-                lats,lons = [],[]
-                for track in ship.tracks:
-                    niter += 1
-                    lats.append([p.lat for p in track])
-                    lons.append([p.lon for p in track])
-                
+            # rndms = np.random.choice(list(to_process.keys()), size=100, replace=False)
+            # to_process = {k:to_process[k] for k in rndms}
 
-                for la, lo in zip(lats,lons):
-                    axs[row,col].plot(
-                        lo,
-                        la,
-                        alpha=0.5, 
-                        marker = "x", 
-                        markersize = 0.65, 
-                        color = allcolors[niter % len(allcolors)],
-                        linewidth = 0.6
-                    )
+            for la, lo in zip(lats,lons):
+                axs[row,col].plot(
+                    lo,
+                    la,
+                    alpha=0.5, 
+                    marker = "x", 
+                    markersize = 0.65, 
+                    color = allcolors[niter % len(allcolors)],
+                    linewidth = 0.6
+                )
+            
+                # Plot center region in inset
+                inset.plot(    
+                    lo,la,
+                    color = allcolors[niter % len(allcolors)],
+                    linewidth = 1,
+                    marker = "x",
+                    markersize = 1
+                )
                 
-                    # Plot center region in inset
-                    inset.plot(    
-                        lo,la,
-                        color = allcolors[niter % len(allcolors)],
-                        linewidth = 1,
-                        marker = "x",
-                        markersize = 1
-                    )
-                    
                     
                 # inset.set_axes_locator(ip)
-                inset.set_xlim(-0.1,0.1)
-                inset.set_ylim(-0.1,0.1)
+                inset.set_xlim(-0.02,0.02)
+                inset.set_ylim(-0.02,0.02)
+                
+                niter += 1
                 
             axs[row,col].set_xlabel("Longitude")
             axs[row,col].set_ylabel("Latitude")
-            axs[row,col].set_title(f"Trajectories with sd {sign} {sds[row*ncols+col]:.2f}")
+            axs[row,col].set_title(
+                f"Trajectories with sd in range\n"
+                f"[{sds[row*ncols+col]:.2f},{sds[row*ncols+col+1]:.2f}]",
+                fontsize=8
+            )
 
             # Set limits
-            axs[row,col].set_xlim(-0.5,1.5)
-            axs[row,col].set_ylim(-0.5,1.5)
-        
-    plt.savefig(f"aisstats/out/trjitter_{mode}.png", dpi=500)
+            axs[row,col].set_xlim(-0.25,0.75)
+            axs[row,col].set_ylim(-0.25,0.75)
+            
+            idx += 1
+            
+    plt.tight_layout()
+    plt.savefig(f"aisstats/out/trjitter.png", dpi=500)
     plt.close()
     
 def plot_simple_route(tv: TargetShip, mode: str) -> None:
@@ -1116,7 +1125,7 @@ def plot_trlen_vs_nmsg(ships: dict[int,TargetShip],
     Plot the length of a trajectory against the number of
     messages in it.
     """
-    f,ax = plt.subplots(1,1,figsize=(6,6))
+    f,ax = plt.subplots(1,1,figsize=(6,5))
     ll = len(ships)
     nmsg = []
     tlens = []
@@ -1134,10 +1143,10 @@ def plot_trlen_vs_nmsg(ships: dict[int,TargetShip],
             tlens.append(mi2nm(d))
             nmsg.append(len(track))
     ax.scatter(tlens,nmsg,color=COLORWHEEL[0],alpha=0.5,s=0.5)        
-    ax.set_xlabel("Number of messages per trajectory")
+    ax.set_ylabel("Number of messages per trajectory")
     ax.set_yscale('log')
     ax.set_xscale('log')
-    ax.set_ylabel("Trajectory length [nm]")
+    ax.set_xlabel("Trajectory length [nm]")
     plt.savefig(savename)
     plt.close()
     
@@ -1278,7 +1287,7 @@ if __name__ == "__main__":
     # plot_reported_vs_calculated_speed(SA)
     # plot_time_diffs(SA)
     
-    ships = SA.get_all_ships(njobs=2, skip_filter=True)
+    ships = SA.get_all_ships(njobs=2)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1287,12 +1296,12 @@ if __name__ == "__main__":
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    # with MemoryLoader():
-    #     plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
-    #     plot_trajectory_jitter(ships,"accepted")
+    with MemoryLoader():
+        # plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
+        plot_trajectory_jitter(ships)
     
     # Plot trajectory length by number of observations
-    plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
+    # plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
     #
     # Plot histograms of raw data ---------------------------------------------------
     # plot_histograms(
