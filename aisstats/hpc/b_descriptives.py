@@ -2,18 +2,11 @@
 HPC script for calculating descriptive data
 for the AIS data set
 """
-from aisplanner.encounters.main import NorthSea
-from aisstats.errchecker import plot_sd_vs_rejection_rate, speed_filter
 from pathlib import Path
 from pytsa.decode import filedescriptor as fd
-from functools import partial
-from pytsa.trajectories.rules import *
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
-
-
-SEARCHAREA = NorthSea
 
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("*.csv"))
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("*.csv"))
