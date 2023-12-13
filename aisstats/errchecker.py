@@ -572,6 +572,21 @@ def plot_latlon_shapes(good: list[TargetShip],bad: list[TargetShip]):
     
     plt.savefig(f"aisstats/out/latlon_kde.png",dpi=300)
     plt.close()
+
+def plot_speed_histogram(sa: SearchAgent,
+                         savename: str) -> None:
+    """
+    Plots a histogram of the speeds of all
+    vessels in the data set.
+    """
+    speeds = sa.dynamic_msgs[fd.Fields12318.speed.name]
+    fig, ax = plt.subplots(figsize=(6,4))
+    ax.hist(speeds, bins=100, color=COLORWHEEL[0])
+    ax.set_xlabel("Speed [kn]")
+    ax.set_ylabel("Number of observations")
+    ax.set_yscale('log')
+    plt.tight_layout()
+    plt.savefig(savename)
     
 def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip],
                               savename: str):
@@ -1265,7 +1280,7 @@ if __name__ == "__main__":
         msg12318file=TEST_FILE_DYN,
         msg5file=TEST_FILE_STA,
         frame=SEARCHAREA,
-        preprocessor=partial(speed_filter, speeds=SPEEDRANGE)
+        # preprocessor=partial(speed_filter, speeds=SPEEDRANGE)
     )
 
     # Create starting positions for the search.
@@ -1287,7 +1302,9 @@ if __name__ == "__main__":
     # plot_reported_vs_calculated_speed(SA)
     # plot_time_diffs(SA)
     
-    ships = SA.get_all_ships(njobs=2)
+    plot_speed_histogram(SA,"aisstats/out/speed_histogram.pdf")
+    
+    # ships = SA.get_all_ships(njobs=2,skip_filter=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1296,9 +1313,9 @@ if __name__ == "__main__":
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    with MemoryLoader():
-        # plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
-        plot_trajectory_jitter(ships)
+    # with MemoryLoader():
+    #     plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
+    #     plot_trajectory_jitter(ships)
     
     # Plot trajectory length by number of observations
     # plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
