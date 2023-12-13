@@ -591,6 +591,7 @@ def plot_speed_histogram(speeds: np.ndarray,
     ax.set_xlabel("Speed [kn]")
     ax.set_ylabel("Number of observations")
     ax.set_yscale('log')
+    ax.set_axisbelow(True)
     plt.tight_layout()
     plt.savefig(savename,dpi=400)
     
@@ -600,10 +601,22 @@ def lat_lon_outofbounds(lats,lons)->None:
     are out of bounds as a percentage of the total
     number of observations.
     """
-    print(f"Number of latitudes out of bounds: {sum(lats < 0) + sum(lats > 90)}")
-    print(f"Number of longitudes out of bounds: {sum(lons < 0) + sum(lons > 180)}")
-    print(f"Percentage of latitudes out of bounds: {(sum(lats < 0) + sum(lats > 90)) / len(lats) * 100:.2f}%")
-    print(f"Percentage of longitudes out of bounds: {(sum(lons < 0) + sum(lons > 180)) / len(lons) * 100:.2f}%")
+    print(
+        f"Number of latitudes out of bounds: "
+        f"{sum(lats < 0) + sum(lats > 90)}"
+    )
+    print(
+        f"Number of longitudes out of bounds: "
+        f"{sum(lons < 0) + sum(lons > 180)}"
+    )
+    print(
+        f"Percentage of latitudes out of bounds: "
+        f"{(sum(lats < 0) + sum(lats > 90)) / len(lats) * 100:.2f}%"
+    )
+    print(
+        f"Percentage of longitudes out of bounds: "
+        f"{(sum(lons < 0) + sum(lons > 180)) / len(lons) * 100:.2f}%"
+    )
     
 def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip],
                               savename: str):
@@ -1319,7 +1332,7 @@ if __name__ == "__main__":
     # plot_reported_vs_calculated_speed(SA)
     # plot_time_diffs(SA)
     
-    # plot_speed_histogram(SA,"aisstats/out/speed_histogram.pdf")
+    plot_speed_histogram(SA,"aisstats/out/speed_histogram.pdf")
     f = pd.read_csv(TEST_FILE_DYN)
     la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     lat_lon_outofbounds(la,lo)
