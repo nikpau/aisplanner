@@ -36,8 +36,8 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
             rlons.append(msg.lon)
             rlats.append(msg.lat)       
         # De-mean
-    latmean = sum(lats) / len(lats)
-    lonmean = sum(lons) / len(lons)
+    latmean = sum(rlats) / len(rlats)
+    lonmean = sum(rlons) / len(rlons)
         # Subtract mean from all positions
     lons, lats = [], []
     for track in tv.tracks:
@@ -49,7 +49,6 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
         
         rlons.append(lons)
         rlats.append(lats)
-
     
     fig, ax = plt.subplots(figsize=(8,6))
     
@@ -71,7 +70,6 @@ if __name__ == "__main__":
         msg12318file=DYNAMIC_MESSAGES,
         frame=SEARCHAREA,
         msg5file=STATIC_MESSAGES,
-        preprocessor=partial(speed_filter, speeds= (1,30))
     )
     
     # Create starting positions for the search.
@@ -84,20 +82,9 @@ if __name__ == "__main__":
     )
     SA.init(tpos)
 
-    ships = SA.get_all_ships(njobs=16)
-
-    ExampleRecipe = Recipe(
-        partial(too_few_obs, n=50),
-        partial(too_small_spatial_deviation, sd=0.2)
-    )
-    from pytsa.trajectories import Inspector
-    inspctr = Inspector(
-        data=ships,
-        recipe=ExampleRecipe
-    )
-    _, rejected = inspctr.inspect(njobs=1)
+    ships = SA.get_all_ships(njobs=16,skip_filter=True)
     
-    tvs = list(rejected.values())
+    tvs = list(ships.values())
     for i in range(60,200):
         tv = tvs[i]
         plot_simple_route(tv, "rejected")
