@@ -400,16 +400,11 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
     # Plot the trajectory
     for i, (lo,la) in enumerate(zip(rlons,rlats)):
         ax.plot(lo,la,color=COLORWHEEL[i%len(COLORWHEEL)],ls="-", alpha = 0.9)
+        ax.scatter(lo,la,color=COLORWHEEL[i%len(COLORWHEEL)],s=1)
         
     # Set labels
     ax.set_xlabel('Longitude')
     ax.set_ylabel('Latitude')
-    
-    # Set legend
-    ax.legend(handles=[
-        patches.Patch(color='k',label=f"{len(rlons)} trajectories"),
-    ]
-    )
     
     # Save figure
     plt.savefig(f"aisstats/out/errchecker/{tv.mmsi}_{mode}.png",dpi=300)
@@ -1332,12 +1327,15 @@ if __name__ == "__main__":
     # plot_reported_vs_calculated_speed(SA)
     # plot_time_diffs(SA)
     
-    plot_speed_histogram(SA,"aisstats/out/speed_histogram.pdf")
-    f = pd.read_csv(TEST_FILE_DYN)
-    la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
-    lat_lon_outofbounds(la,lo)
+    # Speed histogram --------------------------------------------------------------
+    # plot_speed_histogram(SA,"aisstats/out/speed_histogram.pdf")
     
-    # ships = SA.get_all_ships(njobs=2,skip_filter=True)
+    
+    # f = pd.read_csv(TEST_FILE_DYN)
+    # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
+    # lat_lon_outofbounds(la,lo)
+    
+    ships = SA.get_all_ships(njobs=2,skip_filter=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1360,25 +1358,26 @@ if __name__ == "__main__":
     #     specs={}
     # )
     # Split the ships into accepted and rejected ------------------------------------
-    # from pytsa.trajectories.rules import *
-    # ExampleRecipe = Recipe(
-    #     partial(too_few_obs, n=MINLEN),
-    #     partial(too_small_spatial_deviation, sd=SD)
-    # )
-    # from pytsa.trajectories import Inspector
-    # inspctr = Inspector(
-    #     data=ships,
-    #     recipe=ExampleRecipe
-    # )
-    # accepted, rejected = inspctr.inspect(njobs=1)
+    from pytsa.trajectories.rules import *
+    ExampleRecipe = Recipe(
+        partial(too_few_obs, n=MINLEN),
+        partial(too_small_spatial_deviation, sd=SD)
+    )
+    from pytsa.trajectories import Inspector
+    inspctr = Inspector(
+        data=ships,
+        recipe=ExampleRecipe
+    )
+    accepted, rejected = inspctr.inspect(njobs=1)
     
     # Plot heatmap -----------------------------------------------------------------
     # binned_heatmap(accepted,SEARCHAREA,"aisstats/out/heatmap.png")
     
     # Plot routes and speeds for accepted and rejected ------------------------------
-    # Random indices
-    # for i in range(60,100):
-    #     plot_simple_route(list(rejected.values())[i],"rejected")
+    vals = list(accepted.values())
+    np.random.shuffle(vals)
+    for i in range(60,100):
+        plot_simple_route(vals[i],"rejected")
     #     plot_speeds_and_route(list(rejected.values())[i],"rejected")
     #     plot_speeds_and_route(list(accepted.values())[i],"accepted")
     
