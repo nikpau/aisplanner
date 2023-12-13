@@ -31,4 +31,4 @@ if __name__ == "__main__":
     
     sp = np.hstack(results)
 
-    plot_speed_histogram(sp, savename="/home/s2075466/aisplanner/results/speed_hist_21.pdf")
+    plot_speed_histogram(sp, savename="/home/s2075466/aisplanner/results/speed_hist_21.png")
