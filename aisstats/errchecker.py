@@ -573,13 +573,19 @@ def plot_latlon_shapes(good: list[TargetShip],bad: list[TargetShip]):
     plt.savefig(f"aisstats/out/latlon_kde.png",dpi=300)
     plt.close()
 
-def plot_speed_histogram(sa: SearchAgent,
+def plot_speed_histogram(speeds: np.ndarray,
                          savename: str) -> None:
     """
     Plots a histogram of the speeds of all
     vessels in the data set.
     """
-    speeds = sa.dynamic_msgs[fd.Fields12318.speed.name]
+    print(f"Number of observations: {len(speeds)}")
+    
+    # Print how many vessels have a speed of smaller than
+    # 1 knot and larger than 30 knots
+    print(f"Number of vessels with speed < 1 knot: {sum(speeds < 1)}")
+    print(f"Number of vessels with speed > 30 knots: {sum(speeds > 30)}")
+    
     fig, ax = plt.subplots(figsize=(6,4))
     ax.hist(speeds, bins=100, color=COLORWHEEL[0])
     ax.set_xlabel("Speed [kn]")
