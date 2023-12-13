@@ -95,8 +95,9 @@ if __name__ == "__main__":
         data=ships,
         recipe=ExampleRecipe
     )
-    accepted, rejected = inspctr.inspect(njobs=1)
+    _, rejected = inspctr.inspect(njobs=1)
     
+    tvs = list(rejected.values())
     for i in range(60,200):
-        tv = rejected[i]
+        tv = tvs[i]
         plot_simple_route(tv, "rejected")
