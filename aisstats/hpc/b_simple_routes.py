@@ -37,8 +37,8 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
     fig, ax = plt.subplots(figsize=(8,6))
     
     # Plot the trajectory
-    ax.plot(lons,lats,color=COLORWHEEL[1],ls="-", alpha = 0.9)
-    ax.scatter(lons,lats,color=COLORWHEEL[1],s=1)
+    ax.plot(lons,lats,color=COLORWHEEL[0],ls="-", alpha = 0.9)
+    ax.scatter(lons,lats,color=COLORWHEEL[0],s=10)
         
     # Set labels
     ax.set_xlabel('Longitude')
