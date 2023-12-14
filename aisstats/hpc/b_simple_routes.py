@@ -36,7 +36,7 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
     
     fig, ax = plt.subplots(figsize=(8,6))
     
-    plot_coastline(ax)
+    plot_coastline(SEARCHAREA,ax)
     # Plot the trajectory
     ax.plot(lons,lats,color=COLORWHEEL[0],ls="-", alpha = 0.9)
     ax.scatter(lons,lats,color=COLORWHEEL[0],s=10)
