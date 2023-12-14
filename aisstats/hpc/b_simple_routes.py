@@ -2,13 +2,14 @@
 HPC script for calculating descriptive data
 for the AIS data set
 """
+from glob import glob
 from pathlib import Path
 from matplotlib import pyplot as plt
 from pytsa.decode import filedescriptor as fd
 import numpy as np
 import pandas as pd
 import multiprocessing as mp
-from pytsa import TargetShip
+from pytsa import TargetShip, BoundingBox
 from aisplanner.encounters.main import NorthSea
 from aisstats.errchecker import speed_filter
 from pathlib import Path
@@ -17,12 +18,33 @@ from functools import partial
 from pytsa.trajectories.rules import *
 from aisplanner.encounters.encmap import plot_coastline
 from aisstats.errchecker import COLORWHEEL
+import geopandas as gpd
 
 SEARCHAREA = NorthSea
 
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_12.csv"))
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_12.csv"))
 
+def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
+                   save_plot: bool = False,
+                   return_figure: bool = False) -> plt.Figure | None:
+    """
+    Plots the coastline of the North-Sea area.
+    """
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(15,15))
+    coasts = glob(f"/home/s2075466/aisplanner/data/geometry/*.json")
+    for coast in coasts:
+        gdf = gpd.read_file(coast)
+        gdf.plot(ax=ax, color="#0d1b2a", alpha=0.8,linewidth=0.6)
+        
+    # Crop the plot to the extent
+    ax.set_xlim(extent.LONMIN, extent.LONMAX)
+    ax.set_ylim(extent.LATMIN, extent.LATMAX)
+    
+    if save_plot:
+        plt.savefig("aisplanner/encounters/coastline.png", dpi=300)
+    return None if not return_figure else fig
 
 def plot_simple_route(tv: TargetShip, mode: str) -> None:
     """

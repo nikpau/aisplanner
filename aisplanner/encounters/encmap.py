@@ -23,7 +23,8 @@ GEODATA = Path("data/geometry")
 ENCOUNTERS = Path("results/encounters")
 
 def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
-                   save_plot: bool = False) -> None:
+                   save_plot: bool = False,
+                   return_figure: bool = False) -> plt.Figure | None:
     """
     Plots the coastline of the North-Sea area.
     """
@@ -40,7 +41,7 @@ def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
     
     if save_plot:
         plt.savefig("aisplanner/encounters/coastline.png", dpi=300)
-    return None
+    return None if not return_figure else fig
 
 def closest_point(pair: OverlappingPair) -> tuple[Latitude,Longitude]:
     """
