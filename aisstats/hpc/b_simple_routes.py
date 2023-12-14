@@ -36,7 +36,7 @@ def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
     coasts = glob(f"/home/s2075466/aisplanner/data/geometry/*.json")
     for coast in coasts:
         gdf = gpd.read_file(coast)
-        gdf.plot(ax=ax, color="#0d1b2a", alpha=0.8,linewidth=0.6)
+        gdf.plot(ax=ax, color="#0d1b2a0", alpha=0.8,linewidth=0.6)
         
     # Crop the plot to the extent
     ax.set_xlim(extent.LONMIN, extent.LONMAX)
@@ -69,8 +69,8 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
     
     # Set y and x limits to 1.5 times the max and min
     # of the trajectory
-    ax.set_ylim(min(lats)-0.01,max(lats)+0.01)
-    ax.set_xlim(min(lons)-0.01,max(lons)+0.01)
+    ax.set_ylim(min(lats)-0.001,max(lats)+0.001)
+    ax.set_xlim(min(lons)-0.001,max(lons)+0.001)
     
     # Save figure
     plt.savefig(f"/home/s2075466/aisplanner/results/{tv.mmsi}_{mode}.png",dpi=300)
