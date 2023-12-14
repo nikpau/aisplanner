@@ -36,7 +36,7 @@ def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
     coasts = glob(f"/home/s2075466/aisplanner/data/geometry/*.json")
     for coast in coasts:
         gdf = gpd.read_file(coast)
-        gdf.plot(ax=ax, color="#0d1b2a0", alpha=0.8,linewidth=0.6)
+        gdf.plot(ax=ax, color="#0d1b2a", alpha=0.8,linewidth=0.6)
         
     # Crop the plot to the extent
     ax.set_xlim(extent.LONMIN, extent.LONMAX)
