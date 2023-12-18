@@ -75,8 +75,6 @@ tpos = TimePosition(
     lat=center.lat,
     lon=center.lon
 )
-SA.init(tpos)
-
 ships = SA.get_all_ships(njobs=16,skip_filter=True)
 
 average_complexity(ships)
