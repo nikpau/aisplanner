@@ -67,6 +67,6 @@ SA = SearchAgent(
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
-ships = SA.get_all_ships(njobs=16,skip_filter=True)
+ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
 
 average_complexity(ships)
