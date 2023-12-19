@@ -20,7 +20,7 @@ def routine(file: Path) -> np.ndarray:
     return df
 
 if __name__ == "__main__":
-    with mp.Pool(40) as pool:
+    with mp.Pool(30) as pool:
         results = pool.map(routine, STATIC_MESSAGES)
 
     # Concat the results
