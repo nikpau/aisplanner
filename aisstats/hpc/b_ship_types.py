@@ -9,7 +9,7 @@ import pandas as pd
 import multiprocessing as mp
 import pickle
 
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("*.csv"))
 
 def routine(file: Path) -> np.ndarray:
     df = pd.read_csv(file)
@@ -20,7 +20,7 @@ def routine(file: Path) -> np.ndarray:
     return df
 
 if __name__ == "__main__":
-    with mp.Pool(20) as pool:
+    with mp.Pool(40) as pool:
         results = pool.map(routine, STATIC_MESSAGES)
 
     # Concat the results
