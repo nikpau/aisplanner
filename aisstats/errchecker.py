@@ -193,7 +193,7 @@ def plot_speeds_and_route(tv: TargetShip, mode: str) -> None:
     plt.savefig(f"aisstats/out/errchecker/{tv.mmsi}_{mode}.png",dpi=300)
     plt.close()
     
-def plot_speed_scatter(sa: SearchAgent) -> None:
+def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     """
     Plot the speeds calculated from
     individual positions against the
@@ -201,7 +201,7 @@ def plot_speed_scatter(sa: SearchAgent) -> None:
     """
     rspeeds = []
     cspeeds = []
-    ships = sa.get_all_ships(skip_filter=True)
+    ships = sa.get_all_ships(skip_tsplit=True)
     fig, ax = plt.subplots(figsize=(6,6))
     for ship in ships.values():
         for track in ship.tracks:
@@ -215,7 +215,7 @@ def plot_speed_scatter(sa: SearchAgent) -> None:
         cspeeds,
         color=COLORWHEEL[0],
         alpha=0.5,
-        s=2
+        s=1
     )
     
     # Plot line y = x
@@ -223,7 +223,7 @@ def plot_speed_scatter(sa: SearchAgent) -> None:
         np.linspace(1,30,100),
         np.linspace(1,30,100),
         color=COLORWHEEL3[3],
-        lw=0.5
+        lw=0.8
     )
     
     # Log scale for y axis
@@ -231,7 +231,8 @@ def plot_speed_scatter(sa: SearchAgent) -> None:
     
     ax.set_xlabel("Average speed as reported [kn]")
     ax.set_ylabel("Speed calculated from positions [kn]")
-    plt.savefig("aisstats/out/speed_scatter.png",dpi=300)
+    plt.tight_layout()
+    plt.savefig(savename,dpi=300)
     plt.close()
 
 def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
@@ -1308,7 +1309,7 @@ if __name__ == "__main__":
     # plot_average_complexity(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
-    # plot_speed_scatter(sa=SA) 
+    plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
     # with MemoryLoader():
