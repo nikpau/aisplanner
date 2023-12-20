@@ -52,17 +52,14 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ax[0].set_xlim(min(lons)-0.001,max(lons)+0.001)
     
     # Plot speed info
-    speeds = [avg_speed(m1,m2)-speed_from_position(m1,m2) for m1,m2 in zip(track,track[1:])]
-    ax[1].plot(
-        [datetime.fromtimestamp(m.timestamp) for m in track[:-1]],
-        speeds,
-        color=COLORWHEEL[0],ls="-", alpha = 0.9)
+    dists = [haversine(
+        m1.lon,m1.lat,m2.lon,m2.lat) for m1,m2 in zip(track,track[1:])]
+    ax[1].plot(dists,color=COLORWHEEL[0],ls="-", alpha = 0.9)
     ax[1].set_xlabel("Time")
     ax[1].set_ylabel("Reported minus calculated speed")
     
-    # Add sd as info
-    sd = np.std(speeds)
-    ax[1].set_title(f"SD: {sd:.2f}")
+    # Add title
+    ax[1].set_title(f"Distance between consecutive messages")
     
     # Save figure
     # plt.savefig(f"/home/s2075466/aisplanner/results/{tv.mmsi}.png",dpi=300)
@@ -97,13 +94,13 @@ if __name__ == "__main__":
         for track in tv.tracks:
             tracks.append(track)
     
-    def _sort_by_speed_dev(track: list[AISMessage]) -> float:
+    def _sort_by_dist(track: list[AISMessage]) -> float:
         return max(
-            avg_speed(m1,m2)-speed_from_position(m1,m2) for m1,m2 in zip(track,track[1:])
+            haversine(m1.lon,m1.lat,m2.lon,m2.lat) for m1,m2 in zip(track,track[1:])
         )
     
     
-    tracks = sorted(tracks,key=_sort_by_speed_dev ,reverse=True)
+    tracks = sorted(tracks,key=_sort_by_dist ,reverse=True)
     
     for i in range(100):
         t = tracks[i]

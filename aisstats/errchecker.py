@@ -231,6 +231,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     
     ax.set_xlabel("Average speed as reported [kn]")
     ax.set_ylabel("Speed calculated from positions [kn]")
+    ax.set_axisbelow(True)
     plt.tight_layout()
     plt.savefig(savename,dpi=300)
     plt.close()
