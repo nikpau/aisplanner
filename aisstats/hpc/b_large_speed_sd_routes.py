@@ -31,32 +31,36 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     Plot the trajectory of a target vessel
     """
     lons,lats = [],[]
+    latmean = np.mean([msg.lat for msg in track])
+    lonmean = np.mean([msg.lon for msg in track])
     for msg in track:
-        lons.append(msg.lon)
-        lats.append(msg.lat)
+        lons.append(msg.lon - lonmean)
+        lats.append(msg.lat - latmean)
     
-    fig, ax = plt.subplots(2,1,figsize=(8,8))
+    fig, ax = plt.subplots(1,2,figsize=(10,8))
     ax: list[plt.Axes]
     
     # Plot the trajectory
     ax[0].plot(lons,lats,color=COLORWHEEL[0],ls="-", alpha = 0.9)
-    ax[0].scatter(lons,lats,color=COLORWHEEL[0],s=10)
+    ax[0].scatter(lons,lats,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9)
         
     # Set labels
     ax[0].set_xlabel('Longitude')
     ax[0].set_ylabel('Latitude')
     
+    ax[0].set_title(f"Trajectory")
+    
     # Set y and x limits to 1.5 times the max and min
     # of the trajectory
-    ax[0].set_ylim(min(lats)-0.001,max(lats)+0.001)
-    ax[0].set_xlim(min(lons)-0.001,max(lons)+0.001)
+    #ax[0].set_ylim(min(lats)-0.001,max(lats)+0.001)
+    #ax[0].set_xlim(min(lons)-0.001,max(lons)+0.001)
     
     # Plot speed info
     dists = [haversine(
         m1.lon,m1.lat,m2.lon,m2.lat) for m1,m2 in zip(track,track[1:])]
     ax[1].plot(dists,color=COLORWHEEL[0],ls="-", alpha = 0.9)
     ax[1].set_xlabel("Time")
-    ax[1].set_ylabel("Reported minus calculated speed")
+    ax[1].set_ylabel("")
     
     # Add title
     ax[1].set_title(f"Distance between consecutive messages")
