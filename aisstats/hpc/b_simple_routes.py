@@ -17,34 +17,13 @@ from pytsa import SearchAgent, TimePosition, ShipType
 from functools import partial
 from pytsa.trajectories.rules import *
 from aisplanner.encounters.encmap import plot_coastline
-from aisstats.errchecker import COLORWHEEL
+from aisstats.errchecker import COLORWHEEL_MAP
 import geopandas as gpd
 
 SEARCHAREA = NorthSea
 
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_12.csv"))
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_12.csv"))
-
-def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
-                   save_plot: bool = False,
-                   return_figure: bool = False) -> plt.Figure | None:
-    """
-    Plots the coastline of the North-Sea area.
-    """
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(15,15))
-    coasts = glob(f"/home/s2075466/aisplanner/data/geometry/*.json")
-    for coast in coasts:
-        gdf = gpd.read_file(coast)
-        gdf.plot(ax=ax, color="#0d1b2a", alpha=0.8,linewidth=0.6)
-        
-    # Crop the plot to the extent
-    ax.set_xlim(extent.LONMIN, extent.LONMAX)
-    ax.set_ylim(extent.LATMIN, extent.LATMAX)
-    
-    if save_plot:
-        plt.savefig("aisplanner/encounters/coastline.png", dpi=300)
-    return None if not return_figure else fig
 
 def plot_simple_route(tv: TargetShip, mode: str) -> None:
     """
@@ -60,8 +39,8 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
     
     plot_coastline(SEARCHAREA,ax)
     # Plot the trajectory
-    ax.plot(lons,lats,color=COLORWHEEL[0],ls="-", alpha = 0.9)
-    ax.scatter(lons,lats,color=COLORWHEEL[0],s=10)
+    ax.plot(lons,lats,color=COLORWHEEL_MAP[0],ls="-", alpha = 0.9)
+    ax.scatter(lons,lats,color=COLORWHEEL_MAP[0],s=10)
         
     # Set labels
     ax.set_xlabel('Longitude')
@@ -78,22 +57,12 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
 
 if __name__ == "__main__":
     SA = SearchAgent(
-        msg12318file=DYNAMIC_MESSAGES,
+        dynamic_paths=DYNAMIC_MESSAGES,
         frame=SEARCHAREA,
-        msg5file=STATIC_MESSAGES,
+        static_paths=STATIC_MESSAGES,
     )
-    
-    # Create starting positions for the search.
-    # This is just the center of the search area.
-    center = SEARCHAREA.center
-    tpos = TimePosition(
-        timestamp="2021-07-01", # arbitrary date
-        lat=center.lat,
-        lon=center.lon
-    )
-    SA.init(tpos)
 
-    ships = SA.get_all_ships(njobs=16,skip_filter=True)
+    ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
     
     tvs = list(ships.values())
     for i in range(60,200):

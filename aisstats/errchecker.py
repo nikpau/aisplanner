@@ -48,28 +48,6 @@ import pandas as pd
 from functools import partial
 from aisplanner.dataprep import _file_descriptors as fd
 
-def add_subplot_axes(ax,rect):
-    fig = plt.gcf()
-    box = ax.get_position()
-    width = box.width
-    height = box.height
-    inax_position  = ax.transAxes.transform(rect[0:2])
-    transFigure = fig.transFigure.inverted()
-    infig_position = transFigure.transform(inax_position)    
-    x = infig_position[0]
-    y = infig_position[1]
-    width *= rect[2]
-    height *= rect[3]  # <= Typo was here
-    #subax = fig.add_axes([x,y,width,height],facecolor=facecolor)  # matplotlib 2.0+
-    subax = fig.add_axes([x,y,width,height])
-    x_labelsize = subax.get_xticklabels()[0].get_size()
-    y_labelsize = subax.get_yticklabels()[0].get_size()
-    x_labelsize *= rect[2]**0.5
-    y_labelsize *= rect[3]**0.5
-    subax.xaxis.set_tick_params(labelsize=x_labelsize)
-    subax.yaxis.set_tick_params(labelsize=y_labelsize)
-    return subax
-
 # Color converter
 cc = matplotlib.colors.ColorConverter.to_rgb
 def scale_lightness(rgb, scale_l):
@@ -87,6 +65,7 @@ COLORWHEEL3 = ["#335c67","#fff3b0","#e09f3e","#9e2a2b","#540b0e"]
 COLORWHEEL_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL]
 COLORWHEEL2 = ["#386641", "#6a994e", "#a7c957", "#f2e8cf", "#bc4749"]
 COLORWHEEL2_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL2]
+COLORWHEEL_MAP = ["#0466c8","#0353a4","#023e7d","#002855","#001845","#001233","#33415c","#5c677d","#7d8597","#979dac"]
 
 def _bw_sel(kde: gaussian_kde) -> float:
     data = kde.dataset.reshape(-1,1)
@@ -428,7 +407,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
                 [p.lon for p in track],
                 [p.lat for p in track],
                 alpha=0.5, linewidth=0.3, marker = "x", markersize = 0.5,
-                color = COLORWHEEL[idx % len(COLORWHEEL)]
+                color = COLORWHEEL_MAP[idx % len(COLORWHEEL_MAP)]
             )
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
@@ -1302,23 +1281,11 @@ if __name__ == "__main__":
     
     
     SA = SearchAgent(
-        msg12318file=TEST_FILE_DYN,
-        msg5file=TEST_FILE_STA,
+        dynamic_paths=TEST_FILE_DYN,
+        static_paths=TEST_FILE_STA,
         frame=SEARCHAREA,
-        # preprocessor=partial(speed_filter, speeds=SPEEDRANGE)
+        preprocessor=partial(speed_filter, speeds=SPEEDRANGE)
     )
-
-    # Create starting positions for the search.
-    # This is just the center of the search area.
-    center = area_center(SEARCHAREA)
-    tpos = TimePosition(
-        timestamp="2021-07-01",
-        lat=center.lat,
-        lon=center.lon
-    )
-
-    # Initialize the SearchAgent
-    SA.init(tpos)
 
     # Heading changes and speed changes --------------------------------------------
     # inspect_trajectory_splits(SA)
@@ -1335,7 +1302,7 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.get_all_ships(njobs=2,skip_filter=True)
+    ships = SA.get_all_ships(njobs=2,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1374,10 +1341,10 @@ if __name__ == "__main__":
     # binned_heatmap(accepted,SEARCHAREA,"aisstats/out/heatmap.png")
     
     # Plot routes and speeds for accepted and rejected ------------------------------
-    vals = list(accepted.values())
-    np.random.shuffle(vals)
-    for i in range(60,100):
-        plot_simple_route(vals[i],"rejected")
+    # vals = list(accepted.values())
+    # np.random.shuffle(vals)
+    # for i in range(60,100):
+    #     plot_simple_route(vals[i],"rejected")
     #     plot_speeds_and_route(list(rejected.values())[i],"rejected")
     #     plot_speeds_and_route(list(accepted.values())[i],"accepted")
     
@@ -1397,9 +1364,9 @@ if __name__ == "__main__":
 
 
     # Plot trajectories on map ------------------------------------------------------
-    # plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
-    # plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
-    # plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
+    plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
+    plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
+    plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
 
     # # Plot histograms of accepted and rejected --------------------------------------
     # plot_histograms(
