@@ -98,13 +98,13 @@ if __name__ == "__main__":
         for track in tv.tracks:
             tracks.append(track)
     
-    def _sort_by_dist(track: list[AISMessage]) -> float:
+    def _sort_by_speed(track: list[AISMessage]) -> float:
         return max(
-            haversine(m1.lon,m1.lat,m2.lon,m2.lat) for m1,m2 in zip(track,track[1:])
+            abs(m2.SOG - m1.SOG) for m1,m2 in zip(track,track[1:])
         )
     
     
-    tracks = sorted(tracks,key=_sort_by_dist ,reverse=True)
+    tracks = sorted(tracks,key=_sort_by_speed ,reverse=True)
     
     for i in range(100):
         t = tracks[i]
