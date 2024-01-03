@@ -6,7 +6,7 @@ and the spatial standard deviation threshold.
 from aisplanner.encounters.main import NorthSea
 from aisstats.errchecker import speed_filter
 from pathlib import Path
-from pytsa import SearchAgent, TimePosition, TargetShip
+from pytsa import SearchAgent, TargetShip
 from functools import partial
 import pytsa
 import pytsa.tsea.split as split
@@ -42,10 +42,10 @@ def average_complexity(ships: dict[int,TargetShip]):
             tcosines = []
             for ship in rej.values():
                 for track in ship.tracks:
-                    for i in range(1,len(track)-1):
-                        a = track[i-1]
-                        b = track[i]
-                        c = track[i+1]
+                    for k in range(1,len(track)-1):
+                        a = track[k-1]
+                        b = track[k]
+                        c = track[k+1]
                         tcosines.append(
                             split.cosine_of_angle_between(a,b,c)
                         )
