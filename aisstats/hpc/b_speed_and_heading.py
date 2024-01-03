@@ -116,7 +116,6 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     ax[1].set_xlim(-0.2,4)
     
     plt.tight_layout()
-    plt.savefig("aisstats/out/heading_speed_changes_all.pdf")
     plt.savefig(f"/home/s2075466/aisplanner/results/heading_speed_changes_all.pdf")
 
 if __name__ == "__main__":
