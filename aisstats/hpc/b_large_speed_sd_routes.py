@@ -102,9 +102,12 @@ if __name__ == "__main__":
         return max(
             abs(m2.SOG - m1.SOG) for m1,m2 in zip(track,track[1:])
         )
+        
+    def _sort_by_length(track: list[AISMessage]) -> float:
+        return len(track)
     
     
-    tracks = sorted(tracks,key=_sort_by_speed ,reverse=True)
+    tracks = sorted(tracks,key=_sort_by_length ,reverse=True)
     
     for i in range(100):
         t = tracks[i]
