@@ -37,7 +37,7 @@ def plot_simple_route(track: list[AISMessage]) -> None:
         lons.append(msg.lon - lonmean)
         lats.append(msg.lat - latmean)
     
-    fig, ax = plt.subplots(1,2,figsize=(10,8))
+    fig, ax = plt.subplots(1,2,figsize=(6,8))
     ax: list[plt.Axes]
     
     # Plot the trajectory
@@ -48,7 +48,7 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ax[0].set_xlabel('Longitude')
     ax[0].set_ylabel('Latitude')
     
-    ax[0].set_title(f"Trajectory")
+    ax[0].set_title(f"Trajectory",fontsize=8)
     
     # Set y and x limits to 1.5 times the max and min
     # of the trajectory
@@ -56,14 +56,14 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     #ax[0].set_xlim(min(lons)-0.001,max(lons)+0.001)
     
     # Plot speed info
-    dists = [haversine(
-        m1.lon,m1.lat,m2.lon,m2.lat) for m1,m2 in zip(track,track[1:])]
-    ax[1].plot(dists,color=COLORWHEEL[0],ls="-", alpha = 0.9)
-    ax[1].set_xlabel("Time")
-    ax[1].set_ylabel("")
+    speeds = [abs(m2.SOG - m1.SOG) for m1,m2 in zip(track,track[1:])]
+    ax[1].plot(speeds,color=COLORWHEEL[0],ls="-", alpha = 0.9)
+    ax[1].scatter(range(len(speeds)),speeds,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9)
+    ax[1].set_xlabel("Message number")
+    ax[1].set_ylabel("Absolute speed difference [knots]")
     
     # Add title
-    ax[1].set_title(f"Distance between consecutive messages")
+    ax[1].set_title(f"Abs. speed difference\nbetween consecutive messages",fontsize=8)
     
     # Save figure
     # plt.savefig(f"/home/s2075466/aisplanner/results/{tv.mmsi}.png",dpi=300)
