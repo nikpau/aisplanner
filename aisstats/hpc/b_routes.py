@@ -67,13 +67,13 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     
     # Save figure
     # plt.savefig(f"/home/s2075466/aisplanner/results/{tv.mmsi}.png",dpi=300)
-    fname = f"/home/s2075466/aisplanner/results/{track[0].sender}.png"
+    fname = f"/home/s2075466/aisplanner/results/{track[0].sender}.pdf"
     # Check if the file already exists and if so, add a number to the end
     # of the filename
     if Path(fname).exists():
         i = 1
         while Path(fname).exists():
-            fname = f"/home/s2075466/aisplanner/results/{track[0].sender}_{i}.png"
+            fname = f"/home/s2075466/aisplanner/results/{track[0].sender}_{i}.pdf"
             i += 1
     
     plt.tight_layout()
