@@ -51,7 +51,7 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ax[0].set_title(f"Trajectory",fontsize=8)
     
     # Plot speed info
-    cog_changes = [abs(_heading_change(m2.COG - m1.COG)) for m1,m2 in zip(track,track[1:])]
+    cog_changes = [abs(_heading_change(m2.COG,m1.COG)) for m1,m2 in zip(track,track[1:])]
     ax[1].plot(cog_changes,color=COLORWHEEL[0],ls="-", alpha = 0.9)
     ax[1].scatter(range(len(cog_changes)),cog_changes,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9)
     ax[1].set_xlabel("Message number")
@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     def _sort_by_heading_change(track: list[AISMessage]) -> float:
         return sum(
-            abs(_heading_change(m2.COG - m1.COG)) for m1,m2 in zip(track,track[1:])
+            abs(_heading_change(m2.COG,m1.COG)) for m1,m2 in zip(track,track[1:])
         )
     
     
