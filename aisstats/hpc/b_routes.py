@@ -15,7 +15,7 @@ from aisplanner.encounters.main import NorthSea
 from pathlib import Path
 from pytsa import SearchAgent
 from pytsa.trajectories.rules import *
-from aisstats.errchecker import COLORWHEEL, speed_filter
+from aisstats.errchecker import COLORWHEEL, speed_filter, _heading_change
 from pytsa.tsea.split import speed_from_position, avg_speed
 
 SEARCHAREA = NorthSea
@@ -50,34 +50,29 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     
     ax[0].set_title(f"Trajectory",fontsize=8)
     
-    # Set y and x limits to 1.5 times the max and min
-    # of the trajectory
-    #ax[0].set_ylim(min(lats)-0.001,max(lats)+0.001)
-    #ax[0].set_xlim(min(lons)-0.001,max(lons)+0.001)
-    
     # Plot speed info
-    speeds = [abs(m2.SOG - m1.SOG) for m1,m2 in zip(track,track[1:])]
-    ax[1].plot(speeds,color=COLORWHEEL[0],ls="-", alpha = 0.9)
-    ax[1].scatter(range(len(speeds)),speeds,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9)
+    cog_changes = [abs(_heading_change(m2.COG - m1.COG)) for m1,m2 in zip(track,track[1:])]
+    ax[1].plot(cog_changes,color=COLORWHEEL[0],ls="-", alpha = 0.9)
+    ax[1].scatter(range(len(cog_changes)),cog_changes,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9)
     ax[1].set_xlabel("Message number")
-    ax[1].set_ylabel("Absolute speed difference [knots]")
+    ax[1].set_ylabel("Abs. COG change [°]")
     
     # Add title
-    ax[1].set_title(f"Abs. speed difference\nbetween consecutive messages",fontsize=8)
+    ax[1].set_title(f"Abs. COG change\nbetween consecutive messages",fontsize=8)
     
     # Save figure
-    # plt.savefig(f"/home/s2075466/aisplanner/results/{tv.mmsi}.png",dpi=300)
-    fname = f"/home/s2075466/aisplanner/results/{track[0].sender}.pdf"
+    fname = f"/home/s2075466/aisplanner/results/{track[0].sender}"
     # Check if the file already exists and if so, add a number to the end
     # of the filename
     if Path(fname).exists():
         i = 1
         while Path(fname).exists():
-            fname = f"/home/s2075466/aisplanner/results/{track[0].sender}_{i}.pdf"
+            fname = f"/home/s2075466/aisplanner/results/{track[0].sender}_{i}"
             i += 1
     
     plt.tight_layout()
-    plt.savefig(fname,dpi=300)
+    plt.savefig(f"{fname}.png",dpi=300)
+    plt.savefig(f"{fname}.pdf")
     plt.close()
 
 if __name__ == "__main__":
@@ -107,8 +102,8 @@ if __name__ == "__main__":
         return len(track)
 
     def _sort_by_heading_change(track: list[AISMessage]) -> float:
-        return max(
-            abs(m2.COG - m1.COG) for m1,m2 in zip(track,track[1:])
+        return sum(
+            abs(_heading_change(m2.COG - m1.COG)) for m1,m2 in zip(track,track[1:])
         )
     
     
