@@ -105,9 +105,14 @@ if __name__ == "__main__":
         
     def _sort_by_length(track: list[AISMessage]) -> float:
         return len(track)
+
+    def _sort_by_heading_change(track: list[AISMessage]) -> float:
+        return max(
+            abs(m2.COG - m1.COG) for m1,m2 in zip(track,track[1:])
+        )
     
     
-    tracks = sorted(tracks,key=_sort_by_length ,reverse=True)
+    tracks = sorted(tracks,key=_sort_by_heading_change ,reverse=True)
     
     for i in range(100):
         t = tracks[i]
