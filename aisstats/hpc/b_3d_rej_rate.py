@@ -19,13 +19,13 @@ logging.basicConfig(level=logging.WARNING,force = True)
 SDS = np.array([0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3,0.4,0.5])
 MINLENS = np.array([0,10,20,30,40,50,60,70,80,90,100,150,200,250,300,400,500])
 
-def average_complexity(ships: dict[int,TargetShip]):
+def rej_rate_3d(ships: dict[int,TargetShip]):
     """
     Calulates the mean of the cosine of the angles
     enclosed between three consecutive messages 
     for several standard deviations.
     """
-    avg_cosines = np.zeros((len(MINLENS),len(SDS)))
+    rej_rate = np.zeros((len(MINLENS),len(SDS)))
     
     for i, minlen in enumerate(MINLENS): 
         for j, sd in enumerate(SDS):
@@ -38,22 +38,21 @@ def average_complexity(ships: dict[int,TargetShip]):
                     recipe=recipe
                 )
             acc, rej = inpsctr.inspect(njobs=1)
-            del acc
-            tcosines = []
+
+            # Calculate rejection rate
+            ntracks_rejected = 0
+            ntracks_accepted = 0
             for ship in rej.values():
-                for track in ship.tracks:
-                    for k in range(1,len(track)-1):
-                        a = track[k-1]
-                        b = track[k]
-                        c = track[k+1]
-                        tcosines.append(
-                            split.cosine_of_angle_between(a,b,c)
-                        )
-            avg_cosines[i,j] = np.nanmean(np.abs(tcosines))
+                ntracks_rejected += len(ship.tracks)
+            for ship in acc.values():
+                ntracks_accepted += len(ship.tracks)
+            
+            rej_rate[i,j] = ntracks_rejected/(ntracks_rejected+ntracks_accepted)
+            
             
     # Save the results
-    with open("/home/s2075466/aisplanner/results/avg_cosines.pkl","wb") as f:
-        pickle.dump(avg_cosines,f)
+    with open("/home/s2075466/aisplanner/results/3d_rej_rate.pkl","wb") as f:
+        pickle.dump(rej_rate,f)
 
 if __name__ == "__main__":
     SEARCHAREA = NorthSea
@@ -70,4 +69,4 @@ if __name__ == "__main__":
 
     ships = SA.get_all_ships(njobs=16)
 
-    average_complexity(ships)
+    rej_rate_3d(ships)
