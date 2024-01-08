@@ -21,8 +21,8 @@ from pytsa.tsea.split import speed_from_position, avg_speed
 SEARCHAREA = NorthSea
 
 AMSTERDAM = BoundingBox(
-    LATMIN=52.2,
-    LATMAX=52.4,
+    LATMIN=52.25,
+    LATMAX=52.325,
     LONMIN=5.25,
     LONMAX=5.60
 )
