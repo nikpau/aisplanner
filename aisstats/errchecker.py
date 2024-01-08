@@ -688,6 +688,8 @@ def plot_time_diffs(sa:SearchAgent):
         capprops=dict(color=COLORWHEEL[1]),
         flierprops=dict(color=COLORWHEEL[1], markeredgecolor=COLORWHEEL[1])
     )
+    # Remove y ticks
+    ax.set_yticks([])
     
     # Legend with heading
     ax.legend(handles=[
@@ -1294,7 +1296,7 @@ if __name__ == "__main__":
     # plot_heading_and_speed_changes(SA)
     # plot_distance_between_messages(SA)
     # plot_reported_vs_calculated_speed(SA)
-    # plot_time_diffs(SA)
+    plot_time_diffs(SA)
     
     # Speed histogram --------------------------------------------------------------
     # plot_speed_histogram(SA,"aisstats/out/speed_histogram.pdf")
