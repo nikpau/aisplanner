@@ -31,12 +31,10 @@ DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').gl
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
 
 def plot_trajectories_on_map(ships: dict[int,TargetShip], 
-                             mode: str,
                              extent: BoundingBox):
     """
     Plot all trajectories on a map.
     """
-    assert mode in ["all","accepted","rejected"]
     fig, ax = plt.subplots(figsize=(10,16))
     idx = 0
     plot_coastline(extent=extent,ax=ax)
@@ -68,4 +66,4 @@ if __name__ == "__main__":
     ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
     
     # Plot the trajectories
-    plot_trajectories_on_map(ships,"all",{},SEARCHAREA)
+    plot_trajectories_on_map(ships,AMSTERDAM)
