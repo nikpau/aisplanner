@@ -47,12 +47,12 @@ def plot_time_diffs(sa:SearchAgent):
         vert=False,
         showfliers=False,
         patch_artist=True,
-        widths=0.5,
+        widths=.5,
         boxprops=dict(facecolor=COLORWHEEL[0], color=COLORWHEEL[0]),
-        medianprops=dict(color=COLORWHEEL[1]),
-        whiskerprops=dict(color=COLORWHEEL[1]),
-        capprops=dict(color=COLORWHEEL[1]),
-        flierprops=dict(color=COLORWHEEL[1], markeredgecolor=COLORWHEEL[1])
+        medianprops=dict(color=COLORWHEEL[1],lw=2),
+        whiskerprops=dict(color=COLORWHEEL[1],lw=2),
+        capprops=dict(color=COLORWHEEL[1],lw=2),
+        flierprops=dict(color=COLORWHEEL[1], markeredgecolor=COLORWHEEL[1],lw=2)
     )
     # Remove y ticks
     ax.set_yticks([])
