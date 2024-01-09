@@ -33,7 +33,8 @@ def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
     coasts = glob(f"{GEODATA}/*.json")
     for coast in coasts:
         gdf = gpd.read_file(coast)
-        gdf.plot(ax=ax, color="#081c15", alpha=0.8,linewidth=0.6)
+        gdf.crs = 'epsg:3395' # Mercator projection
+        gdf.plot(ax=ax, color="white", alpha=0.8,linewidth=0.6)
         
     # Crop the plot to the extent
     ax.set_xlim(extent.LONMIN, extent.LONMAX)

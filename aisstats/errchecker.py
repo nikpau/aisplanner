@@ -399,7 +399,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     Plot all trajectories on a map.
     """
     assert mode in ["all","accepted","rejected"]
-    fig, ax = plt.subplots(figsize=(10,16))
+    fig, ax = plt.subplots(figsize=(10,4))
     idx = 0
     plot_coastline(extent=extent,ax=ax)
     for ship in ships.values():
@@ -1296,7 +1296,7 @@ if __name__ == "__main__":
     # plot_heading_and_speed_changes(SA)
     # plot_distance_between_messages(SA)
     # plot_reported_vs_calculated_speed(SA)
-    plot_time_diffs(SA)
+    # plot_time_diffs(SA)
     
     # Speed histogram --------------------------------------------------------------
     # plot_speed_histogram(SA,"aisstats/out/speed_histogram.pdf")
@@ -1312,7 +1312,7 @@ if __name__ == "__main__":
     # plot_average_complexity(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
-    plot_speed_scatter(sa=SA) 
+    # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
     # with MemoryLoader():
@@ -1368,9 +1368,15 @@ if __name__ == "__main__":
 
 
     # Plot trajectories on map ------------------------------------------------------
-    plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
-    plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
-    plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
+    AMSTERDAM = BoundingBox(
+    LATMIN=52.25,
+    LATMAX=52.325,
+    LONMIN=5.25,
+    LONMAX=5.60
+)
+    plot_trajectories_on_map(ships, "all",{},AMSTERDAM)
+    plot_trajectories_on_map(accepted,"accepted",specs,AMSTERDAM)
+    plot_trajectories_on_map(rejected,"rejected",specs,AMSTERDAM)
 
     # # Plot histograms of accepted and rejected --------------------------------------
     # plot_histograms(
