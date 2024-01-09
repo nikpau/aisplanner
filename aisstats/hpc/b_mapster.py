@@ -21,10 +21,10 @@ from pytsa.tsea.split import speed_from_position, avg_speed
 SEARCHAREA = NorthSea
 
 AMSTERDAM = BoundingBox(
-    LATMIN=52.25,
-    LATMAX=52.325,
-    LONMIN=5.25,
-    LONMAX=5.60
+    LATMIN=52.79,
+    LATMAX=53.28,
+    LONMIN=5.5,
+    LONMAX=6.5
 )
 
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07*.csv"))

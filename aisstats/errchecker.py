@@ -1306,7 +1306,7 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.get_all_ships(njobs=2,skip_tsplit=True)
+    ships = SA.get_all_ships(njobs=2)#,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1369,11 +1369,10 @@ if __name__ == "__main__":
 
     # Plot trajectories on map ------------------------------------------------------
     AMSTERDAM = BoundingBox(
-    LATMIN=52.25,
-    LATMAX=52.325,
-    LONMIN=5.25,
-    LONMAX=5.60
-)
+    LATMIN=52.79,
+    LATMAX=53.28,
+    LONMIN=5.5,
+    LONMAX=6.5)
     plot_trajectories_on_map(ships, "all",{},AMSTERDAM)
     plot_trajectories_on_map(accepted,"accepted",specs,AMSTERDAM)
     plot_trajectories_on_map(rejected,"rejected",specs,AMSTERDAM)
