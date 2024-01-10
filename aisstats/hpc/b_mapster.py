@@ -44,7 +44,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
             ax.plot(
                 [p.lon for p in track],
                 [p.lat for p in track],
-                alpha=0.8, linewidth=1.8, marker = "x", markersize = 2,
+                alpha=0.8, linewidth=0.8, marker = "x", markersize = 2,
                 color = COLORWHEEL_MAP[3]
             )
     ax.set_xlabel("Longitude")
