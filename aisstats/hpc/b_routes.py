@@ -51,14 +51,16 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ax[0].set_title(f"Trajectory",fontsize=8)
     
     # Plot speed info
-    cog_changes = [abs(_heading_change(m2.COG,m1.COG)) for m1,m2 in zip(track,track[1:])]
-    ax[1].plot(cog_changes,color=COLORWHEEL[0],ls="-", alpha = 0.9)
-    ax[1].scatter(range(len(cog_changes)),cog_changes,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9)
+    relvscalc = [
+        avg_speed(m1,m2) - speed_from_position(m1,m2) for m1,m2 in zip(track,track[1:])
+    ]
+    ax[1].plot(relvscalc,color=COLORWHEEL[0],ls="-", alpha = 0.9)
+    ax[1].scatter(range(len(relvscalc)),relvscalc,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9)
     ax[1].set_xlabel("Message number")
-    ax[1].set_ylabel("Abs. COG change [°]")
+    ax[1].set_ylabel("Difference in speed [kn]")
     
     # Add title
-    ax[1].set_title(f"Abs. COG change\nbetween consecutive messages",fontsize=8)
+    ax[1].set_title(r"$\overline{SOG}_{m_i}^{m_{i+1}} - \widehat{SOG}_{m_i}^{m_{i+1}}$",fontsize=8)
     
     # Save figure
     fname = f"/home/s2075466/aisplanner/results/{track[0].sender}"
@@ -106,8 +108,13 @@ if __name__ == "__main__":
             abs(_heading_change(m2.COG,m1.COG)) for m1,m2 in zip(track,track[1:])
         )
     
+    def _sort_by_max_distance(track: list[AISMessage]) -> float:
+        return max(
+            haversine(m1.lon,m1.lat,m2.lon,m2.lat) for m1,m2 in zip(track,track[1:])
+        )
     
-    tracks = sorted(tracks,key=_sort_by_heading_change ,reverse=True)
+    
+    tracks = sorted(tracks,key=_sort_by_max_distance ,reverse=True)
     
     for i in range(100):
         t = tracks[i]
