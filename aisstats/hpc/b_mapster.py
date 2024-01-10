@@ -44,14 +44,14 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
             ax.plot(
                 [p.lon for p in track],
                 [p.lat for p in track],
-                alpha=0.5, linewidth=0.8, marker = "x", markersize = 1,
-                color = COLORWHEEL_MAP[idx % len(COLORWHEEL_MAP)]
+                alpha=0.8, linewidth=1.8, marker = "x", markersize = 2,
+                color = COLORWHEEL_MAP[0]
             )
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_sht.png",dpi=600)
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_sht.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.png",dpi=600)
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.pdf")
     plt.close()
 
 if __name__ == "__main__":
