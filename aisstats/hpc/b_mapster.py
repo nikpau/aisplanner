@@ -35,7 +35,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     """
     Plot all trajectories on a map.
     """
-    fig, ax = plt.subplots(figsize=(10,3))
+    fig, ax = plt.subplots(figsize=(8,4))
     idx = 0
     plot_coastline(extent=extent,ax=ax)
     for ship in ships.values():
@@ -50,8 +50,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap.png",dpi=600)
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.png",dpi=600)
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.pdf")
     plt.close()
 
 if __name__ == "__main__":

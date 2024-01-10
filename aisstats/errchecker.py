@@ -399,7 +399,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     Plot all trajectories on a map.
     """
     assert mode in ["all","accepted","rejected"]
-    fig, ax = plt.subplots(figsize=(10,4))
+    fig, ax = plt.subplots(figsize=(8,4))
     idx = 0
     plot_coastline(extent=extent,ax=ax)
     for ship in ships.values():
@@ -1306,7 +1306,7 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.get_all_ships(njobs=2)#,skip_tsplit=True)
+    ships = SA.get_all_ships(njobs=2,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
