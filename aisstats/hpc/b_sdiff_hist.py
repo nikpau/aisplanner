@@ -7,7 +7,7 @@ from pathlib import Path
 
 import numpy as np
 from aisplanner.encounters.main import NorthSea
-from aisstats.errchecker import COLORWHEEL, speed_filter
+from aisstats.errchecker import COLORWHEEL, speed_filter, TEST_FILE_DYN, TEST_FILE_STA
 from pathlib import Path
 from pytsa.tsea.split import speed_from_position, avg_speed
 import pandas as pd
@@ -49,9 +49,9 @@ def plot_sdiff_histogram(sa: SearchAgent):
         [0.005,0.995,0.025,0.975,0.05,0.95]
     )
     q_labels_h = [
-        f"99% within [{h_qs[0]:.2f}°,{h_qs[1]:.2f}°]",
-        f"95% within [{h_qs[2]:.2f}°,{h_qs[3]:.2f}°]",
-        f"90% within [{h_qs[4]:.2f}°,{h_qs[5]:.2f}°]"
+        f"99% within [{h_qs[0]:.2f} kn,{h_qs[1]:.2f} kn]",
+        f"95% within [{h_qs[2]:.2f} kn,{h_qs[3]:.2f} kn]",
+        f"90% within [{h_qs[4]:.2f} kn,{h_qs[5]:.2f} kn]"
     ]
     # Heading Quantiles as vertical lines
     hl11 = ax.axvline(h_qs[0],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
@@ -64,28 +64,29 @@ def plot_sdiff_histogram(sa: SearchAgent):
     # Histogram of heading changes
     ax.hist(
         diffs,
-        bins=100,
+        bins=np.append(-np.inf,np.append(np.linspace(-30,30,100), np.inf)),
         density=True,
         alpha=0.8,
         color=COLORWHEEL[0]
     )
-    ax.set_xlim(-30,30)
+    # ax.set_xlim(-30,30)
     
     # Legend with heading
     ax.legend(handles=[hl11,hl21,hl31])
-    ax.set_xlabel("Difference in speed [knots]")
+    ax.set_xlabel(r"$\overline{SOG}_{m_i}^{m_{i+1}} - \widehat{SOG}_{m_i}^{m_{i+1}}$")
     ax.set_ylabel("Density")
     ax.set_title(
-        r"$\overline{SOG}_{m_i}^{m_{i+1}} - \widehat{SOG}_{m_i}^{m_{i+1}}$",fontsize=8
+        "Difference between reported and calculated speed\n"
     )
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/diffs_rep_calc_speed.pdf")
+    #plt.savefig(f"/home/s2075466/aisplanner/results/diffs_rep_calc_speed.pdf")
+    plt.savefig(f"results/diffs_rep_calc_speed.pdf")
     plt.close()
     
 
 if __name__ == "__main__":
     SA = SearchAgent(
-        dynamic_paths=DYNAMIC_MESSAGES,
+        dynamic_paths= DYNAMIC_MESSAGES,
         frame=SEARCHAREA,
         static_paths=STATIC_MESSAGES,
         preprocessor=partial(speed_filter, speeds = (1,30))
