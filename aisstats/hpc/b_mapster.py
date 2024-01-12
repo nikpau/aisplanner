@@ -35,7 +35,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     """
     Plot all trajectories on a map.
     """
-    fig, ax = plt.subplots(figsize=(8,4))
+    # fig, ax = plt.subplots(figsize=(8,4))
+    fig, ax = plt.subplots(figsize=(10,15))
     idx = 0
     plot_coastline(extent=extent,ax=ax)
     for ship in ships.values():
