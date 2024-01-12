@@ -79,8 +79,8 @@ def plot_sdiff_histogram(sa: SearchAgent):
         "Difference between reported and calculated speed\n"
     )
     plt.tight_layout()
-    #plt.savefig(f"/home/s2075466/aisplanner/results/diffs_rep_calc_speed.pdf")
-    plt.savefig(f"results/diffs_rep_calc_speed.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/diffs_rep_calc_speed.pdf")
+    #plt.savefig(f"results/diffs_rep_calc_speed.pdf")
     plt.close()
     
 
