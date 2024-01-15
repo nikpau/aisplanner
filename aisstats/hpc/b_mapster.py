@@ -45,8 +45,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
                 c = COLORWHEEL_MAP[5]
             )
             ax.scatter(
-                tlon[0],
-                tlat[0],
+                tlon,
+                tlat,
                 alpha=0.6, linewidth=0.8, marker = "o", s = 10,
                 c = tsog
             )
