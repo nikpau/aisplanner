@@ -71,4 +71,4 @@ if __name__ == "__main__":
     ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
     
     # Plot the trajectories
-    plot_trajectories_on_map(ships,AMSTERDAM)
+    plot_trajectories_on_map(ships,FISHING_GROUNDS)
