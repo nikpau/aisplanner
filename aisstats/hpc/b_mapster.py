@@ -16,8 +16,15 @@ SEARCHAREA = NorthSea
 AMSTERDAM = BoundingBox(
     LATMIN=52.79,
     LATMAX=53.28,
-    LONMIN=5.5,
-    LONMAX=6.5
+    LONMIN=7.25,
+    LONMAX=8.25
+)
+
+FISHING_GROUNDS = BoundingBox(
+    LATMIN=54.5,
+    LATMAX=55,
+    LONMIN=3.5,
+    LONMAX=5.5
 )
 
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_01.csv"))
@@ -44,16 +51,6 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
                 alpha=0.6, linewidth=0.8, marker = "x", markersize = 2,
                 c = COLORWHEEL_MAP[5]
             )
-            ax.scatter(
-                tlon,
-                tlat,
-                alpha=0.6, linewidth=0.8, marker = "o", s = 10,
-                c = tsog
-            )
-    # Colorbar
-    cbar = fig.colorbar(cm.ScalarMappable(norm=None, cmap="winter"), ax=ax)
-    # Label the colorbar
-    cbar.set_label("Speed over ground [kn]")
             
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
