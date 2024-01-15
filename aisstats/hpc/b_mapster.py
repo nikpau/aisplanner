@@ -23,8 +23,8 @@ AMSTERDAM = BoundingBox(
 FISHING_GROUNDS = BoundingBox(
     LATMIN=54.5,
     LATMAX=55,
-    LONMIN=3.5,
-    LONMAX=5.5
+    LONMIN=7.25,
+    LONMAX=8.25
 )
 
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_01.csv"))
