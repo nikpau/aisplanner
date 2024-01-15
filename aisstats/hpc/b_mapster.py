@@ -2,21 +2,14 @@
 HPC script for calculating descriptive data
 for the AIS data set
 """
-from glob import glob
 from pathlib import Path
-from matplotlib import pyplot as plt
-from pytsa.decode import filedescriptor as fd
-import numpy as np
-import pandas as pd
-from datetime import datetime
+from matplotlib import cm, pyplot as plt
 from pytsa import TargetShip, BoundingBox
-from aisplanner.encounters.filter import haversine
 from aisplanner.encounters.main import NorthSea
 from pathlib import Path
 from pytsa import SearchAgent
 from pytsa.trajectories.rules import *
 from aisstats.errchecker import COLORWHEEL_MAP, speed_filter,plot_coastline
-from pytsa.tsea.split import speed_from_position, avg_speed
 
 SEARCHAREA = NorthSea
 
@@ -46,13 +39,18 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
                 [p.lon for p in track],
                 [p.lat for p in track],
                 alpha=0.6, linewidth=0.8, marker = "x", markersize = 2,
-                color = COLORWHEEL_MAP[5]
+                color = [p.SOG for p in track]
             )
+    # Colorbar
+    cbar = fig.colorbar(cm.ScalarMappable(norm=None, cmap="winter"), ax=ax)
+    # Label the colorbar
+    cbar.set_label("Speed over ground [kn]")
+            
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_north_sea.png",dpi=600)
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_north_sea.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.png",dpi=600)
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.pdf")
     plt.close()
 
 if __name__ == "__main__":
@@ -67,4 +65,4 @@ if __name__ == "__main__":
     ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
     
     # Plot the trajectories
-    plot_trajectories_on_map(ships,NorthSea)
+    plot_trajectories_on_map(ships,AMSTERDAM)
