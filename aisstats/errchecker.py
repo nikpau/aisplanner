@@ -1110,8 +1110,18 @@ def binned_heatmap(targets: dict[int,TargetShip],
                 counts[j,i] += 1
     
     # Plot the heatmap
-    fig, ax = plt.subplots(figsize=(10,10*1.5))
+    fig, ax = plt.subplots(figsize=(10,10))
     ax: plt.Axes
+
+    # Add coastline redered to an image
+    # and plot it on top of the heatmap
+    coastline: plt.Figure = plot_coastline(bb,ax=ax)
+    # buf = io.BytesIO()
+    # coastline.savefig(buf)
+    # buf.seek(0)
+    # img = Image.open(buf)
+    # img = img.resize((lonpx,latpx))
+    # ax.imshow(img,alpha=0.8)
     
     # Mask the pixels with no messages
     counts = np.ma.masked_where(counts == 0,counts)
@@ -1121,23 +1131,14 @@ def binned_heatmap(targets: dict[int,TargetShip],
     # the plot
     counts = np.vectorize(lambda x: np.log(np.log(x+1)+1))(counts)
     
-    cmap = cm.get_cmap("Reds").copy()
-    cmap.set_bad(color='white')
+    cmap = matplotlib.colormaps["Reds"]
+    cmap.set_bad(alpha=0)
     ax.grid(False)
     ax.pcolormesh(xx,yy,counts,cmap=cmap)#,shading="gouraud")
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     ax.set_title("Heatmap of messages")
     
-    # Add coastline redered to an image
-    # and plot it on top of the heatmap
-    coastline: plt.Figure = plot_coastline(bb,return_figure=True)
-    buf = io.BytesIO()
-    coastline.savefig(buf)
-    buf.seek(0)
-    img = Image.open(buf)
-    img = img.resize((lonpx,latpx))
-    ax.imshow(img,alpha=0.5)
     
     plt.tight_layout()
     plt.savefig(savename,dpi=300)
@@ -1373,9 +1374,9 @@ if __name__ == "__main__":
     LATMAX=53.28,
     LONMIN=5.5,
     LONMAX=6.5)
-    plot_trajectories_on_map(ships, "all",{},AMSTERDAM)
-    plot_trajectories_on_map(accepted,"accepted",specs,AMSTERDAM)
-    plot_trajectories_on_map(rejected,"rejected",specs,AMSTERDAM)
+    plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
+    # plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
+    # plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
 
     # # Plot histograms of accepted and rejected --------------------------------------
     # plot_histograms(
