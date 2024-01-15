@@ -16,16 +16,6 @@ SA = SearchAgent(
         msg5file=STATIC_MESSAGES,
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
-    
-# Create starting positions for the search.
-# This is just the center of the search area.
-center = SEARCHAREA.center
-tpos = TimePosition(
-    timestamp="2021-07-01", # arbitrary date
-    lat=center.lat,
-    lon=center.lon
-)
-SA.init(tpos)
 
 ships = SA.get_all_ships(njobs=16)
 
