@@ -11,9 +11,9 @@ DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').gl
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
 
 SA = SearchAgent(
-        msg12318file=DYNAMIC_MESSAGES,
+        dynamic_paths=DYNAMIC_MESSAGES,
         frame=SEARCHAREA,
-        msg5file=STATIC_MESSAGES,
+        static_paths=STATIC_MESSAGES,
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
