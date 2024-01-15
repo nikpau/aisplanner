@@ -35,11 +35,20 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     for ship in ships.values():
         for track in ship.tracks:
             idx += 1
+            tlon = [p.lon for p in track]
+            tlat = [p.lat for p in track]
+            tsog = [p.SOG for p in track]
             ax.plot(
-                [p.lon for p in track],
-                [p.lat for p in track],
+                tlon,
+                tlat,
                 alpha=0.6, linewidth=0.8, marker = "x", markersize = 2,
                 c = [p.SOG for p in track]
+            )
+            ax.scatter(
+                tlon[0],
+                tlat[0],
+                alpha=0.6, linewidth=0.8, marker = "o", s = 10,
+                c = tsog
             )
     # Colorbar
     cbar = fig.colorbar(cm.ScalarMappable(norm=None, cmap="winter"), ax=ax)
