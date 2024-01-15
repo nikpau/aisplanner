@@ -69,7 +69,7 @@ def plot_sdiff_histogram(sa: SearchAgent):
         alpha=0.8,
         color=COLORWHEEL[0]
     )
-    # ax.set_xlim(-30,30)
+    ax.set_xlim(-30,30)
     
     # Legend with heading
     ax.legend(handles=[hl11,hl21,hl31])
