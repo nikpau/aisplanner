@@ -100,9 +100,9 @@ ddiffs = []
 
 for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
     SA = SearchAgent(
-        msg12318file=dc,
+        dynamic_paths=dc,
         frame=SEARCHAREA,
-        msg5file=sc,
+        static_paths=sc,
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
     
