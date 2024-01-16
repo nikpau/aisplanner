@@ -27,8 +27,8 @@ FISHING_GROUNDS = BoundingBox(
     LONMAX=8.25
 )
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_07.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_07.csv"))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
 
 def plot_trajectories_on_map(ships: dict[int,TargetShip], 
                              extent: BoundingBox):
@@ -48,7 +48,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
             ax.plot(
                 tlon,
                 tlat,
-                alpha=0.6, linewidth=0.8, marker = "x", markersize = 2,
+                alpha=0.5, linewidth=1, marker = "x", markersize = 4,
                 c = COLORWHEEL_MAP[5]
             )
             
