@@ -9,17 +9,18 @@ Script to generate the ECDF and its quantiles for two variables:
 Barnard (HPC) specific script.
 """
 from pathlib import Path
-from pytsa import SearchAgent, TimePosition
-from pytsa.utils import heading_change, haversine
+from pytsa import SearchAgent
+from pytsa.utils import heading_change
 import pytsa.tsea.split as split
 import numpy as np
 from functools import partial
-from errchecker import area_center, speed_filter
+from errchecker import speed_filter
 from aisplanner.encounters.main import NorthSea
 import ciso8601
 import pickle
-from matplotlib import pyplot as plt
+import matplotlib.pyplot as plt
 COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
+from aisstats.errchecker import haversine
 
 def quantiles(data, quantiles):
     """
@@ -58,7 +59,7 @@ def _date_transformer(datefile: Path) -> float:
 
 # MAIN MATTER ---------------------------------------------------------------    
 
-SEARCHAREA = NorthSea(nrows=1, ncols=1, utm=False).cells[0]
+SEARCHAREA = NorthSea
 
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
 
@@ -97,6 +98,7 @@ heading_changes = []
 speed_changes = []
 diff_speeds = [] # Difference between reported speed and speed calculated from positions
 time_diffs = []
+ddiffs = []
 
 for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
     SA = SearchAgent(
@@ -106,17 +108,7 @@ for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
     
-    # Create starting positions for the search.
-    # This is just the center of the search area.
-    center = area_center(SEARCHAREA)
-    tpos = TimePosition(
-        timestamp="2021-07-01", # arbitrary date
-        lat=center.lat,
-        lon=center.lon
-    )
-    SA.init(tpos)
-    
-    ships = SA.get_all_ships(njobs=8,skip_filter=True)
+    ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
     l = len(ships)
     for idx, ship in enumerate(ships.values()):
         print(f"Processing ship {idx+1}/{l}")
@@ -132,11 +124,13 @@ for dc,sc in zip(DYNAMIC_MESSAGES, STATIC_MESSAGES):
                 cspeed = split.speed_from_position(track[i-1],track[i])
                 diff_speeds.append(rspeed - cspeed)
                 time_diffs.append(track[i].timestamp - track[i-1].timestamp)
+                ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
                 
 squants = quantiles(speed_changes, np.linspace(0,1,1001))
 hquants = quantiles(heading_changes, np.linspace(0,1,1001))
 tquants = quantiles(time_diffs, np.linspace(0,1,1001))
 diffquants = quantiles(diff_speeds, np.linspace(0,1,1001))
+dquants = quantiles(ddiffs, np.linspace(0,1,1001))
 
 # Save the quantiles
 with open('/home/s2075466/aisplanner/results/squants.pkl', 'wb') as f:
@@ -147,26 +141,5 @@ with open('/home/s2075466/aisplanner/results/tquants.pkl', 'wb') as f:
     pickle.dump(tquants, f)
 with open('/home/s2075466/aisplanner/results/diffquants.pkl', 'wb') as f:
     pickle.dump(diffquants, f)
-
-# Plotting ------------------------------------------------------------------
-
-# Boxplots
-# Use matplotlib style `bmh`
-plt.style.use('bmh')
-plt.rcParams["font.family"] = "monospace"
-fig, ax = plt.subplots(2,2, figsize=(5,8))
-
-ax[0,0].boxplot(speed_changes,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
-ax[0,0].set_title("Speed changes",fontsize = 10)
-ax[0,0].set_ylabel("Speed [kn]")
-ax[0,1].boxplot(heading_changes,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
-ax[0,1].set_title("Heading changes",fontsize = 10)
-ax[0,1].set_ylabel("Change [°]")
-ax[1,0].boxplot(time_diffs,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
-ax[1,0].set_title("Time difference\nbetween messages",fontsize = 10)
-ax[1,0].set_ylabel("Difference [s]")
-ax[1,1].boxplot(diff_speeds,widths = 0.5,medianprops=dict(color=COLORWHEEL[1]))
-ax[1,1].set_title("Difference between\nreported and\ncalculated speed",fontsize = 10)
-ax[1,1].set_ylabel("Difference [kn]")
-fig.tight_layout()
-plt.savefig("/home/s2075466/aisplanner/results/boxplots.pdf", dpi=300)
+with open('/home/s2075466/aisplanner/results/dquants.pkl', 'wb') as f:
+    pickle.dump(dquants, f)
