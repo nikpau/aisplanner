@@ -35,10 +35,13 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     """
     Plot all trajectories on a map.
     """
-    # fig, ax = plt.subplots(figsize=(8,4))
-    fig, ax = plt.subplots(figsize=(10,12))
+    fig, ax = plt.subplots(figsize=(8,4))
+    # fig, ax = plt.subplots(figsize=(10,12))
     idx = 0
-    plot_coastline(extent=extent,ax=ax)
+    plot_coastline(
+        datapath=Path("/home/s2075466/aisplanner/data/lakes"),
+        extent=extent,
+        ax=ax)
     for ship in ships.values():
         for track in ship.tracks:
             idx += 1
@@ -48,15 +51,15 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
             ax.plot(
                 tlon,
                 tlat,
-                alpha=0.5, linewidth=1, marker = "x", markersize = 4,
+                alpha=0.5, linewidth=0.8, marker = "x", markersize = 2,
                 c = COLORWHEEL_MAP[5]
             )
             
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_tshd.png",dpi=600)
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_tshd.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.png",dpi=600)
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.pdf")
     plt.close()
 
 if __name__ == "__main__":
@@ -67,7 +70,7 @@ if __name__ == "__main__":
         preprocessor=partial(speed_filter, speeds = (1,30)),
     )
 
-    ships = SA.get_all_ships(njobs=16)#,skip_tsplit=True)
+    ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
     
     # Plot the trajectories
-    plot_trajectories_on_map(ships,FISHING_GROUNDS)
+    plot_trajectories_on_map(ships,AMSTERDAM)

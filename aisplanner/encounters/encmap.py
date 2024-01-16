@@ -22,7 +22,8 @@ Longitude = float
 GEODATA = Path("data/geometry")
 ENCOUNTERS = Path("results/encounters")
 
-def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
+def plot_coastline(datapath: Path,
+                    extent: BoundingBox , ax: plt.Axes = None,
                    save_plot: bool = False,
                    return_figure: bool = False) -> plt.Figure | None:
     """
@@ -30,11 +31,11 @@ def plot_coastline(extent: BoundingBox , ax: plt.Axes = None,
     """
     if ax is None:
         fig, ax = plt.subplots(figsize=(15,15))
-    coasts = glob(f"{GEODATA}/*.json")
+    coasts = glob(f"{datapath}/*.json")
     for coast in coasts:
         gdf = gpd.read_file(coast)
         gdf.crs = 'epsg:3395' # Mercator projection
-        gdf.plot(ax=ax, color="white", alpha=0.8,linewidth=0.6)
+        gdf.plot(ax=ax, color="#457b9d", alpha=0.8,linewidth=0.6)
         
     # Crop the plot to the extent
     ax.set_xlim(extent.LONMIN, extent.LONMAX)
