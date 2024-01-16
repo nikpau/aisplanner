@@ -27,8 +27,8 @@ FISHING_GROUNDS = BoundingBox(
     LONMAX=8.25
 )
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07*.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_1*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_1*.csv"))
 
 def plot_trajectories_on_map(ships: dict[int,TargetShip], 
                              extent: BoundingBox):
@@ -55,8 +55,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_tshd.png",dpi=600)
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_tshd.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.png",dpi=600)
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.pdf")
     plt.close()
 
 if __name__ == "__main__":
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         preprocessor=partial(speed_filter, speeds = (1,30)),
     )
 
-    ships = SA.get_all_ships(njobs=16)#,skip_tsplit=True)
+    ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
     
     # Plot the trajectories
     plot_trajectories_on_map(ships,FISHING_GROUNDS)
