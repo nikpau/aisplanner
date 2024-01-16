@@ -58,8 +58,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.png",dpi=600)
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_tshd.png",dpi=600)
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_tshd.pdf")
     plt.close()
 
 if __name__ == "__main__":
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         preprocessor=partial(speed_filter, speeds = (1,30)),
     )
 
-    ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
+    ships = SA.get_all_ships(njobs=16)#,skip_tsplit=True)
     
     # Plot the trajectories
     plot_trajectories_on_map(ships,AMSTERDAM)
