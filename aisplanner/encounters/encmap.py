@@ -35,7 +35,7 @@ def plot_coastline(datapath: Path,
     for coast in coasts:
         gdf = gpd.read_file(coast)
         gdf.crs = 'epsg:3395' # Mercator projection
-        gdf.plot(ax=ax, color="#457b9d", alpha=0.8,linewidth=0.6)
+        gdf.plot(ax=ax, color="#4fb3a0", alpha=0.8,linewidth=2)
         
     # Crop the plot to the extent
     ax.set_xlim(extent.LONMIN, extent.LONMAX)
