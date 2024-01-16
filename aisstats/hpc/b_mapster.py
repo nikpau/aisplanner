@@ -16,8 +16,8 @@ SEARCHAREA = NorthSea
 AMSTERDAM = BoundingBox(
     LATMIN=52.79,
     LATMAX=53.28,
-    LONMIN=7.25,
-    LONMAX=8.25
+    LONMIN=5.5,
+    LONMAX=6.5
 )
 
 FISHING_GROUNDS = BoundingBox(
@@ -31,7 +31,8 @@ DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').gl
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_1*.csv"))
 
 def plot_trajectories_on_map(ships: dict[int,TargetShip], 
-                             extent: BoundingBox):
+                             extent: BoundingBox,
+                             savename: str):
     """
     Plot all trajectories on a map.
     """
@@ -58,8 +59,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_tshd.png",dpi=600)
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/trmap_raw_tshd.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/{savename}.png",dpi=600)
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/{savename}.pdf")
     plt.close()
 
 if __name__ == "__main__":
@@ -70,7 +71,9 @@ if __name__ == "__main__":
         preprocessor=partial(speed_filter, speeds = (1,30)),
     )
 
-    ships = SA.get_all_ships(njobs=16)#,skip_tsplit=True)
+    ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
+    plot_trajectories_on_map(ships,AMSTERDAM,"trmap_raw")
     
-    # Plot the trajectories
-    plot_trajectories_on_map(ships,AMSTERDAM)
+    # With filter
+    ships = SA.get_all_ships(njobs=16,skip_tsplit=False)
+    plot_trajectories_on_map(ships,AMSTERDAM,"trmap_raw_tshd")
