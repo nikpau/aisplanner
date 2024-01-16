@@ -239,7 +239,6 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
 def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
     
     np.random.seed(424)
-    allcolors = COLORWHEEL + COLORWHEEL_DARK + COLORWHEEL2 + COLORWHEEL2_DARK
     
     sds = np.array([0,0.01,0.02,0.03,0.04,0.05,0.1,0.2,0.3])
     
@@ -311,14 +310,14 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
                     alpha=0.5, 
                     marker = "x", 
                     markersize = 0.65, 
-                    color = allcolors[niter % len(allcolors)],
+                    color = COLORWHEEL_MAP[niter % len(COLORWHEEL_MAP)],
                     linewidth = 0.6
                 )
             
                 # Plot center region in inset
                 inset.plot(    
                     lo,la,
-                    color = allcolors[niter % len(allcolors)],
+                    color = COLORWHEEL_MAP[niter % len(COLORWHEEL_MAP)],
                     linewidth = 1,
                     marker = "x",
                     markersize = 1
@@ -340,8 +339,8 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
             )
 
             # Set limits
-            axs[row,col].set_xlim(-0.25,0.75)
-            axs[row,col].set_ylim(-0.25,0.75)
+            axs[row,col].set_xlim(-0.25,0.65)
+            axs[row,col].set_ylim(-0.25,0.65)
             
             idx += 1
             
@@ -1307,7 +1306,7 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.get_all_ships(njobs=2,skip_tsplit=True)
+    ships = SA.get_all_ships(njobs=2)#,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1316,9 +1315,9 @@ if __name__ == "__main__":
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    # with MemoryLoader():
-    #     plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
-    #     plot_trajectory_jitter(ships)
+    with MemoryLoader():
+        # plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
+        plot_trajectory_jitter(ships)
     
     # Plot trajectory length by number of observations
     # plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
@@ -1330,17 +1329,17 @@ if __name__ == "__main__":
     #     specs={}
     # )
     # Split the ships into accepted and rejected ------------------------------------
-    from pytsa.trajectories.rules import *
-    ExampleRecipe = Recipe(
-        partial(too_few_obs, n=MINLEN),
-        partial(too_small_spatial_deviation, sd=SD)
-    )
-    from pytsa.trajectories import Inspector
-    inspctr = Inspector(
-        data=ships,
-        recipe=ExampleRecipe
-    )
-    accepted, rejected = inspctr.inspect(njobs=1)
+    # from pytsa.trajectories.rules import *
+    # ExampleRecipe = Recipe(
+    #     partial(too_few_obs, n=MINLEN),
+    #     partial(too_small_spatial_deviation, sd=SD)
+    # )
+    # from pytsa.trajectories import Inspector
+    # inspctr = Inspector(
+    #     data=ships,
+    #     recipe=ExampleRecipe
+    # )
+    # accepted, rejected = inspctr.inspect(njobs=1)
     
     # Plot heatmap -----------------------------------------------------------------
     # binned_heatmap(accepted,SEARCHAREA,"aisstats/out/heatmap.png")
@@ -1369,12 +1368,12 @@ if __name__ == "__main__":
 
 
     # Plot trajectories on map ------------------------------------------------------
-    AMSTERDAM = BoundingBox(
-    LATMIN=52.79,
-    LATMAX=53.28,
-    LONMIN=5.5,
-    LONMAX=6.5)
-    plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
+    # AMSTERDAM = BoundingBox(
+    # LATMIN=52.79,
+    # LATMAX=53.28,
+    # LONMIN=5.5,
+    # LONMAX=6.5)
+    # plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
     # plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
     # plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
 
