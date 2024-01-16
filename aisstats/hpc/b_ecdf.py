@@ -14,13 +14,11 @@ from pytsa.utils import heading_change
 import pytsa.tsea.split as split
 import numpy as np
 from functools import partial
-from errchecker import speed_filter
 from aisplanner.encounters.main import NorthSea
 import ciso8601
 import pickle
-import matplotlib.pyplot as plt
 COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
-from aisstats.errchecker import haversine
+from aisstats.errchecker import haversine, speed_filter
 
 def quantiles(data, quantiles):
     """
