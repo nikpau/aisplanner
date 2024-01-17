@@ -9,7 +9,7 @@ from pathlib import Path
 from pytsa import SearchAgent, TargetShip
 from functools import partial
 import pytsa
-import pytsa.tsea.split as split
+import pytsa.trajectories.inspect as inspect
 from pytsa.trajectories.rules import *
 import logging
 import pickle
@@ -17,7 +17,7 @@ import pickle
 # Set logging level to warning
 logging.basicConfig(level=logging.WARNING,force = True)
 SDS = np.array([0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3,0.4,0.5])
-MINLENS = np.array([0,10,20,30,40,50,60,70,80,90,100,150,200,250,300,400,500])
+MINLENS = np.array([0,5,10,15,20,30,40,50,60,70,80,90,100,200,300,400,500])
 
 def average_complexity(ships: dict[int,TargetShip]):
     """
@@ -25,13 +25,13 @@ def average_complexity(ships: dict[int,TargetShip]):
     enclosed between three consecutive messages 
     for several standard deviations.
     """
-    avg_cosines = np.zeros((len(MINLENS),len(SDS)))
+    avg_smthness = np.zeros((len(MINLENS),len(SDS)))
     
     for i, minlen in enumerate(MINLENS): 
         for j, sd in enumerate(SDS):
             recipe = Recipe(
                     partial(too_few_obs,n=minlen),
-                    partial(too_small_spatial_deviation,sd=sd)
+                    partial(spatial_deviation,sd=sd)
                 )
             inpsctr = pytsa.Inspector(
                     data=ships,
@@ -39,21 +39,15 @@ def average_complexity(ships: dict[int,TargetShip]):
                 )
             acc, rej = inpsctr.inspect(njobs=1)
             del acc
-            tcosines = []
+            smthness = []
             for ship in rej.values():
                 for track in ship.tracks:
-                    for k in range(1,len(track)-1):
-                        a = track[k-1]
-                        b = track[k]
-                        c = track[k+1]
-                        tcosines.append(
-                            split.cosine_of_angle_between(a,b,c)
-                        )
-            avg_cosines[i,j] = np.nanmean(np.abs(tcosines))
+                    smthness.append(inspect.average_smoothness(track))
+            avg_smthness[i,j] = np.mean(smthness)
             
     # Save the results
-    with open("/home/s2075466/aisplanner/results/avg_cosines.pkl","wb") as f:
-        pickle.dump(avg_cosines,f)
+    with open("/home/s2075466/aisplanner/results/avg_smoothness.pkl","wb") as f:
+        pickle.dump(avg_smthness,f)
 
 if __name__ == "__main__":
     SEARCHAREA = NorthSea
