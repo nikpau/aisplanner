@@ -8,6 +8,7 @@ positions and the time between them.
 import colorsys
 import io
 from datetime import datetime
+from pathlib import Path
 import matplotlib
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from matplotlib.collections import LineCollection
@@ -32,7 +33,7 @@ from pytsa.utils import mi2nm
 import matplotlib.lines as lines
 
 # Rules for inspection of trajectories
-from pytsa.trajectories.rules import too_few_obs,too_small_spatial_deviation
+from pytsa.trajectories.rules import too_few_obs,spatial_deviation
 from functools import partial
 
 TEST_FILE_DYN = 'data/aisrecords/2021_08_02.csv'
@@ -398,9 +399,13 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     Plot all trajectories on a map.
     """
     assert mode in ["all","accepted","rejected"]
-    fig, ax = plt.subplots(figsize=(8,4))
+    fig, ax = plt.subplots(figsize=(10,15))
     idx = 0
-    plot_coastline(extent=extent,ax=ax)
+    plot_coastline(
+        datapath=Path("data/geometry"),
+        extent=extent,
+        ax=ax
+    )
     for ship in ships.values():
         for track in ship.tracks:
             idx += 1
@@ -609,7 +614,7 @@ def plot_sd_vs_rejection_rate(ships: dict[int,TargetShip],
         for sd in sds:
             recipe = Recipe(
                 partial(too_few_obs,n=minlen),
-                partial(too_small_spatial_deviation,sd=sd)
+                partial(spatial_deviation,sd=sd)
             )
             inpsctr = pytsa.Inspector(
                 data=ships,
@@ -1052,7 +1057,7 @@ def plot_average_complexity(ships: dict[int,TargetShip],
     for sd in sds:
         recipe = Recipe(
                 # partial(too_few_obs,n=50),
-                partial(too_small_spatial_deviation,sd=sd)
+                partial(spatial_deviation,sd=sd)
             )
         inpsctr = pytsa.Inspector(
                 data=ships,
@@ -1306,7 +1311,7 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.get_all_ships(njobs=2)#,skip_tsplit=True)
+    ships = SA.get_all_ships(njobs=2,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1315,9 +1320,9 @@ if __name__ == "__main__":
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    with MemoryLoader():
-        # plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
-        plot_trajectory_jitter(ships)
+    # with MemoryLoader():
+    #     plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
+    #     plot_trajectory_jitter(ships)
     
     # Plot trajectory length by number of observations
     # plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
@@ -1332,7 +1337,7 @@ if __name__ == "__main__":
     # from pytsa.trajectories.rules import *
     # ExampleRecipe = Recipe(
     #     partial(too_few_obs, n=MINLEN),
-    #     partial(too_small_spatial_deviation, sd=SD)
+    #     partial(spatial_deviation, sd=SD)
     # )
     # from pytsa.trajectories import Inspector
     # inspctr = Inspector(
@@ -1373,7 +1378,7 @@ if __name__ == "__main__":
     # LATMAX=53.28,
     # LONMIN=5.5,
     # LONMAX=6.5)
-    # plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
+    plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
     # plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
     # plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
 
