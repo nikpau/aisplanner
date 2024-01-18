@@ -27,6 +27,13 @@ FISHING_GROUNDS = BoundingBox(
     LONMAX=8.25
 )
 
+AABENRAA = BoundingBox(
+    LATMIN=54.9,
+    LATMAX=55.5,
+    LONMIN=9.2,
+    LONMAX=10
+)
+
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_1*.csv"))
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_1*.csv"))
 
@@ -36,7 +43,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     """
     Plot all trajectories on a map.
     """
-    fig, ax = plt.subplots(figsize=(8,4))
+    fig, ax = plt.subplots(figsize=(8,8))
     # fig, ax = plt.subplots(figsize=(10,12))
     idx = 0
     plot_coastline(
