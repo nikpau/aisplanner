@@ -79,8 +79,8 @@ if __name__ == "__main__":
     )
 
     ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
-    plot_trajectories_on_map(ships,AMSTERDAM,"trmap_raw")
+    plot_trajectories_on_map(ships,AABENRAA,"trmap_raw")
     
     # With filter
     ships = SA.get_all_ships(njobs=16,skip_tsplit=False)
-    plot_trajectories_on_map(ships,AMSTERDAM,"trmap_raw_tshd")
+    plot_trajectories_on_map(ships,AABENRAA,"trmap_raw_tshd")
