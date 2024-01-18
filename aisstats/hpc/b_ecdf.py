@@ -45,7 +45,7 @@ SEARCHAREA = NorthSea
 
 
 # for month in range(1,13):
-for month in range(2,3): # For testing purposes
+for month in range(3,4): # For testing purposes
     try:
         if month < 10:
             month = f"0{month}"
