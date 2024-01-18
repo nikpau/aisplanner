@@ -43,7 +43,9 @@ def quantiles(data, quantiles):
 
 SEARCHAREA = NorthSea
 
-for month in range(1,13):
+
+# for month in range(1,13):
+for month in range(2,3): # For testing purposes
     try:
         if month < 10:
             month = f"0{month}"
@@ -77,7 +79,12 @@ for month in range(1,13):
                     )
                     speed_changes.append(abs(track[i].SOG - track[i-1].SOG))
                     rspeed = split.avg_speed(track[i-1],track[i])
-                    cspeed = split.speed_from_position(track[i-1],track[i])
+                    try:
+                        cspeed = split.speed_from_position(track[i-1],track[i])
+                    except:
+                        print(f"Failed for track {track[i-1].sender} at {track[i-1].timestamp}")
+                        print([t for t in track])
+                        exit()
                     diff_speeds.append(rspeed - cspeed)
                     time_diffs.append(track[i].timestamp - track[i-1].timestamp)
                     ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
