@@ -83,7 +83,7 @@ for month in range(3,4): # For testing purposes
                         cspeed = split.speed_from_position(track[i-1],track[i])
                     except:
                         print(f"Failed for track {track[i-1].sender} at {track[i-1].timestamp}")
-                        print([t for t in track])
+                        print([t for t in track[i-10:i+10]])
                         exit()
                     diff_speeds.append(rspeed - cspeed)
                     time_diffs.append(track[i].timestamp - track[i-1].timestamp)
