@@ -47,7 +47,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     # fig, ax = plt.subplots(figsize=(10,12))
     idx = 0
     plot_coastline(
-        datapath=Path("/home/s2075466/aisplanner/data/lakes"),
+        datapath=Path("/home/s2075466/aisplanner/data/geometry"),
         extent=extent,
         ax=ax)
     for ship in ships.values():
