@@ -17,7 +17,7 @@ import pickle
 # Set logging level to warning
 logging.basicConfig(level=logging.WARNING,force = True)
 SDS = np.array([0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3,0.4,0.5])
-MINLENS = np.array([0,10,20,30,40,50,60,70,80,90,100,150,200,250,300,400,500])
+MINLENS = np.array([0,5,10,15,20,30,40,50,60,70,80,90,100,200,300,400,500])
 
 def rej_rate_3d(ships: dict[int,TargetShip]):
     """
@@ -31,7 +31,7 @@ def rej_rate_3d(ships: dict[int,TargetShip]):
         for j, sd in enumerate(SDS):
             recipe = Recipe(
                     partial(too_few_obs,n=minlen),
-                    partial(too_small_spatial_deviation,sd=sd)
+                    partial(spatial_deviation,sd=sd)
                 )
             inpsctr = pytsa.Inspector(
                     data=ships,
