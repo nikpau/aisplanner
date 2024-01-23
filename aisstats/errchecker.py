@@ -336,7 +336,7 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
             axs[row,col].set_title(
                 f"Trajectories with sd in range\n"
                 f"[{sds[row*ncols+col]:.2f},{sds[row*ncols+col+1]:.2f}]",
-                fontsize=8
+                fontsize=12
             )
 
             # Set limits
@@ -346,7 +346,7 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
             idx += 1
             
     plt.tight_layout()
-    plt.savefig(f"aisstats/out/trjitter.png", dpi=500)
+    plt.savefig(f"aisstats/out/trjitter.pdf")#, dpi=500)
     plt.close()
     
 def plot_simple_route(tv: TargetShip, mode: str) -> None:
@@ -399,7 +399,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     Plot all trajectories on a map.
     """
     assert mode in ["all","accepted","rejected"]
-    fig, ax = plt.subplots(figsize=(10,15))
+    fig, ax = plt.subplots(figsize=(10,10))
     idx = 0
     plot_coastline(
         datapath=Path("data/geometry"),
@@ -1311,7 +1311,7 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.get_all_ships(njobs=2,skip_tsplit=True)
+    ships = SA.get_all_ships(njobs=2)#,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1320,9 +1320,9 @@ if __name__ == "__main__":
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    # with MemoryLoader():
-    #     plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
-    #     plot_trajectory_jitter(ships)
+    with MemoryLoader():
+        #plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
+        plot_trajectory_jitter(ships)
     
     # Plot trajectory length by number of observations
     # plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
@@ -1378,7 +1378,7 @@ if __name__ == "__main__":
     # LATMAX=53.28,
     # LONMIN=5.5,
     # LONMAX=6.5)
-    plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
+    # plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
     # plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
     # plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
 
