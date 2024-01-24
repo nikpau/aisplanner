@@ -63,8 +63,8 @@ def average_smoothness(lons: np.ndarray, lats: np.ndarray):
 if __name__ == "__main__":
     SEARCHAREA = NorthSea
 
-    DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
-    STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
+    DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_0*.csv"))
+    STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_0*.csv"))
 
     SA = SearchAgent(
             dynamic_paths=DYNAMIC_MESSAGES,
