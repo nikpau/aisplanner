@@ -16,7 +16,6 @@ import pickle
 import multiprocessing as mp
 
 # Set logging level to warning
-logging.basicConfig(level=logging.WARNING,force = True)
 SDS = np.array([0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3,0.4,0.5])
 MINLENS = np.array([0,5,10,15,20,30,40,50,60,70,80,90,100,200,300,400,500])
 
