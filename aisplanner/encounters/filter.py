@@ -30,7 +30,6 @@ import numpy as np
 import pandas as pd
 import paramiko
 import pytsa
-from pytsa.tsea.search_agent import FileLoadingError
 from pytsa.structs import Position
 from pytsa import ShipType, TargetShip
 
