@@ -39,7 +39,7 @@ def average_complexity(ships: dict[int,TargetShip]):
                     recipe=recipe
                 )
             print("Inspecting...")
-            acc, rej = inpsctr.inspect(njobs=1)
+            acc, rej = inpsctr.inspect(njobs=24)
             del acc
             smthness = []
             for ship in rej.values():
