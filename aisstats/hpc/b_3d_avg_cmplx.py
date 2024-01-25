@@ -16,8 +16,8 @@ import pickle
 import multiprocessing as mp
 import sys
 
-sd = sys.argv[1]
-minlen = sys.argv[2]
+sd = float(sys.argv[1])
+minlen = int(sys.argv[2])
 
 # Set logging level to warning
 SDS = np.array([0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3,0.4,0.5])
