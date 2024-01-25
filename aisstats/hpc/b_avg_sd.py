@@ -39,7 +39,7 @@ accepted, _ = inspctr.inspect(njobs=1)
 # Split up accepted and rejected trajectories
 # to only contain ships of type CARGO, TANKER,
 # PASSENGER and FISHING
-types = [ShipType.CARGO, ShipType.TANKER, ShipType.PASSENGER, ShipType.FISHING]
+types = [t for t in ShipType]
 names = [t.name for t in types]
 expanded = []
 for t in types:
