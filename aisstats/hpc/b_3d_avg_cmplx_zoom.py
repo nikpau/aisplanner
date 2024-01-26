@@ -18,8 +18,8 @@ import sys
 
 np.seterr(all='raise')
 
-SDS = np.linspace(0,0.5,201)
-MINLENS = np.linspace(0,500,201)
+SDS = np.linspace(0,0.1,201)
+MINLENS = np.linspace(0,100,201)
 
 def online_average(avg, new, n):
     return avg + (new - avg) / n
