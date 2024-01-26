@@ -16,12 +16,14 @@ import pickle
 import multiprocessing as mp
 import sys
 
-sd = float(sys.argv[1])
-minlen = int(sys.argv[2])
+np.seterr(all='raise')
 
 # Set logging level to warning
 SDS = np.array([0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3,0.4,0.5])
 MINLENS = np.array([0,5,10,15,20,30,40,50,60,80,100,200,400,500])
+
+def online_average(avg, new, n):
+    return avg + (new - avg) / n
 
 def average_complexity(ships: dict[int,TargetShip]):
     """
@@ -29,31 +31,48 @@ def average_complexity(ships: dict[int,TargetShip]):
     enclosed between three consecutive messages 
     for several standard deviations.
     """
-    recipe = Recipe(
-            partial(too_few_obs,n=minlen),
-            partial(spatial_deviation,sd=sd)
-        )
-    inpsctr = pytsa.Inspector(
-            data=ships,
-            recipe=recipe
-        )
-    print("Inspecting...")
-    acc, rej = inpsctr.inspect(njobs=1)
-    del acc
-    smthness = []
-    for ship in rej.values():
+    minlens = np.linspace(0,5000,1001)
+    sds = np.linspace(0,2,1001)
+    smthness = np.full((len(minlens),len(sds)),np.nan)
+    
+    # count for running average
+    counts = np.full((len(minlens),len(sds)),0)
+    for ship in ships.values():
         for track in ship.tracks:
-            smthness.append(inspect.average_smoothness(track))
+            length = len(track)
+            if length < 3:
+                print("Track too short")
+                continue
+            sd = np.std([p.lon for p in track]) + np.std([p.lat for p in track])
+            s = inspect.average_smoothness(track)
+            
+            # Find the index of the minimum length
+            minlen_idx = np.argmin(np.abs(minlens-length))
+            sd_idx = np.argmin(np.abs(sds-sd))
+            
+            # If there is no value yet, set it
+            if counts[minlen_idx,sd_idx] == 0:
+                smthness[minlen_idx,sd_idx] = s
+                counts[minlen_idx,sd_idx] = 1
+                continue
+            
+            # Update the running average
+            counts[minlen_idx,sd_idx] += 1
+            smthness[minlen_idx,sd_idx] = online_average(
+                smthness[minlen_idx,sd_idx], 
+                s,
+                counts[minlen_idx,sd_idx]
+            )
             
     # Save the results
-    with open(f"/home/s2075466/aisplanner/results/avg_smoothness_{sd}_{minlen}.pkl","wb") as f:
-        pickle.dump(np.mean(smthness),f)
+    with open(f"/home/s2075466/aisplanner/results/avg_smoothness.pkl","wb") as f:
+        pickle.dump(smthness,f)
 
 if __name__ == "__main__":
     SEARCHAREA = NorthSea
 
-    DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
-    STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
+    DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07*.csv"))
+    STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
 
     SA = SearchAgent(
             dynamic_paths=DYNAMIC_MESSAGES,
@@ -62,6 +81,6 @@ if __name__ == "__main__":
             preprocessor=partial(speed_filter, speeds= (1,30))
         )
 
-    ships = SA.get_all_ships(njobs=8)
+    ships = SA.get_all_ships(njobs=16)
 
     average_complexity(ships)
