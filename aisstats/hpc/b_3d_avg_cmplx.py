@@ -19,8 +19,8 @@ import sys
 np.seterr(all='raise')
 
 # Set logging level to warning
-SDS = np.array([0.01,0.015,0.02,0.025,0.03,0.04,0.05,0.1,0.2,0.3,0.4,0.5])
-MINLENS = np.array([0,5,10,15,20,30,40,50,60,80,100,200,400,500])
+SDS = np.linspace(0,0.5,201)
+MINLENS = np.linspace(0,500,201)
 
 def online_average(avg, new, n):
     return avg + (new - avg) / n
@@ -31,12 +31,10 @@ def average_complexity(ships: dict[int,TargetShip]):
     enclosed between three consecutive messages 
     for several standard deviations.
     """
-    minlens = np.linspace(0,1000,1001)
-    sds = np.linspace(0,0.5,1001)
-    smthness = np.full((len(minlens),len(sds)),np.nan)
+    smthness = np.full((len(MINLENS),len(SDS)),np.nan)
     
     # count for running average
-    counts = np.full((len(minlens),len(sds)),0)
+    counts = np.full((len(MINLENS),len(SDS)),0)
     for ship in ships.values():
         for track in ship.tracks:
             length = len(track)
@@ -47,8 +45,8 @@ def average_complexity(ships: dict[int,TargetShip]):
             s = inspect.average_smoothness(track)
             
             # Find the index of the minimum length
-            minlen_idx = np.argmin(np.abs(minlens-length))
-            sd_idx = np.argmin(np.abs(sds-sd))
+            minlen_idx = np.argmin(np.abs(MINLENS-length))
+            sd_idx = np.argmin(np.abs(SDS-sd))
             
             # If there is no value yet, set it
             if counts[minlen_idx,sd_idx] == 0:
