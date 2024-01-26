@@ -31,8 +31,8 @@ def average_complexity(ships: dict[int,TargetShip]):
     enclosed between three consecutive messages 
     for several standard deviations.
     """
-    minlens = np.linspace(0,5000,1001)
-    sds = np.linspace(0,2,1001)
+    minlens = np.linspace(0,1000,1001)
+    sds = np.linspace(0,0.5,1001)
     smthness = np.full((len(minlens),len(sds)),np.nan)
     
     # count for running average
