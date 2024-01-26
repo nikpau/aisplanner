@@ -65,12 +65,16 @@ def average_complexity(ships: dict[int,TargetShip]):
     # Save the results
     with open(f"/home/s2075466/aisplanner/results/avg_smoothness.pkl","wb") as f:
         pickle.dump(smthness,f)
+        
+    # Save the counts
+    with open(f"/home/s2075466/aisplanner/results/avg_smoothness_counts.pkl","wb") as f:
+        pickle.dump(counts,f)
 
 if __name__ == "__main__":
     SEARCHAREA = NorthSea
 
-    DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07*.csv"))
-    STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
+    DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
+    STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
 
     SA = SearchAgent(
             dynamic_paths=DYNAMIC_MESSAGES,
