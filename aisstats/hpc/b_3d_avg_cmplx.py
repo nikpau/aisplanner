@@ -62,11 +62,11 @@ def average_complexity(ships: dict[int,TargetShip]):
             )
             
     # Save the results
-    with open(f"/home/s2075466/aisplanner/results/avg_smoothness.pkl","wb") as f:
+    with open(f"/home/s2075466/aisplanner/results/avg_raw_smoothness.pkl","wb") as f:
         pickle.dump(smthness,f)
         
     # Save the counts
-    with open(f"/home/s2075466/aisplanner/results/avg_smoothness_counts.pkl","wb") as f:
+    with open(f"/home/s2075466/aisplanner/results/avg_smoothness_raw_counts.pkl","wb") as f:
         pickle.dump(counts,f)
 
 if __name__ == "__main__":
@@ -82,6 +82,6 @@ if __name__ == "__main__":
             preprocessor=partial(speed_filter, speeds= (1,30))
         )
 
-    ships = SA.get_all_ships(njobs=16)
+    ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
 
     average_complexity(ships)
