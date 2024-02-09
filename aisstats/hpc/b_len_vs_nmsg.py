@@ -32,7 +32,7 @@ tpos = TimePosition(
 )
 SA.init(tpos)
 
-ships = SA.get_all_ships(njobs=16,skip_filter=True)
+ships = SA.extract_all(njobs=16,skip_filter=True)
 
 plot_trlen_vs_nmsg(ships, savename="/home/s2075466/aisplanner/results/trlen_vs_nmsg_07_21.pdf")
 
@@ -52,6 +52,6 @@ tpos = TimePosition(
 )
 SA.init(tpos)
 
-ships = SA.get_all_ships(njobs=16,skip_filter=True)
+ships = SA.extract_all(njobs=16,skip_filter=True)
 
 plot_trlen_vs_nmsg(ships, savename="/home/s2075466/aisplanner/results/trlen_vs_nmsg_07_21_raw.pdf")

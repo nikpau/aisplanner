@@ -31,7 +31,7 @@ def plot_sdiff_histogram(sa: SearchAgent):
     """
     f, ax = plt.subplots(1,1,figsize=(8,5))
 
-    ships = sa.get_all_ships(skip_tsplit=True)
+    ships = sa.extract_all(skip_tsplit=True)
     diffs = []
     it = 0
     maxlen = len(ships)

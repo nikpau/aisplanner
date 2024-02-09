@@ -16,22 +16,12 @@ DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').gl
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
 
 SA = SearchAgent(
-        msg12318file=DYNAMIC_MESSAGES,
+        dynamic_paths=DYNAMIC_MESSAGES,
         frame=SEARCHAREA,
-        msg5file=STATIC_MESSAGES,
+        static_paths=STATIC_MESSAGES,
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
     
-# Create starting positions for the search.
-# This is just the center of the search area.
-center = SEARCHAREA.center
-tpos = TimePosition(
-    timestamp="2021-07-01", # arbitrary date
-    lat=center.lat,
-    lon=center.lon
-)
-SA.init(tpos)
-
-ships = SA.get_all_ships(njobs=16,skip_filter=True)
+ships = SA.extract_all(njobs=16,skip_tsplit=True)
 
 plot_sd_vs_rejection_rate(ships, savename="/home/s2075466/aisplanner/results/sd_vs_rejection_rate_21.pdf")

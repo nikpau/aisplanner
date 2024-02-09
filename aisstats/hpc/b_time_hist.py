@@ -46,7 +46,7 @@ if __name__ == "__main__":
         preprocessor=partial(speed_filter, speeds = (1,30))
     )
     
-    ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
+    ships = SA.extract_all(njobs=16,skip_tsplit=True)
     temp_diffs = []
     for ship in ships.values():
         for track in ship.tracks:

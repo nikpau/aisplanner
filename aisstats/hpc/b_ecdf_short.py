@@ -77,7 +77,7 @@ SA = SearchAgent(
     preprocessor=partial(speed_filter, speeds= (1,30))
 )
 
-ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
+ships = SA.extract_all(njobs=16,skip_tsplit=True)
 l = len(ships)
 for idx, ship in enumerate(ships.values()):
     print(f"Processing ship {idx+1}/{l}")

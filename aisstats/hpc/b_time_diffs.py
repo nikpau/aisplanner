@@ -24,7 +24,7 @@ def plot_time_diffs(sa:SearchAgent):
     """
     f, ax = plt.subplots(1,1,figsize=(6,4))
     ax: plt.Axes
-    ships = sa.get_all_ships(njobs=16,skip_tsplit=True)
+    ships = sa.extract_all(njobs=16,skip_tsplit=True)
     time_diffs = []
     it = 0
     maxlen = len(ships)

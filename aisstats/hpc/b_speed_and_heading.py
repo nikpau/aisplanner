@@ -25,10 +25,9 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     Plot the changes in heading and speed between
     two consecutive messages.
     """
-    f, ax = plt.subplots(1,2,figsize=(16,5))
-    ax: list[plt.Axes]
+    f, ax = plt.subplots(1,1,figsize=(8,5))
 
-    ships = sa.get_all_ships(skip_tsplit=True)
+    ships = sa.extract_all(skip_tsplit=True)
     heading_changes = []
     speed_changes = []
     it = 0
@@ -57,15 +56,15 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
         f"90% within [{h_qs[4]:.2f}°,{h_qs[5]:.2f}°]"
     ]
     # Heading Quantiles as vertical lines
-    hl11 = ax[0].axvline(h_qs[0],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
-    hl12 = ax[0].axvline(h_qs[1],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
-    hl21 = ax[0].axvline(h_qs[2],color=COLORWHEEL[0],label=q_labels_h[1],ls="-.")
-    hl22 = ax[0].axvline(h_qs[3],color=COLORWHEEL[0],label=q_labels_h[1],ls="-.")
-    hl31 = ax[0].axvline(h_qs[4],color=COLORWHEEL[0],label=q_labels_h[2],ls=":")
-    hl32 = ax[0].axvline(h_qs[5],color=COLORWHEEL[0],label=q_labels_h[2],ls=":")
+    hl11 = ax.axvline(h_qs[0],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
+    hl12 = ax.axvline(h_qs[1],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
+    hl21 = ax.axvline(h_qs[2],color=COLORWHEEL[0],label=q_labels_h[1],ls="-.")
+    hl22 = ax.axvline(h_qs[3],color=COLORWHEEL[0],label=q_labels_h[1],ls="-.")
+    hl31 = ax.axvline(h_qs[4],color=COLORWHEEL[0],label=q_labels_h[2],ls=":")
+    hl32 = ax.axvline(h_qs[5],color=COLORWHEEL[0],label=q_labels_h[2],ls=":")
     
     # Histogram of heading changes
-    ax[0].hist(
+    ax.hist(
         heading_changes,
         bins=100,
         density=True,
@@ -85,13 +84,28 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
         f"90% smaller than {s_qs[2]:.2f} kn"
     ]
     
+    
+    # Legend with heading
+    ax.legend(handles=[hl11,hl21,hl31])
+    ax.set_xlabel("Change in heading [°]")
+    ax.set_ylabel("Density")
+    ax.set_title(
+        "Change in heading between two consecutive messages",fontsize=10
+    )
+    plt.tight_layout()
+    plt.savefig(f"/home/s2075466/aisplanner/results/heading_changes.pdf")
+    plt.close()
+    
+    # Plot speed changes
+    f, ax = plt.subplots(1,1,figsize=(8,5))
+
     # Speed Quantiles as vertical lines
-    sl1 = ax[1].axvline(s_qs[0],color=COLORWHEEL[0],label=q_labels_s[0],ls="--")
-    sl2 = ax[1].axvline(s_qs[1],color=COLORWHEEL[0],label=q_labels_s[1],ls="-.")
-    sl3 = ax[1].axvline(s_qs[2],color=COLORWHEEL[0],label=q_labels_s[2],ls=":")
+    sl1 = ax.axvline(s_qs[0],color=COLORWHEEL[0],label=q_labels_s[0],ls="--")
+    sl2 = ax.axvline(s_qs[1],color=COLORWHEEL[0],label=q_labels_s[1],ls="-.")
+    sl3 = ax.axvline(s_qs[2],color=COLORWHEEL[0],label=q_labels_s[2],ls=":")
     
     # Histogram of speed changes
-    ax[1].hist(
+    ax.hist(
         speed_changes,
         bins=200,
         density=True,
@@ -99,21 +113,13 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
         color=COLORWHEEL[0]
     )
     
-    # Legend with heading
-    ax[0].legend(handles=[hl11,hl21,hl31])
-    ax[0].set_xlabel("Change in heading [°]")
-    ax[0].set_ylabel("Density")
-    ax[0].set_title(
-        "Change in heading between two consecutive messages",fontsize=10
-    )
-    
-    ax[1].legend(handles=[sl1,sl2,sl3])
-    ax[1].set_xlabel("Absolute change in speed [knots]")
-    ax[1].set_ylabel("Density")
-    ax[1].set_title(
+    ax.legend(handles=[sl1,sl2,sl3])
+    ax.set_xlabel("Absolute change in speed [knots]")
+    ax.set_ylabel("Density")
+    ax.set_title(
         "Change in speed between two consecutive messages",fontsize=10
     )
-    ax[1].set_xlim(-0.2,4)
+    ax.set_xlim(-0.2,4)
     
     plt.tight_layout()
     plt.savefig(f"/home/s2075466/aisplanner/results/heading_speed_changes_all.pdf")

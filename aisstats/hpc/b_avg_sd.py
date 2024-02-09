@@ -25,7 +25,7 @@ SA = SearchAgent(
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
-ships = SA.get_all_ships(njobs=16)
+ships = SA.extract_all(njobs=16)
 
 ExampleRecipe = Recipe(
     partial(too_few_obs, n=50),

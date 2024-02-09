@@ -58,5 +58,5 @@ if __name__ == "__main__":
     )
     
     # With filter
-    ships = SA.get_all_ships(njobs=16,skip_tsplit=False)
+    ships = SA.extract_all(njobs=16,skip_tsplit=False)
     plot_trajectories_on_map(ships,NorthSea,"trmap_tugtow")

@@ -17,11 +17,11 @@ SA = SearchAgent(
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
-ships = SA.get_all_ships(njobs=16)
+ships = SA.extract_all(njobs=16)
 
 ExampleRecipe = Recipe(
     partial(too_few_obs, n=50),
-    partial(too_small_spatial_deviation, sd=0.2)
+    partial(spatial_deviation, sd=0.2)
 )
 from pytsa.trajectories import Inspector
 inspctr = Inspector(

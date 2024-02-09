@@ -32,6 +32,6 @@ tpos = TimePosition(
 )
 SA.init(tpos)
 
-ships = SA.get_all_ships(njobs=16,skip_filter=True)
+ships = SA.extract_all(njobs=16,skip_filter=True)
 
 plot_average_complexity(ships, savename="/home/s2075466/aisplanner/results/a_avg_cmplx_07_21.pdf")

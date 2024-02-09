@@ -62,7 +62,7 @@ if __name__ == "__main__":
         static_paths=STATIC_MESSAGES,
     )
 
-    ships = SA.get_all_ships(njobs=16,skip_tsplit=True)
+    ships = SA.extract_all(njobs=16,skip_tsplit=True)
     
     tvs = list(ships.values())
     for i in range(60,200):
