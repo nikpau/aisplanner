@@ -30,7 +30,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
         extent=extent,
         ax=ax)
     for ship in ships.values():
-        if ship.ship_type in ShipType.TUGTOW.value:
+        if any(st in ShipType.TUGTOW.value for st in ship.ship_type):
             for track in ship.tracks:
                 idx += 1
                 tlon = [p.lon for p in track]
