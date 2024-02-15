@@ -1113,7 +1113,7 @@ def binned_heatmap(targets: dict[int,TargetShip],
 
     # Add coastline redered to an image
     # and plot it on top of the heatmap
-    plot_coastline("data/geometry/",bb,ax=ax)
+    plot_coastline("/home/s2075466/aisplanner/data/geometry/",bb,ax=ax)
     
     # Mask the pixels with no messages
     counts = np.ma.masked_where(counts == 0,counts)
