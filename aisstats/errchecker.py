@@ -31,6 +31,7 @@ from pytsa.trajectories.rules import Recipe
 from KDEpy.bw_selection import improved_sheather_jones
 from pytsa.utils import mi2nm
 import matplotlib.lines as lines
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 # Rules for inspection of trajectories
 from pytsa.trajectories.rules import too_few_obs,spatial_deviation
@@ -202,7 +203,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     """
     rspeeds = []
     cspeeds = []
-    ships = sa.get_all_ships(skip_tsplit=True)
+    ships = sa.extract_all(skip_tsplit=True)
     fig, ax = plt.subplots(figsize=(6,6))
     for ship in ships.values():
         for track in ship.tracks:
@@ -298,11 +299,6 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
             
             axs[row,col].axhline(0, color='k', linewidth=0.5)
             axs[row,col].axvline(0, color='k', linewidth=0.5)
-            
-            # Randomly select 100 ships
-            # to plot trajectories for
-            # rndms = np.random.choice(list(to_process.keys()), size=100, replace=False)
-            # to_process = {k:to_process[k] for k in rndms}
 
             for la, lo in zip(lats,lons):
                 axs[row,col].plot(
@@ -334,9 +330,9 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
             axs[row,col].set_xlabel("Longitude")
             axs[row,col].set_ylabel("Latitude")
             axs[row,col].set_title(
-                f"Trajectories with sd in range\n"
+                "$\sigma_{ssd}\in$"
                 f"[{sds[row*ncols+col]:.2f},{sds[row*ncols+col+1]:.2f}]",
-                fontsize=12
+                fontsize=16
             )
 
             # Set limits
@@ -662,7 +658,7 @@ def plot_time_diffs(sa:SearchAgent):
     """
     f, ax = plt.subplots(1,1,figsize=(6,4))
     ax: plt.Axes
-    ships = sa.get_all_ships(skip_filter=True)
+    ships = sa.extract_all(skip_filter=True)
     time_diffs = []
     it = 0
     maxlen = len(ships)
@@ -718,7 +714,7 @@ def plot_reported_vs_calculated_speed(sa:SearchAgent):
     """
     f, ax = plt.subplots(1,1,figsize=(6,4))
     ax: plt.Axes
-    ships = sa.get_all_ships(skip_filter=True)
+    ships = sa.extract_all(skip_filter=True)
     speeds = []
     it = 0
     maxlen = len(ships)
@@ -779,7 +775,7 @@ def plot_distance_between_messages(sa:SearchAgent):
     """
     f, ax = plt.subplots(1,1,figsize=(8,8))
     ax: plt.Axes
-    ships = sa.get_all_ships(skip_filter=True)
+    ships = sa.extract_all(skip_filter=True)
     distances = []
     it = 0
     maxlen = len(ships)
@@ -852,7 +848,7 @@ def plot_heading_and_speed_changes(sa:SearchAgent):
     f, ax = plt.subplots(2,1,figsize=(8,10))
     ax: list[plt.Axes]
 
-    ships = sa.get_all_ships(skip_filter=True)
+    ships = sa.extract_all(skip_filter=True)
     heading_changes = []
     speed_changes = []
     it = 0
@@ -962,7 +958,7 @@ def inspect_trajectory_splits(sa: SearchAgent):
     hc_hist = []
     sc_hist = [] 
     for col,tgap in enumerate(tgaps):
-        ships = sa.get_all_ships(max_tgap=tgap,max_dgap=np.inf)
+        ships = sa.extract_all(max_tgap=tgap,max_dgap=np.inf)
         heading_changes = []
         speed_changes = []
         it = 0
@@ -1092,11 +1088,9 @@ def binned_heatmap(targets: dict[int,TargetShip],
     resolution. Then count the number of 
     messages in each pixel and plot a heatmap.
     """
-    # Find aspect ratio of bounding box         
-    aspect = 1.0/np.cos(60*np.pi/180)
     
     lonpx = 500
-    latpx = int(lonpx * aspect)
+    latpx = lonpx
         
     # Create a grid of pixels
     x = np.linspace(bb.LONMIN,bb.LONMAX,lonpx)
@@ -1114,18 +1108,12 @@ def binned_heatmap(targets: dict[int,TargetShip],
                 counts[j,i] += 1
     
     # Plot the heatmap
-    fig, ax = plt.subplots(figsize=(10,10))
+    fig, ax = plt.subplots(figsize=(7,7))
     ax: plt.Axes
 
     # Add coastline redered to an image
     # and plot it on top of the heatmap
-    coastline: plt.Figure = plot_coastline(bb,ax=ax)
-    # buf = io.BytesIO()
-    # coastline.savefig(buf)
-    # buf.seek(0)
-    # img = Image.open(buf)
-    # img = img.resize((lonpx,latpx))
-    # ax.imshow(img,alpha=0.8)
+    plot_coastline("data/geometry/",bb,ax=ax)
     
     # Mask the pixels with no messages
     counts = np.ma.masked_where(counts == 0,counts)
@@ -1133,18 +1121,35 @@ def binned_heatmap(targets: dict[int,TargetShip],
     # Log transform of counts to avoid
     # spots with many messages to dominate
     # the plot
-    counts = np.vectorize(lambda x: np.log(np.log(x+1)+1))(counts)
+    loglogcounts = np.vectorize(lambda x: np.log(np.log(x+1)+1))(counts)
     
-    cmap = matplotlib.colormaps["Reds"]
+    cmap = matplotlib.colormaps["gist_stern_r"]
     cmap.set_bad(alpha=0)
     ax.grid(False)
-    ax.pcolormesh(xx,yy,counts,cmap=cmap)#,shading="gouraud")
+    pcm = ax.pcolormesh(xx,yy,loglogcounts,cmap=cmap)#,shading="gouraud")
+    plt.tight_layout()
+    
+    # Small  inset Colorbar
+    cbaxes = inset_axes(ax, width="40%", height="2%", loc=4, borderpad = 2)
+    cbaxes.grid(False)
+    cbar = fig.colorbar(pcm,cax=cbaxes, orientation="horizontal")
+    cbar.set_label(r"Route density ($n_{msg}$)",color="white")
+
+    newticks = np.linspace(1,loglogcounts.max(),3)
+    cbar.set_ticks(
+        ticks = newticks,
+        labels = [f"{(np.exp(np.exp(t))-np.exp(1))/np.exp(1):.0f}" for t in newticks]
+    )
+    
+    cbar.ax.xaxis.set_ticks_position("top")
+    cbar.ax.xaxis.set_tick_params(color="white")
+    plt.setp(plt.getp(cbar.ax.axes, 'xticklabels'), color="white")
+    
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
-    ax.set_title("Heatmap of messages")
+    #ax.set_title("Heatmap of messages")
     
     
-    plt.tight_layout()
     plt.savefig(savename,dpi=300)
     
 def plot_trlen_vs_nmsg(ships: dict[int,TargetShip],
@@ -1311,7 +1316,7 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.get_all_ships(njobs=2)#,skip_tsplit=True)
+    ships = SA.extract_all(njobs=2)#,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1320,9 +1325,9 @@ if __name__ == "__main__":
     # plot_speed_scatter(sa=SA) 
 
     # Plot trajectory jitter --------------------------------------------------------
-    with MemoryLoader():
+    # with MemoryLoader():
         #plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
-        plot_trajectory_jitter(ships)
+        # plot_trajectory_jitter(ships)
     
     # Plot trajectory length by number of observations
     # plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
@@ -1347,7 +1352,7 @@ if __name__ == "__main__":
     # accepted, rejected = inspctr.inspect(njobs=1)
     
     # Plot heatmap -----------------------------------------------------------------
-    # binned_heatmap(accepted,SEARCHAREA,"aisstats/out/heatmap.png")
+    binned_heatmap(ships,SEARCHAREA,"aisstats/out/heatmap.png")
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # vals = list(accepted.values())
