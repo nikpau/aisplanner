@@ -62,7 +62,7 @@ def average_complexity(ships: dict[int,TargetShip]):
             )
             
     # Save the results
-    with open(f"/home/s2075466/aisplanner/results/avg_smoothnessraw__zoom.pkl","wb") as f:
+    with open(f"/home/s2075466/aisplanner/results/avg_smoothness_raw_zoom.pkl","wb") as f:
         pickle.dump(smthness,f)
         
     # Save the counts
