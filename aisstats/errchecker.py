@@ -1108,7 +1108,7 @@ def binned_heatmap(targets: dict[int,TargetShip],
                 counts[j,i] += 1
     
     # Plot the heatmap
-    fig, ax = plt.subplots(figsize=(10,10))
+    fig, ax = plt.subplots(figsize=(12,10))
     ax: plt.Axes
 
     # Add coastline redered to an image
