@@ -1127,7 +1127,7 @@ def binned_heatmap(targets: dict[int,TargetShip],
     cmap.set_bad(alpha=0)
     ax.grid(False)
     pcm = ax.pcolormesh(xx,yy,loglogcounts,cmap=cmap)#,shading="gouraud")
-    plt.tight_layout()
+    #plt.tight_layout()
     
     # Small  inset Colorbar
     cbaxes = inset_axes(ax, width="40%", height="2%", loc=4, borderpad = 2)
@@ -1352,7 +1352,7 @@ if __name__ == "__main__":
     # accepted, rejected = inspctr.inspect(njobs=1)
     
     # Plot heatmap -----------------------------------------------------------------
-    binned_heatmap(ships,SEARCHAREA,"aisstats/out/heatmap.png")
+    binned_heatmap(ships,SEARCHAREA,"aisstats/out/heatmap_no_rejoin.png")
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # vals = list(accepted.values())
