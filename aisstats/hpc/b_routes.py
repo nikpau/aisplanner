@@ -16,8 +16,8 @@ from pytsa.tsea.split import speed_from_position, avg_speed, AISMessage
 
 SEARCHAREA = NorthSea
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07*.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
+DYNAMIC_MESSAGES = list(Path('/data/walrus/ws/s2075466-ais/decoded/jan2020_to_jun2022').glob("2021_07*.csv"))
+STATIC_MESSAGES = list(Path('/data/walrus/ws/s2075466-ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
 
 TEST_FILE_DYN = 'data/aisrecords/2021_07_01.csv'
 TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_07_01.csv'
