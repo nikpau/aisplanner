@@ -37,8 +37,9 @@ def plot_td_histogram(tdiffs: np.ndarray,
         tdiffs,
         [0.99,0.95,0.90]
     )
-    tdiffs500 = tdiffs[tdiffs <= 500]
-    ax.hist(tdiffs500, bins=100, color=COLORWHEEL[0])
+    bins = np.linspace(0,500,100)
+    np.append(bins,np.inf)
+    ax.hist(tdiffs, bins=bins, color=COLORWHEEL[0])
 
 
     q_labels = [
