@@ -33,7 +33,7 @@ def plot_simple_route(track: list[AISMessage]) -> None:
         lons.append(msg.lon - lonmean)
         lats.append(msg.lat - latmean)
     
-    fig, ax = plt.subplots(1,2,figsize=(8,4))
+    fig, ax = plt.subplots(1,2,figsize=(8,3))
     ax: list[plt.Axes]
     
     # Plot the trajectory
