@@ -75,9 +75,9 @@ def plot_simple_route(track: list[AISMessage]) -> None:
 
 if __name__ == "__main__":
     SA = SearchAgent(
-        dynamic_paths=TEST_FILE_DYN,#DYNAMIC_MESSAGES,
+        dynamic_paths=DYNAMIC_MESSAGES,
         frame=SEARCHAREA,
-        static_paths=TEST_FILE_STA,#STATIC_MESSAGES,
+        static_paths=STATIC_MESSAGES,
         preprocessor=partial(speed_filter, speeds = (1,30)),
     )
 
