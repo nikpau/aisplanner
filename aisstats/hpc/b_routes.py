@@ -5,18 +5,14 @@ for the AIS data set
 from glob import glob
 from pathlib import Path
 from matplotlib import pyplot as plt
-from pytsa.decode import filedescriptor as fd
 import numpy as np
-import pandas as pd
-from datetime import datetime
-from pytsa import TargetShip, BoundingBox
 from aisplanner.encounters.filter import haversine
 from aisplanner.encounters.main import NorthSea
 from pathlib import Path
 from pytsa import SearchAgent
 from pytsa.trajectories.rules import *
 from aisstats.errchecker import COLORWHEEL, speed_filter, _heading_change
-from pytsa.tsea.split import speed_from_position, avg_speed
+from pytsa.tsea.split import speed_from_position, avg_speed, AISMessage
 
 SEARCHAREA = NorthSea
 
@@ -41,8 +37,8 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ax: list[plt.Axes]
     
     # Plot the trajectory
-    ax[0].plot(lons,lats,color=COLORWHEEL[0],ls="-", alpha = 0.9)
-    ax[0].scatter(lons,lats,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9)
+    ax[0].plot(lons,lats,color=COLORWHEEL[0],ls="-", alpha = 0.9,lw=0.5)
+    ax[0].scatter(lons,lats,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9,linewidths=0.5)
         
     # Set labels
     ax[0].set_xlabel('Longitude')
@@ -54,8 +50,8 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     relvscalc = [
         avg_speed(m1,m2) - speed_from_position(m1,m2) for m1,m2 in zip(track,track[1:])
     ]
-    ax[1].plot(relvscalc,color=COLORWHEEL[0],ls="-", alpha = 0.9)
-    ax[1].scatter(range(len(relvscalc)),relvscalc,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9)
+    ax[1].plot(relvscalc,color=COLORWHEEL[0],ls="-", alpha = 0.9,lw=0.5)
+    ax[1].scatter(range(len(relvscalc)),relvscalc,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9,linewidths=0.5)
     ax[1].set_xlabel("Message number")
     ax[1].set_ylabel("Difference in speed [kn]")
     
@@ -63,13 +59,13 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ax[1].set_title(r"$\overline{SOG}_{m_i}^{m_{i+1}} - \widehat{SOG}_{m_i}^{m_{i+1}}$",fontsize=8)
     
     # Save figure
-    fname = f"/home/s2075466/aisplanner/results/{track[0].sender}"
+    fname = f"/home/s2075466/aisplanner/results/routes/{track[0].sender}"
     # Check if the file already exists and if so, add a number to the end
     # of the filename
     if Path(fname).exists():
         i = 1
         while Path(fname).exists():
-            fname = f"/home/s2075466/aisplanner/results/{track[0].sender}_{i}"
+            fname = f"/home/s2075466/aisplanner/results/routes/{track[0].sender}_{i}"
             i += 1
     
     plt.tight_layout()
