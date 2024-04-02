@@ -75,21 +75,22 @@ def plot_simple_route(track: list[AISMessage]) -> None:
 
 if __name__ == "__main__":
     SA = SearchAgent(
-        dynamic_paths=DYNAMIC_MESSAGES,
+        dynamic_paths=TEST_FILE_DYN,#DYNAMIC_MESSAGES,
         frame=SEARCHAREA,
-        static_paths=STATIC_MESSAGES,
+        static_paths=TEST_FILE_STA,#STATIC_MESSAGES,
         preprocessor=partial(speed_filter, speeds = (1,30)),
     )
 
 
-    ships = SA.extract_all(njobs=4,skip_tsplit=True)
+    ships = SA.extract_all(njobs=3,skip_tsplit=True)
     
     # Sort the trajectories by standard deviation
     # of the calculated speeds
     tracks = []
     for tv in ships.values():
         for track in tv.tracks:
-            tracks.append(track)
+            if len(track) > 1:
+                tracks.append(track)
     
     def _sort_by_speed(track: list[AISMessage]) -> float:
         return max(
