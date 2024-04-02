@@ -89,7 +89,7 @@ if __name__ == "__main__":
     tracks = []
     for tv in ships.values():
         for track in tv.tracks:
-            if len(track) > 1:
+            if len(track) > 1 and len(track) < 200:
                 tracks.append(track)
     
     def _sort_by_speed(track: list[AISMessage]) -> float:
