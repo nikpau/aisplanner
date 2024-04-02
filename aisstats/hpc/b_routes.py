@@ -82,7 +82,7 @@ if __name__ == "__main__":
     )
 
 
-    ships = SA.extract_all(njobs=3,skip_tsplit=True)
+    ships = SA.extract_all(njobs=20,skip_tsplit=True)
     
     # Sort the trajectories by standard deviation
     # of the calculated speeds
