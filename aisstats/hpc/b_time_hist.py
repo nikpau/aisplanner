@@ -80,4 +80,4 @@ if __name__ == "__main__":
                 diff = track[i].timestamp - track[i-1].timestamp
                 temp_diffs.append(diff)
     
-    plot_td_histogram(temp_diffs, savename="/home/s2075466/aisplanner/results/td_hist_21.pdf")
+    plot_td_histogram(np.array(temp_diffs), savename="/home/s2075466/aisplanner/results/td_hist_21.pdf")
