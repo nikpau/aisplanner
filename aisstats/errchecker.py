@@ -226,7 +226,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     ax2.plot(
         np.linspace(1,30,100),
         np.linspace(1,30,100),
-        color=COLORWHEEL3[3],
+        color="r",
         lw=0.8, label = r"$\overline{SOG}_{m_i}^{m_{i+1}}=\widehat{SOG}_{m_i}^{m_{i+1}}$"
     )
     
@@ -239,8 +239,8 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
         s=0.2
     )
 
-    ax2.set_ylim(0,60)
-    ax1.set_ylim(100,1.05*max(cspeeds))
+    ax2.set_ylim(0,100)
+    ax1.set_ylim(500,1.05*max(cspeeds))
     ax1.set_yscale('log')
     
     # hide the spines between ax1 and ax2
