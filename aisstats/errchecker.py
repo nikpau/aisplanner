@@ -60,7 +60,8 @@ def scale_lightness(rgb, scale_l):
 
 
 # Use matplotlib style `bmh`
-plt.style.use('bmh')
+# plt.style.use('bmh')
+plt.style.use('default')
 plt.rcParams["font.family"] = "monospace"
 COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
 COLORWHEEL3 = ["#335c67","#fff3b0","#e09f3e","#9e2a2b","#540b0e"]
@@ -204,7 +205,8 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     rspeeds = []
     cspeeds = []
     ships = sa.extract_all(skip_tsplit=True)
-    fig, ax = plt.subplots(figsize=(6,6))
+    fig, (ax1,ax2) = plt.subplots(2,1,sharex=True,figsize=(6,6))
+    ax1: plt.Axes; ax2: plt.Axes
     for ship in ships.values():
         for track in ship.tracks:
             for i in range(1,len(track)):
@@ -212,28 +214,58 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
                 cspeed = split.speed_from_position(track[i-1],track[i])
                 rspeeds.append(rspeed)
                 cspeeds.append(cspeed)
-    ax.scatter(
+    ax1.scatter(
         rspeeds,
         cspeeds,
         color=COLORWHEEL[0],
         alpha=0.5,
         s=1
     )
-    
+
     # Plot line y = x
-    ax.plot(
+    ax2.plot(
         np.linspace(1,30,100),
         np.linspace(1,30,100),
         color=COLORWHEEL3[3],
-        lw=0.8
+        lw=0.8, label = r"$\overline{SOG}_{m_i}^{m_{i+1}}=\widehat{SOG}_{m_i}^{m_{i+1}}$"
     )
     
-    # Log scale for y axis
-    ax.set_yscale('log')
     
-    ax.set_xlabel("Average speed as reported [kn]")
-    ax.set_ylabel("Speed calculated from positions [kn]")
-    ax.set_axisbelow(True)
+    ax2.scatter(
+        rspeeds,
+        cspeeds,
+        color=COLORWHEEL[0],
+        alpha=0.5,
+        s=1
+    )
+
+    ax2.set_ylim(0,60)
+    ax1.set_ylim(100,1.05*max(cspeeds))
+    ax1.set_yscale('log')
+    
+    # hide the spines between ax1 and ax2
+    ax1.spines['bottom'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax1.xaxis.tick_top()
+    ax1.tick_params(top='off')  # don't put tick labels at the top
+    ax2.xaxis.tick_bottom()
+        
+    d = .01  # how big to make the diagonal lines in axes coordinates
+    # arguments to pass to plot, just so we don't keep repeating them
+    kwargs = dict(transform=ax1.transAxes, color='k', clip_on=False)
+    ax1.plot((-d, +d), (-d, +d), **kwargs)        # top-left diagonal
+    ax1.plot((1 - d, 1 + d), (-d, +d), **kwargs)  # top-right diagonal
+
+    kwargs.update(transform=ax2.transAxes)  # switch to the bottom axes
+    ax2.plot((-d, +d), (1 - d, 1 + d), **kwargs)  # bottom-left diagonal
+    ax2.plot((1 - d, 1 + d), (1 - d, 1 + d), **kwargs)  # bottom-right diagonal
+    
+    ax2.set_xlabel("Average speed as reported [kn]")
+    fig.supylabel("Speed calculated from positions [kn]")
+    ax1.set_axisbelow(True)
+    ax2.legend(loc = "upper right",fontsize=8)
+    
+    
     plt.tight_layout()
     plt.savefig(savename,dpi=300)
     plt.close()
@@ -284,18 +316,18 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
                     lonstd = np.std(lo)
                     # Check if within range
                     if sds[idx] <= (latstd + lonstd) <= sds[idx+1]:
-                        if trnr == 100:
+                        if trnr == 50:
                             break
                         trnr += 1
                         lons.append(lo)
                         lats.append(la)
                         
-
-            inset = axs[row,col].inset_axes(subpos)
-            
-            # Add lines for x and y axes
-            inset.axhline(0, color='k', linewidth=0.5)
-            inset.axvline(0, color='k', linewidth=0.5)
+            if row != 1:
+                inset = axs[row,col].inset_axes(subpos)
+                
+                # Add lines for x and y axes
+                inset.axhline(0, color='k', linewidth=0.5)
+                inset.axvline(0, color='k', linewidth=0.5)
             
             axs[row,col].axhline(0, color='k', linewidth=0.5)
             axs[row,col].axvline(0, color='k', linewidth=0.5)
@@ -311,20 +343,21 @@ def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
                     linewidth = 0.6
                 )
             
-                # Plot center region in inset
-                inset.plot(    
-                    lo,la,
-                    color = COLORWHEEL_MAP[niter % len(COLORWHEEL_MAP)],
-                    linewidth = 1,
-                    marker = "x",
-                    markersize = 1
-                )
-                
+                if row != 1:
+                    # Plot center region in inset
+                    inset.plot(    
+                        lo,la,
+                        color = COLORWHEEL_MAP[niter % len(COLORWHEEL_MAP)],
+                        linewidth = 1,
+                        marker = "x",
+                        markersize = 1
+                    )
                     
-                # inset.set_axes_locator(ip)
-                inset.set_xlim(-0.02,0.02)
-                inset.set_ylim(-0.02,0.02)
-                
+                        
+                    # inset.set_axes_locator(ip)
+                    inset.set_xlim(-0.02,0.02)
+                    inset.set_ylim(-0.02,0.02)
+                    
                 niter += 1
                 
             axs[row,col].set_xlabel("Longitude")
@@ -1316,13 +1349,13 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.extract_all(njobs=2)#,skip_tsplit=True)
+    # ships = SA.extract_all(njobs=2)#,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
-    # plot_speed_scatter(sa=SA) 
+    plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
 
     # Plot trajectory jitter --------------------------------------------------------
     # with MemoryLoader():
@@ -1352,7 +1385,7 @@ if __name__ == "__main__":
     # accepted, rejected = inspctr.inspect(njobs=1)
     
     # Plot heatmap -----------------------------------------------------------------
-    binned_heatmap(ships,SEARCHAREA,"aisstats/out/heatmap_no_rejoin.png")
+    # binned_heatmap(ships,SEARCHAREA,"aisstats/out/heatmap_no_rejoin.png")
     
     # Plot routes and speeds for accepted and rejected ------------------------------
     # vals = list(accepted.values())
