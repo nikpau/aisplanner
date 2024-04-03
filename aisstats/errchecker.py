@@ -219,7 +219,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
         cspeeds,
         color=COLORWHEEL[0],
         alpha=0.5,
-        s=0.2
+        s=0.05
     )
 
     # Plot line y = x
@@ -236,7 +236,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
         cspeeds,
         color=COLORWHEEL[0],
         alpha=0.5,
-        s=0.2
+        s=0.05
     )
 
     ax2.set_ylim(0,100)
