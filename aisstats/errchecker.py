@@ -219,7 +219,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
         cspeeds,
         color=COLORWHEEL[0],
         alpha=0.5,
-        s=1
+        s=0.2
     )
 
     # Plot line y = x
@@ -227,7 +227,8 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
         np.linspace(1,30,100),
         np.linspace(1,30,100),
         color=COLORWHEEL3[3],
-        lw=0.8, label = r"$\overline{SOG}_{m_i}^{m_{i+1}}=\widehat{SOG}_{m_i}^{m_{i+1}}$"
+        lw=0.8, label = r"$\overline{SOG}_{m_i}^{m_{i+1}}=\widehat{SOG}_{m_i}^{m_{i+1}}$",
+        s = 0.2
     )
     
     
