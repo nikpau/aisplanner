@@ -78,4 +78,5 @@ SA = SearchAgent(
     )
 
 ships = SA.extract_all(njobs=16)
+average_complexity(ships)
 
