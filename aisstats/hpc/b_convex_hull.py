@@ -32,12 +32,16 @@ def average_complexity(ships):
             if length < 3:
                 print("Track too short")
                 continue
-            sd = np.std([p.lon for p in track]) + np.std([p.lat for p in track])
+            try:
+                area = _cvh_area(track)
+            except:
+                print("Convex hull failed")
+                continue
             s = inspect.average_smoothness(track)
             
             # Find the index of the minimum length
             minlen_idx = np.argmin(np.abs(MINLENS-length))
-            sd_idx = np.argmin(np.abs(AREAS-sd))
+            sd_idx = np.argmin(np.abs(AREAS-area))
             
             # If there is no value yet, set it
             if counts[minlen_idx,sd_idx] == 0:
