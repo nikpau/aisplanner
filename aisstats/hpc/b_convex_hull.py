@@ -41,20 +41,20 @@ def average_complexity(ships):
             
             # Find the index of the minimum length
             minlen_idx = np.argmin(np.abs(MINLENS-length))
-            sd_idx = np.argmin(np.abs(AREAS-area))
+            area_idx = np.argmin(np.abs(AREAS-area))
             
             # If there is no value yet, set it
-            if counts[minlen_idx,sd_idx] == 0:
-                smthness[minlen_idx,sd_idx] = s
-                counts[minlen_idx,sd_idx] = 1
+            if counts[minlen_idx,area_idx] == 0:
+                smthness[minlen_idx,area_idx] = s
+                counts[minlen_idx,area_idx] = 1
                 continue
             
             # Update the running average
-            counts[minlen_idx,sd_idx] += 1
-            smthness[minlen_idx,sd_idx] = online_average(
-                smthness[minlen_idx,sd_idx], 
+            counts[minlen_idx,area_idx] += 1
+            smthness[minlen_idx,area_idx] = online_average(
+                smthness[minlen_idx,area_idx], 
                 s,
-                counts[minlen_idx,sd_idx]
+                counts[minlen_idx,area_idx]
             )
             
     # Save the results
