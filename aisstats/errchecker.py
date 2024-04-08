@@ -13,6 +13,7 @@ import matplotlib
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from matplotlib.collections import LineCollection
 import pytsa
+from pytsa.structs import Track
 from PIL import Image
 from pytsa import SearchAgent, TargetShip, TimePosition, BoundingBox
 from pytsa.structs import Position
@@ -32,6 +33,9 @@ from KDEpy.bw_selection import improved_sheather_jones
 from pytsa.utils import mi2nm
 import matplotlib.lines as lines
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from scipy.spatial import ConvexHull
+from scipy.spatial._qhull import QhullError
+import utm
 
 # Rules for inspection of trajectories
 from pytsa.trajectories.rules import too_few_obs,spatial_deviation
@@ -683,6 +687,44 @@ def _heading_change(h1,h2):
         return diff
     else:
         return -diff
+    
+def _cvh_area(track: Track) -> float:
+    """
+    Calculate the area of the convex hull
+    of a track.
+    """
+    res = utm.from_latlon(
+        np.array([p.lat for p in track]),
+        np.array([p.lon for p in track])
+    )
+    points = np.array([res[0],res[1]]).T
+    return ConvexHull(points).area
+
+def plot_convex_hull_area_histogram(ships: dict[int,TargetShip],
+                                    savename: str) -> None:
+    """
+    Plot a histogram of the areas of the
+    convex hulls of all trajectories.
+    """
+    areas = []
+    for ship in ships.values():
+        for track in ship.tracks:
+            try:
+                areas.append(_cvh_area(track))
+            except QhullError:
+                print("Could not calculate convex hull area.")
+                pass
+    
+    # Convert to km^2
+    areas = np.array(areas) / 1e6
+    fig, ax = plt.subplots(figsize=(6,4))
+    ax.hist(areas, bins=100, color=COLORWHEEL[0])
+    ax.set_xlabel("Area [km^2]")
+    ax.set_ylabel("Number of observations")
+    ax.set_yscale('log')
+    ax.set_axisbelow(True)
+    plt.tight_layout()
+    plt.savefig(savename,dpi=400)
     
 def plot_time_diffs(sa:SearchAgent):
     """
@@ -1349,13 +1391,14 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    # ships = SA.extract_all(njobs=2)#,skip_tsplit=True)
+    ships = SA.extract_all(njobs=8)#,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
-    plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
+    # plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
+    plot_convex_hull_area_histogram(ships,"aisstats/out/convex_hull_area_histogram.pdf")
 
     # Plot trajectory jitter --------------------------------------------------------
     # with MemoryLoader():
