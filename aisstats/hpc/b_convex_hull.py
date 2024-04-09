@@ -16,7 +16,7 @@ MINLENS = np.linspace(0,100,101)
 def online_average(avg, new, n):
     return avg + (new - avg) / n
 
-def average_complexity(ships):
+def average_complexity(ships, split=False):
     """
     Calulates the mean of the cosine of the angles
     enclosed between three consecutive messages 
@@ -58,25 +58,28 @@ def average_complexity(ships):
             )
             
     # Save the results
-    with open(f"/home/s2075466/aisplanner/results/avg_smoothness_cvh.pkl","wb") as f:
+    split = "_split" if split else "_raw"
+    with open(f"/home/s2075466/aisplanner/results/avg_smoothness_cvh{split}.pkl","wb") as f:
         pickle.dump(smthness,f)
         
     # Save the counts
-    with open(f"/home/s2075466/aisplanner/results/avg_smoothness_counts_cvh.pkl","wb") as f:
+    with open(f"/home/s2075466/aisplanner/results/avg_smoothness_counts_cvh{split}.pkl","wb") as f:
         pickle.dump(counts,f)
 
-SEARCHAREA = NorthSea
+if __name__ == "__main__":
+    for split in [True,False]:
+        SEARCHAREA = NorthSea
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
+        DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
+        STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
 
-SA = SearchAgent(
-        dynamic_paths=DYNAMIC_MESSAGES,
-        frame=SEARCHAREA,
-        static_paths=STATIC_MESSAGES,
-        preprocessor=partial(speed_filter, speeds= (1,30))
-    )
+        SA = SearchAgent(
+                dynamic_paths=DYNAMIC_MESSAGES,
+                frame=SEARCHAREA,
+                static_paths=STATIC_MESSAGES,
+                preprocessor=partial(speed_filter, speeds= (1,30))
+            )
 
-ships = SA.extract_all(njobs=16)
-average_complexity(ships)
+        ships = SA.extract_all(njobs=16, skip_tsplit=split)
+        average_complexity(ships,split=split)
 
