@@ -14,6 +14,7 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from matplotlib.collections import LineCollection
 import pytsa
 from pytsa.structs import Track
+from pytsa.trajectories.inspect import average_smoothness
 from PIL import Image
 from pytsa import SearchAgent, TargetShip, TimePosition, BoundingBox
 from pytsa.structs import Position
@@ -64,8 +65,8 @@ def scale_lightness(rgb, scale_l):
 
 
 # Use matplotlib style `bmh`
-# plt.style.use('bmh')
-plt.style.use('default')
+plt.style.use('bmh')
+# plt.style.use('default')
 plt.rcParams["font.family"] = "monospace"
 COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
 COLORWHEEL3 = ["#335c67","#fff3b0","#e09f3e","#9e2a2b","#540b0e"]
@@ -200,6 +201,24 @@ def plot_speeds_and_route(tv: TargetShip, mode: str) -> None:
     plt.savefig(f"aisstats/out/errchecker/{tv.mmsi}_{mode}.png",dpi=300)
     plt.close()
     
+def average_smoothness_quantiles(ships: dict[int,TargetShip]) -> None:
+    """
+    Plot a histogram of the average complexity
+    of all trajectories.
+    """
+    avg_complexities = []
+    for ship in ships.values():
+        for track in ship.tracks:
+            avg_complexities.append(average_smoothness(track))
+
+    
+    # Get quantiles and draw them as vertical lines
+    _qs = [0.25,0.5,0.75]
+    q1 = np.quantile(avg_complexities,_qs)
+    for i,q in enumerate(q1):
+        print(f"{_qs[i]*100}% Quantile: {q:.2f}")
+
+    
 def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     """
     Plot the speeds calculated from
@@ -272,6 +291,113 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     
     plt.tight_layout()
     plt.savefig(savename,dpi=300)
+    plt.close()
+
+def plot_cvh_jitter(ships: dict[int,TargetShip]) -> None:
+    
+    np.random.seed(424)
+    
+    areas = np.array([0,1000,2000,3000,4000,5000,10_000,20_000,30_000])
+    
+    for ship in ships.values():
+        # Center trajectory
+        # Get mean of lat and lon
+        for track in ship.tracks:
+            latmean = sum(p.lat for p in track) / len(track)
+            lonmean = sum(p.lon for p in track) / len(track)
+            # Subtract mean from all positions
+            for msg in track:
+                msg.lat -= latmean
+                msg.lon -= lonmean
+    
+    ships: list[TargetShip] = list(ships.values())
+            
+    # Plot trajectories for different sds
+    ncols = 4
+    div,mod = divmod(len(areas)-1,ncols)
+    nrows = div + 1 if mod else div
+    fig, axs = plt.subplots(nrows=nrows,ncols=ncols,figsize=(4*ncols,8))
+    subpos = [0.55,0.55,0.4,0.4]
+    axs: dict[int,plt.Axes] # type hint
+    niter = 0
+    idx = 0
+    for row in range(nrows):
+        for col in range(ncols):
+            
+            trnr = 0
+            # Find trajectories whose standard deviation
+            # is within the current range
+            lons, lats = [], []
+            
+            np.random.shuffle(ships)
+            for ship in ships:
+                # Get standard deviation of lat and lon
+                for track in ship.tracks:
+                    lo = [p.lon for p in track]
+                    la = [p.lat for p in track]
+                    hullarea = _cvh_area(track)
+                    # Check if within range
+                    if areas[idx] <= hullarea <= areas[idx+1]:
+                        if trnr == 50:
+                            break
+                        trnr += 1
+                        lons.append(lo)
+                        lats.append(la)
+                        
+            if row != 1:
+                inset = axs[row,col].inset_axes(subpos)
+                
+                # Add lines for x and y axes
+                inset.axhline(0, color='k', linewidth=0.5)
+                inset.axvline(0, color='k', linewidth=0.5)
+            
+            axs[row,col].axhline(0, color='k', linewidth=0.5)
+            axs[row,col].axvline(0, color='k', linewidth=0.5)
+
+            for la, lo in zip(lats,lons):
+                axs[row,col].plot(
+                    lo,
+                    la,
+                    alpha=0.5, 
+                    marker = "x", 
+                    markersize = 0.65, 
+                    color = COLORWHEEL_MAP[niter % len(COLORWHEEL_MAP)],
+                    linewidth = 0.6
+                )
+            
+                if row != 1:
+                    # Plot center region in inset
+                    inset.plot(    
+                        lo,la,
+                        color = COLORWHEEL_MAP[niter % len(COLORWHEEL_MAP)],
+                        linewidth = 1,
+                        marker = "x",
+                        markersize = 1
+                    )
+                    
+                        
+                    # inset.set_axes_locator(ip)
+                    inset.set_xlim(-0.02,0.02)
+                    inset.set_ylim(-0.02,0.02)
+                    
+                niter += 1
+                
+            axs[row,col].set_xlabel("Longitude")
+            axs[row,col].set_ylabel("Latitude")
+            axs[row,col].set_title(
+                "$A^{C}\in$"
+                f"[{areas[row*ncols+col]:.2f},{areas[row*ncols+col+1]:.2f}]",
+                fontsize=16
+            )
+
+            # Set limits
+            axs[row,col].set_xlim(-0.25,0.65)
+            axs[row,col].set_ylim(-0.25,0.65)
+            
+            idx += 1
+            
+    plt.tight_layout()
+    plt.savefig(f"aisstats/out/cvhjitter.pdf")#, dpi=500)
     plt.close()
 
 def plot_trajectory_jitter(ships: dict[int,TargetShip]) -> None:
@@ -722,6 +848,33 @@ def plot_convex_hull_area_histogram(ships: dict[int,TargetShip],
     ax.set_xlabel("Area [km^2]")
     ax.set_ylabel("Number of observations")
     ax.set_yscale('log')
+    ax.set_axisbelow(True)
+    plt.tight_layout()
+    plt.savefig(savename,dpi=400)
+    
+def plot_npoints_vs_cvh_area(ships, savename):
+    """
+    Plot the number of points in a track
+    against the area of the convex hull
+    of the track.
+    """
+    npoints = []
+    areas = []
+    for ship in ships.values():
+        for track in ship.tracks:
+            try:
+                areas.append(_cvh_area(track))
+                npoints.append(len(track))
+            except QhullError:
+                print("Could not calculate convex hull area.")
+                pass
+    
+    # Convert to km^2
+    areas = np.array(areas) / 1e6
+    fig, ax = plt.subplots(figsize=(6,4))
+    ax.scatter(npoints,areas, color=COLORWHEEL[0], s=0.2)
+    ax.set_xlabel("Number of points")
+    ax.set_ylabel("Area [km^2]")
     ax.set_axisbelow(True)
     plt.tight_layout()
     plt.savefig(savename,dpi=400)
@@ -1395,15 +1548,18 @@ if __name__ == "__main__":
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
+    average_smoothness_histogram(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
     # plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
-    plot_convex_hull_area_histogram(ships,"aisstats/out/convex_hull_area_histogram.pdf")
+    # plot_convex_hull_area_histogram(ships,"aisstats/out/convex_hull_area_histogram.pdf")
+    # plot_npoints_vs_cvh_area(ships,"aisstats/out/npoints_vs_cvh_area.pdf")
 
     # Plot trajectory jitter --------------------------------------------------------
     # with MemoryLoader():
         #plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
-        # plot_trajectory_jitter(ships)
+        #plot_trajectory_jitter(ships)
+        # plot_cvh_jitter(ships)
     
     # Plot trajectory length by number of observations
     # plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
