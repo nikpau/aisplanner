@@ -311,12 +311,17 @@ def plot_cvh_jitter(ships: dict[int,TargetShip]) -> None:
     
     np.random.seed(424)
     
-    areas = np.array([0,1000,2000,3000,4000,5000,10_000,20_000,30_000])
+    areas = np.array([0,1000,5000,10000,20000,50000,100_000,200_000,300_000])
     
     for ship in ships.values():
         # Center trajectory
         # Get mean of lat and lon
+        ship.cvhareas = []
         for track in ship.tracks:
+            try:
+                ship.cvhareas.append(_cvh_area(track))
+            except:
+                ship.cvhareas.append(-1)
             latmean = sum(p.lat for p in track) / len(track)
             lonmean = sum(p.lon for p in track) / len(track)
             # Subtract mean from all positions
@@ -346,10 +351,12 @@ def plot_cvh_jitter(ships: dict[int,TargetShip]) -> None:
             np.random.shuffle(ships)
             for ship in ships:
                 # Get standard deviation of lat and lon
-                for track in ship.tracks:
+                for i, track in enumerate(ship.tracks):
                     lo = [p.lon for p in track]
                     la = [p.lat for p in track]
-                    hullarea = _cvh_area(track)
+                    hullarea = ship.cvhareas[i]
+                    if hullarea == -1:
+                        continue
                     # Check if within range
                     if areas[idx] <= hullarea <= areas[idx+1]:
                         if trnr == 50:
@@ -400,7 +407,7 @@ def plot_cvh_jitter(ships: dict[int,TargetShip]) -> None:
             axs[row,col].set_ylabel("Latitude")
             axs[row,col].set_title(
                 "$A^{C}\in$"
-                f"[{areas[row*ncols+col]:.2f},{areas[row*ncols+col+1]:.2f}]",
+                f"[{areas[row*ncols+col]},{areas[row*ncols+col+1]}]$m^2$",
                 fontsize=16
             )
 
@@ -1562,7 +1569,7 @@ if __name__ == "__main__":
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
-    average_smoothness_quantiles(ships)
+    # average_smoothness_quantiles(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
     # plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
@@ -1570,10 +1577,10 @@ if __name__ == "__main__":
     # plot_npoints_vs_cvh_area(ships,"aisstats/out/npoints_vs_cvh_area.pdf")
 
     # Plot trajectory jitter --------------------------------------------------------
-    # with MemoryLoader():
+    with MemoryLoader():
         #plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
         #plot_trajectory_jitter(ships)
-        # plot_cvh_jitter(ships)
+        plot_cvh_jitter(ships)
     
     # Plot trajectory length by number of observations
     # plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")

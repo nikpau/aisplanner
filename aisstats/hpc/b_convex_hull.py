@@ -10,7 +10,7 @@ import pickle
 
 np.seterr(all='raise')
 
-AREAS = np.linspace(0,1e5,101)
+DEGREES = np.linspace(0,10,101)
 MINLENS = np.linspace(0,100,101)
 
 def online_average(avg, new, n):
@@ -22,10 +22,10 @@ def average_change_of_course(ships, split=False):
     enclosed between three consecutive messages 
     for several standard deviations.
     """
-    delta = np.full((len(MINLENS),len(AREAS)),np.nan)
+    delta = np.full((len(MINLENS),len(DEGREES)),np.nan)
     
     # count for running average
-    counts = np.full((len(MINLENS),len(AREAS)),0)
+    counts = np.full((len(MINLENS),len(DEGREES)),0)
     for ship in ships.values():
         for track in ship.tracks:
             length = len(track)
@@ -42,7 +42,7 @@ def average_change_of_course(ships, split=False):
             
             # Find the index of the minimum length
             minlen_idx = np.argmin(np.abs(MINLENS-length))
-            area_idx = np.argmin(np.abs(AREAS-area))
+            area_idx = np.argmin(np.abs(DEGREES-area))
             
             # If there is no value yet, set it
             if counts[minlen_idx,area_idx] == 0:
