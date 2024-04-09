@@ -217,6 +217,20 @@ def average_smoothness_quantiles(ships: dict[int,TargetShip]) -> None:
     q1 = np.quantile(avg_complexities,_qs)
     for i,q in enumerate(q1):
         print(f"{_qs[i]*100}% Quantile: {q:.2f}")
+        
+    # Average COG change
+    av_cog = 180 - np.array(avg_complexities)*180
+        
+    # Plot 
+    fig, ax = plt.subplots(figsize=(6,6))
+    ax.hist(av_cog,bins=100,color=COLORWHEEL[0],alpha=0.7)
+    ax.set_xlabel("Average COG change in route [°]")
+    ax.set_ylabel("Frequency")
+    ax.set_yscale('log')
+    ax.set_title("Average COG change in route")
+    for q in q1:
+        ax.axvline(q,color="r",ls="--")
+    plt.savefig(f"aisstats/out/avg_complexity_hist.pdf",dpi=300)
 
     
 def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
@@ -1548,7 +1562,7 @@ if __name__ == "__main__":
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
-    average_smoothness_histogram(ships)
+    average_smoothness_quantiles(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
     # plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
