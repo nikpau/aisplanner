@@ -68,7 +68,7 @@ def average_change_of_course(ships, skip=False):
         pickle.dump(counts,f)
 
 if __name__ == "__main__":
-    for skip in [True,False]:
+    for skip in [False]:
         SEARCHAREA = NorthSea
 
         DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
