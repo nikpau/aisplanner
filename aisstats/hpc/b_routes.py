@@ -47,16 +47,17 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ax[0].set_title(f"Trajectory",fontsize=8)
     
     # Plot speed info
-    relvscalc = [
-        avg_speed(m1,m2) - speed_from_position(m1,m2) for m1,m2 in zip(track,track[1:])
+    cogchange = [
+        _heading_change(m1.COG,m2.COG) for m1,m2 in zip(track,track[1:])
     ]
-    ax[1].plot(relvscalc,color=COLORWHEEL[0],ls="-", alpha = 0.9,lw=0.5)
-    ax[1].scatter(range(len(relvscalc)),relvscalc,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9,linewidths=0.5)
+    ax[1].plot(cogchange,color=COLORWHEEL[0],ls="-", alpha = 0.9,lw=0.5)
+    ax[1].scatter(range(len(cogchange)),cogchange,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9,linewidths=0.5)
     ax[1].set_xlabel("Message number")
-    ax[1].set_ylabel("Difference in speed [kn]")
+    ax[1].set_ylabel("Abs. COG change [°]")
     
     # Add title
-    ax[1].set_title(r"$\overline{SOG}_{m_i}^{m_{i+1}} - \widehat{SOG}_{m_i}^{m_{i+1}}$",fontsize=8)
+    #ax[1].set_title(r"$\overline{SOG}_{m_i}^{m_{i+1}} - \widehat{SOG}_{m_i}^{m_{i+1}}$",fontsize=8)
+    ax[1].set_title("Abs. COG change\nbetween consecutive messages",fontsize=8)
     
     # Save figure
     fname = f"/home/s2075466/aisplanner/results/routes/{track[0].sender}"
