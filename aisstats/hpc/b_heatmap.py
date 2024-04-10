@@ -21,7 +21,7 @@ ships = SA.extract_all(njobs=16)
 
 R = Recipe(
     partial(too_few_obs, n=50),
-    partial(spatial_deviation, sd=0.1)
+    partial(convex_hull_area, area=3e4)
 )
 from pytsa.trajectories import Inspector
 inspctr = Inspector(
