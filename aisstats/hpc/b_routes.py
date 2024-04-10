@@ -105,8 +105,9 @@ if __name__ == "__main__":
         return sum(
             abs(_heading_change(m2.COG,m1.COG)) for m1,m2 in zip(track[len(track)//2:],track[(len(track)//2)+1:])
         ) + \
-            1/sum(
-                abs(_heading_change(m2.COG,m1.COG)) for m1,m2 in zip(track[:len(track)//2],track[(len(track)//2)-1:]))
+            1/(sum(
+                abs(_heading_change(m2.COG,m1.COG)) for m1,m2 in zip(track[:len(track)//2],track[(len(track)//2)-1:]))\
+                    +1)
     
     def _sort_by_max_distance(track: list[AISMessage]) -> float:
         return max(
