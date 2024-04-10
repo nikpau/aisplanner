@@ -48,7 +48,7 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     
     # Plot speed info
     cogchange = [
-        _heading_change(m1.COG,m2.COG) for m1,m2 in zip(track,track[1:])
+        abs(_heading_change(m1.COG,m2.COG)) for m1,m2 in zip(track,track[1:])
     ]
     ax[1].plot(cogchange,color=COLORWHEEL[0],ls="-", alpha = 0.9,lw=0.5)
     ax[1].scatter(range(len(cogchange)),cogchange,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9,linewidths=0.5)
@@ -103,7 +103,7 @@ if __name__ == "__main__":
 
     def _sort_by_heading_change(track: list[AISMessage]) -> float:
         return sum(
-            abs(_heading_change(m2.COG,m1.COG)) for m1,m2 in zip(track,track[1:])
+            abs(_heading_change(m2.COG,m1.COG)) for m1,m2 in zip(track[len(track)//2:],track[(len(track)//2)+1:])
         )
     
     def _sort_by_max_distance(track: list[AISMessage]) -> float:
