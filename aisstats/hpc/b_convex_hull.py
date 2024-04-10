@@ -10,7 +10,7 @@ import pickle
 
 np.seterr(all='raise')
 
-AREAS = np.linspace(0,1e5,101)
+AREAS = np.linspace(0,5e4,101)
 MINLENS = np.linspace(0,100,101)
 
 def online_average(avg, new, n):
