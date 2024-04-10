@@ -1,17 +1,10 @@
 from aisplanner.encounters.main import NorthSea
-from aisstats.errchecker import binned_heatmap, speed_filter
+from aisstats.errchecker import _cvh_area, speed_filter
 from pathlib import Path
 from pytsa import SearchAgent, TimePosition, ShipType
+from pytsa.structs import AISMessage
 from functools import partial
 from pytsa.trajectories.rules import *
-
-def spatial_dev(track: list[AISMessage]) -> float:
-    """
-    Calculate the spatial deviation of a track.
-    """
-    lons = [p.lon for p in track]
-    lats = [p.lat for p in track]
-    return np.std(lons) + np.std(lats)
 
 SEARCHAREA = NorthSea
 
@@ -48,16 +41,19 @@ for t in types:
     else:
         expanded.append(list(t.value))
 
-with open("/home/s2075466/aisplanner/results/avg_spatial_deviation.csv", "w") as f:
+with open("/home/s2075466/aisplanner/results/avg_cvh_areas.csv", "w") as f:
     # Header
-    f.write("ship_type,avg_spatial_deviation\n")
+    f.write("ship_type,avg_cvh_area\n")
     for i,t in enumerate(expanded):
         a = {mmsi:s for mmsi,s in accepted.items() if any(st in t for st in s.ship_type)}
         # Calculate average spatial deviation per ship type
         # and save the results to a file
-        deviations = []
+        cvh_areas = []
         for mmsi, ship in a.items():
             for track in ship.tracks:
-                deviations.append(spatial_dev(track))
-        f.write(f"{names[i]},{np.mean(deviations)}\n")
+                try:
+                    cvh_areas.append(_cvh_area(track))
+                except:
+                    print(f"Could not calculate convex hull for {mmsi}")
+        f.write(f"{names[i]},{np.mean(cvh_areas)}\n")
         
