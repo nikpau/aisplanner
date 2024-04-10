@@ -10,7 +10,7 @@ import pickle
 
 np.seterr(all='raise')
 
-DEGREES = np.linspace(0,10,101)
+DEGREES = np.linspace(0,1e5,101)
 MINLENS = np.linspace(0,100,101)
 
 def online_average(avg, new, n):
@@ -35,7 +35,7 @@ def average_change_of_course(ships, split=False):
             try:
                 area = _cvh_area(track)
             except:
-                print("Convex hull failed")
+                print("Convex hull could not be calculated.")
                 continue
             s = inspect.average_smoothness(track)
             d = 180 - 180*s
