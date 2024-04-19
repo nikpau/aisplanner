@@ -14,7 +14,7 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from matplotlib.collections import LineCollection
 import pytsa
 from pytsa.structs import Track
-from pytsa.trajectories.inspect import average_smoothness
+from pytsa.structs import ShipType
 from PIL import Image
 from pytsa import SearchAgent, TargetShip, TimePosition, BoundingBox
 from pytsa.structs import Position
@@ -93,6 +93,17 @@ def flatten(l: list[list]) -> list:
     Flatten a list of lists.
     """
     return [item for sublist in l for item in sublist]  
+
+def color_from_array(arr: np.ndarray) -> tuple[np.ndarray, dict[ShipType,str]]:
+    """
+    Maps every unique value in an array
+    to a unique color in the tab20 colormap.
+    """
+    unique = list(set(arr))
+    color_map = {}
+    for i, u in enumerate(unique):
+        color_map[u] = cm.tab20(i)
+    return np.array([color_map[a] for a in arr]), color_map
 
 def speed_filter(df: pd.DataFrame, speeds: tuple[float,float]) -> pd.DataFrame:
     """
@@ -241,6 +252,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     """
     rspeeds = []
     cspeeds = []
+    ship_types = []
     ships = sa.extract_all(skip_tsplit=True)
     fig, (ax1,ax2) = plt.subplots(2,1,sharex=True,figsize=(6,6))
     ax1: plt.Axes; ax2: plt.Axes
@@ -251,10 +263,14 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
                 cspeed = split.speed_from_position(track[i-1],track[i])
                 rspeeds.append(rspeed)
                 cspeeds.append(cspeed)
+                ship_types.append(ship.ship_type)
+                
+    ship_type_cols, color_mapping = color_from_array(np.array(ship_types))
+                
     ax1.scatter(
         rspeeds,
         cspeeds,
-        color=COLORWHEEL[0],
+        c=ship_type_cols,
         alpha=0.5,
         s=0.05
     )
@@ -271,7 +287,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     ax2.scatter(
         rspeeds,
         cspeeds,
-        color=COLORWHEEL[0],
+        c=ship_type_cols,
         alpha=0.5,
         s=0.05
     )
@@ -279,6 +295,14 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     ax2.set_ylim(0,100)
     ax1.set_ylim(500,1.05*max(cspeeds))
     ax1.set_yscale('log')
+    
+    # Legend for each unique ship_type
+    handles = []
+    labels = []
+    for st, col in color_mapping.items():
+        handles.append(lines.Line2D([0], [0], color=col, lw=4))
+        labels.append(st.name)
+    ax1.legend(handles, labels, title="Ship type", fontsize=6, ncol=2)
     
     # hide the spines between ax1 and ax2
     ax1.spines['bottom'].set_visible(False)
@@ -1565,22 +1589,22 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.extract_all(njobs=8)#,skip_tsplit=True)
+    # ships = SA.extract_all(njobs=8)#,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
     # average_smoothness_quantiles(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
-    # plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
+    plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
     # plot_convex_hull_area_histogram(ships,"aisstats/out/convex_hull_area_histogram.pdf")
     # plot_npoints_vs_cvh_area(ships,"aisstats/out/npoints_vs_cvh_area.pdf")
 
     # Plot trajectory jitter --------------------------------------------------------
-    with MemoryLoader():
+    # with MemoryLoader():
         #plot_sd_vs_rejection_rate(ships,"aisstats/out/sd_vs_rejection_rate_08_02_21.pdf.pdf")
         #plot_trajectory_jitter(ships)
-        plot_cvh_jitter(ships)
+        # plot_cvh_jitter(ships)
     
     # Plot trajectory length by number of observations
     # plot_trlen_vs_nmsg(ships,"aisstats/out/trlen_vs_nmsg_1-30.pdf")
