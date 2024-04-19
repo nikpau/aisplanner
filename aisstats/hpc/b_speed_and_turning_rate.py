@@ -28,7 +28,7 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     f, ax = plt.subplots(1,1,figsize=(8,5))
 
     ships = sa.extract_all(skip_tsplit=True)
-    heading_changes = []
+    tuning_rates = []
     speed_changes = []
     it = 0
     maxlen = len(ships)
@@ -37,23 +37,23 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
         print(f"Working on ship {it}/{maxlen}")
         for track in ship.tracks:
             for i in range(1,len(track)):
-                _chheading = _heading_change(
+                _turn = _heading_change(
                     track[i-1].COG,
                     track[i].COG
-                )
+                ) / (track[i].timestamp - track[i-1].timestamp)
                 _chspeed = abs(track[i].SOG - track[i-1].SOG)
-                heading_changes.append(_chheading)
+                tuning_rates.append(_turn)
                 speed_changes.append(_chspeed)
                 
-    # Quantiles of heading changes
+    # Quantiles of turning rates
     h_qs = np.quantile(
-        heading_changes,
+        tuning_rates,
         [0.005,0.995,0.025,0.975,0.05,0.95]
     )
     q_labels_h = [
-        f"99% within [{h_qs[0]:.2f}°,{h_qs[1]:.2f}°]",
-        f"95% within [{h_qs[2]:.2f}°,{h_qs[3]:.2f}°]",
-        f"90% within [{h_qs[4]:.2f}°,{h_qs[5]:.2f}°]"
+        f"99% within [{h_qs[0]:.2f}°/s,{h_qs[1]:.2f}°/s]",
+        f"95% within [{h_qs[2]:.2f}°/s,{h_qs[3]:.2f}°/s]",
+        f"90% within [{h_qs[4]:.2f}°/s,{h_qs[5]:.2f}°/s]"
     ]
     # Heading Quantiles as vertical lines
     hl11 = ax.axvline(h_qs[0],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
@@ -65,7 +65,7 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     
     # Histogram of heading changes
     ax.hist(
-        heading_changes,
+        tuning_rates,
         bins=100,
         density=True,
         alpha=0.8,
@@ -87,13 +87,13 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     
     # Legend with heading
     ax.legend(handles=[hl11,hl21,hl31])
-    ax.set_xlabel("Change in heading [°]")
+    ax.set_xlabel("Turning rate [°/s]")
     ax.set_ylabel("Density")
     ax.set_title(
         "Change in heading between two consecutive messages",fontsize=10
     )
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/heading_changes.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/turning_rates.pdf")
     plt.close()
     
     # Plot speed changes
@@ -122,7 +122,7 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     ax.set_xlim(-0.2,4)
     
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/heading_speed_changes_all.pdf")
+    plt.savefig(f"/home/s2075466/aisplanner/results/speed_changes.pdf")
 
 if __name__ == "__main__":
     SA = SearchAgent(

@@ -48,7 +48,7 @@ DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').gl
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob(f"2021*.csv"))
 
 
-heading_changes = []
+turning_rate = []
 speed_changes = []
 diff_speeds = [] # Difference between reported speed and speed calculated from positions
 time_diffs = []
@@ -67,10 +67,10 @@ for idx, ship in enumerate(ships.values()):
     print(f"Processing ship {idx+1}/{l}")
     for track in ship.tracks:
         for i in range(1, len(track)):
-            heading_changes.append(
+            turning_rate.append(
                 heading_change(
                     track[i-1].COG, track[i].COG
-                    )
+                    ) / (track[i].timestamp - track[i-1].timestamp)
             )
             speed_changes.append(abs(track[i].SOG - track[i-1].SOG))
             rspeed = split.avg_speed(track[i-1],track[i])
@@ -80,7 +80,7 @@ for idx, ship in enumerate(ships.values()):
             ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
                 
 squants = quantiles(speed_changes, np.linspace(0,1,1001))
-hquants = quantiles(heading_changes, np.linspace(0,1,1001))
+trquants = quantiles(turning_rate, np.linspace(0,1,1001))
 tquants = quantiles(time_diffs, np.linspace(0,1,1001))
 diffquants = quantiles(diff_speeds, np.linspace(0,1,1001))
 dquants = quantiles(ddiffs, np.linspace(0,1,1001))
@@ -88,8 +88,8 @@ dquants = quantiles(ddiffs, np.linspace(0,1,1001))
 # Save the quantiles
 with open(f'/home/s2075466/aisplanner/results/squants_21.pkl', 'wb') as f:
     pickle.dump(squants, f)
-with open(f'/home/s2075466/aisplanner/results/hquants_21.pkl', 'wb') as f:    
-    pickle.dump(hquants, f)
+with open(f'/home/s2075466/aisplanner/results/trquants_21.pkl', 'wb') as f:    
+    pickle.dump(trquants, f)
 with open(f'/home/s2075466/aisplanner/results/tquants_21.pkl', 'wb') as f:
     pickle.dump(tquants, f)
 with open(f'/home/s2075466/aisplanner/results/diffquants_21.pkl', 'wb') as f:
