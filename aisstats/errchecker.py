@@ -257,6 +257,8 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     fig, (ax1,ax2) = plt.subplots(2,1,sharex=True,figsize=(6,6))
     ax1: plt.Axes; ax2: plt.Axes
     for ship in ships.values():
+        if ship.ship_type is ShipType.NOTAVAILABLE:
+            continue
         for track in ship.tracks:
             for i in range(1,len(track)):
                 rspeed = split.avg_speed(track[i-1],track[i])
