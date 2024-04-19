@@ -27,7 +27,7 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     """
     f, ax = plt.subplots(1,1,figsize=(8,5))
 
-    ships = sa.extract_all(skip_tsplit=True)
+    ships = sa.extract_all(njobs=16, skip_tsplit=True)
     tuning_rates = []
     speed_changes = []
     it = 0
