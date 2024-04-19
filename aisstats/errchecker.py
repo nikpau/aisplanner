@@ -273,7 +273,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
         rspeeds,
         cspeeds,
         c=ship_type_cols,
-        alpha=0.5,
+        alpha=0.75,
         s=0.05
     )
 
@@ -290,7 +290,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
         rspeeds,
         cspeeds,
         c=ship_type_cols,
-        alpha=0.5,
+        alpha=0.75,
         s=0.05
     )
 
