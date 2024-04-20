@@ -66,7 +66,7 @@ diff_speeds = [] # Difference between reported speed and speed calculated from p
 time_diffs = []
 ddiffs = []
 
-dates = date_list(7)
+dates = date_list(1)
 dyn = [DYNAMIC_MESSAGES / f"{day}.csv" for day in dates]
 sta = [STATIC_MESSAGES / f"{day}.csv" for day in dates]
 
@@ -102,7 +102,7 @@ diffquants = quantiles(diff_speeds, np.linspace(0,1,1001))
 dquants = quantiles(ddiffs, np.linspace(0,1,1001))
 
 # Save the quantiles
-suffix = "one_week"
+suffix = "one_day"
 with open(f'/home/s2075466/aisplanner/results/squants_{suffix}.pkl', 'wb') as f:
     pickle.dump(squants, f)
 with open(f'/home/s2075466/aisplanner/results/trquants_{suffix}.pkl', 'wb') as f:    
