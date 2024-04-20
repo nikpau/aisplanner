@@ -66,7 +66,7 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     # Histogram of heading changes
     ax.hist(
         tuning_rates,
-        bins=100,
+        bins=400,
         density=True,
         alpha=0.8,
         color=COLORWHEEL[0]
@@ -88,9 +88,10 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     # Legend with heading
     ax.legend(handles=[hl11,hl21,hl31])
     ax.set_xlabel("Turning rate [°/s]")
+    ax.set_xlim(-2,2)
     ax.set_ylabel("Density")
     ax.set_title(
-        "Change in heading between two consecutive messages",fontsize=10
+        "Turning rate between two consecutive messages",fontsize=10
     )
     plt.tight_layout()
     plt.savefig(f"/home/s2075466/aisplanner/results/turning_rates.pdf")
