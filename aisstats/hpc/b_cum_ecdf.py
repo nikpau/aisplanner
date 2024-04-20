@@ -85,11 +85,11 @@ for interval in intervals:
                         time_diffs.append(track[i].timestamp - track[i-1].timestamp)
                         ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
                             
-            squants = quantiles(speed_changes, np.linspace(0,1,1001))
-            trquants = quantiles(turning_rate, np.linspace(0,1,1001))
-            tquants = quantiles(time_diffs, np.linspace(0,1,1001))
-            diffquants = quantiles(diff_speeds, np.linspace(0,1,1001))
-            dquants = quantiles(ddiffs, np.linspace(0,1,1001))
+            squants = quantiles(speed_changes, np.linspace(0,1,10001))
+            trquants = quantiles(turning_rate, np.linspace(0,1,10001))
+            tquants = quantiles(time_diffs, np.linspace(0,1,10001))
+            diffquants = quantiles(diff_speeds, np.linspace(0,1,10001))
+            dquants = quantiles(ddiffs, np.linspace(0,1,10001))
 
             # Save the quantiles
             with open(f'/home/s2075466/aisplanner/results/squants_{interval[0]}-{interval[1]-1}.pkl', 'wb') as f:

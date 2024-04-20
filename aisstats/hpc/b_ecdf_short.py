@@ -41,11 +41,6 @@ def quantiles(data, quantiles):
 
 # MAIN MATTER ---------------------------------------------------------------    
 
-SEARCHAREA = NorthSea
-
-DYNAMIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022')
-STATIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5')
-
 def date_list(days: int = 7) -> list[Path]:
     """
     Select `days` consectutive dates
@@ -59,57 +54,63 @@ def date_list(days: int = 7) -> list[Path]:
         dates.append(f"2021_07_{day}")
     return dates
 
+for days, name in zip([1,7,14],["one_day","one_week","two_week"]):
+    
+    SEARCHAREA = NorthSea
 
-turning_rate = []
-speed_changes = []
-diff_speeds = [] # Difference between reported speed and speed calculated from positions
-time_diffs = []
-ddiffs = []
+    DYNAMIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022')
+    STATIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5')
 
-dates = date_list(1)
-dyn = [DYNAMIC_MESSAGES / f"{day}.csv" for day in dates]
-sta = [STATIC_MESSAGES / f"{day}.csv" for day in dates]
+    turning_rate = []
+    speed_changes = []
+    diff_speeds = [] # Difference between reported speed and speed calculated from positions
+    time_diffs = []
+    ddiffs = []
 
-SA = SearchAgent(
-    dynamic_paths=dyn,
-    frame=SEARCHAREA,
-    static_paths=sta,
-    preprocessor=partial(speed_filter, speeds= (1,30))
-)
+    dates = date_list(days)
+    dyn = [DYNAMIC_MESSAGES / f"{day}.csv" for day in dates]
+    sta = [STATIC_MESSAGES / f"{day}.csv" for day in dates]
 
-ships = SA.extract_all(njobs=16,skip_tsplit=True)
-l = len(ships)
-for idx, ship in enumerate(ships.values()):
-    print(f"Processing ship {idx+1}/{l}")
-    for track in ship.tracks:
-        for i in range(1, len(track)):
-            turning_rate.append(
-                heading_change(
-                    track[i-1].COG, track[i].COG
-                    ) / (track[i].timestamp - track[i-1].timestamp)
-            )
-            speed_changes.append(abs(track[i].SOG - track[i-1].SOG))
-            rspeed = split.avg_speed(track[i-1],track[i])
-            cspeed = split.speed_from_position(track[i-1],track[i])
-            diff_speeds.append(rspeed - cspeed)
-            time_diffs.append(track[i].timestamp - track[i-1].timestamp)
-            ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
-                
-squants = quantiles(speed_changes, np.linspace(0,1,1001))
-trquants = quantiles(turning_rate, np.linspace(0,1,1001))
-tquants = quantiles(time_diffs, np.linspace(0,1,1001))
-diffquants = quantiles(diff_speeds, np.linspace(0,1,1001))
-dquants = quantiles(ddiffs, np.linspace(0,1,1001))
+    SA = SearchAgent(
+        dynamic_paths=dyn,
+        frame=SEARCHAREA,
+        static_paths=sta,
+        preprocessor=partial(speed_filter, speeds= (1,30))
+    )
 
-# Save the quantiles
-suffix = "one_day"
-with open(f'/home/s2075466/aisplanner/results/squants_{suffix}.pkl', 'wb') as f:
-    pickle.dump(squants, f)
-with open(f'/home/s2075466/aisplanner/results/trquants_{suffix}.pkl', 'wb') as f:    
-    pickle.dump(trquants, f)
-with open(f'/home/s2075466/aisplanner/results/tquants_{suffix}.pkl', 'wb') as f:
-    pickle.dump(tquants, f)
-with open(f'/home/s2075466/aisplanner/results/diffquants_{suffix}.pkl', 'wb') as f:
-    pickle.dump(diffquants, f)
-with open(f'/home/s2075466/aisplanner/results/dquants_{suffix}.pkl', 'wb') as f:
-    pickle.dump(dquants, f)
+    ships = SA.extract_all(njobs=16,skip_tsplit=True)
+    l = len(ships)
+    for idx, ship in enumerate(ships.values()):
+        print(f"Processing ship {idx+1}/{l}")
+        for track in ship.tracks:
+            for i in range(1, len(track)):
+                turning_rate.append(
+                    heading_change(
+                        track[i-1].COG, track[i].COG
+                        ) / (track[i].timestamp - track[i-1].timestamp)
+                )
+                speed_changes.append(abs(track[i].SOG - track[i-1].SOG))
+                rspeed = split.avg_speed(track[i-1],track[i])
+                cspeed = split.speed_from_position(track[i-1],track[i])
+                diff_speeds.append(rspeed - cspeed)
+                time_diffs.append(track[i].timestamp - track[i-1].timestamp)
+                ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
+                    
+    squants = quantiles(speed_changes, np.linspace(0,1,10001))
+    trquants = quantiles(turning_rate, np.linspace(0,1,10001))
+    tquants = quantiles(time_diffs, np.linspace(0,1,10001))
+    diffquants = quantiles(diff_speeds, np.linspace(0,1,10001))
+    dquants = quantiles(ddiffs, np.linspace(0,1,10001))
+
+    # Save the quantiles
+    suffix = name
+    with open(f'/home/s2075466/aisplanner/results/squants_{suffix}.pkl', 'wb') as f:
+        pickle.dump(squants, f)
+    with open(f'/home/s2075466/aisplanner/results/trquants_{suffix}.pkl', 'wb') as f:    
+        pickle.dump(trquants, f)
+    with open(f'/home/s2075466/aisplanner/results/tquants_{suffix}.pkl', 'wb') as f:
+        pickle.dump(tquants, f)
+    with open(f'/home/s2075466/aisplanner/results/diffquants_{suffix}.pkl', 'wb') as f:
+        pickle.dump(diffquants, f)
+    with open(f'/home/s2075466/aisplanner/results/dquants_{suffix}.pkl', 'wb') as f:
+        pickle.dump(dquants, f)
