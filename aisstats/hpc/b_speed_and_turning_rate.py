@@ -57,8 +57,11 @@ def plot_heading_and_speed_changes(sa: SearchAgent):
     ]
     # Heading Quantiles as vertical lines
     hl11 = ax.axvline(h_qs[0],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
+    hl12 = ax.axvline(h_qs[1],color=COLORWHEEL[0],label=q_labels_h[0],ls="--")
     hl21 = ax.axvline(h_qs[2],color=COLORWHEEL[0],label=q_labels_h[1],ls="-.")
+    hl22 = ax.axvline(h_qs[3],color=COLORWHEEL[0],label=q_labels_h[1],ls="-.")
     hl31 = ax.axvline(h_qs[4],color=COLORWHEEL[0],label=q_labels_h[2],ls=":")
+    hl32 = ax.axvline(h_qs[5],color=COLORWHEEL[0],label=q_labels_h[2],ls=":")
     
     # Histogram of heading changes
     ax.hist(
