@@ -65,15 +65,15 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
 
     # Add Aabenraa to the plot
     ax.plot(9.421,55.044,marker="x",markersize=8,c=COLORWHEEL[6])
-    ax.text(9.361,55.054,"Aabenraa",fontsize=8,c="white")
+    ax.text(9.361,55.054,"Aabenraa",fontsize=14,c="white")
     
     # Add Haderslev to the plot
     ax.plot(9.489,55.251,marker="x",markersize=8,c=COLORWHEEL[6])
-    ax.text(9.439,55.261,"Haderslev",fontsize=8,c="white")
+    ax.text(9.439,55.261,"Haderslev",fontsize=14,c="white")
     
     # Add Assens to the plot
     ax.plot(9.9,55.271,marker="x",markersize=8,c=COLORWHEEL[6])
-    ax.text(9.91,55.271,"Assens",fontsize=8,c="white")
+    ax.text(9.91,55.271,"Assens",fontsize=14,c="white")
             
     ax.set_xlabel("Longitude")
     ax.set_ylabel("Latitude")
