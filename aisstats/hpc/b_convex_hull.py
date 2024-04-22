@@ -37,8 +37,7 @@ def average_change_of_course(ships, skip=False):
             except:
                 print("Convex hull could not be calculated.")
                 continue
-            s = inspect.average_smoothness(track)
-            d = 180 - 180*s
+            s = inspect.average_absolute_change_of_course(track,degrees=True)
             
             # Find the index of the minimum length
             minlen_idx = np.argmin(np.abs(MINLENS-length))
@@ -46,7 +45,7 @@ def average_change_of_course(ships, skip=False):
             
             # If there is no value yet, set it
             if counts[minlen_idx,area_idx] == 0:
-                delta[minlen_idx,area_idx] = d
+                delta[minlen_idx,area_idx] = s
                 counts[minlen_idx,area_idx] = 1
                 continue
             
@@ -54,7 +53,7 @@ def average_change_of_course(ships, skip=False):
             counts[minlen_idx,area_idx] += 1
             delta[minlen_idx,area_idx] = online_average(
                 delta[minlen_idx,area_idx], 
-                d,
+                s,
                 counts[minlen_idx,area_idx]
             )
             
