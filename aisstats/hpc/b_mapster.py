@@ -90,9 +90,24 @@ if __name__ == "__main__":
         preprocessor=partial(speed_filter, speeds = (1,30)),
     )
 
-    ships = SA.extract_all(njobs=16,skip_tsplit=True)
-    plot_trajectories_on_map(ships,AABENRAA,"trmap_raw")
+    # ships = SA.extract_all(njobs=16,skip_tsplit=True)
+    # plot_trajectories_on_map(ships,AABENRAA,"trmap_raw")
     
     # With filter
+    from pytsa.utils import haversine
     ships = SA.extract_all(njobs=16,skip_tsplit=False)
-    plot_trajectories_on_map(ships,AABENRAA,"trmap_raw_tshd")
+    #plot_trajectories_on_map(ships,AABENRAA,"trmap_raw_tshd")
+    lens = []
+    for ship in ships.values():
+        for track in ship.tracks:
+            lens.append(
+                sum(
+                    haversine(
+                        track[i].lat,
+                        track[i].lon,
+                        track[i+1].lat,
+                        track[i+1].lon
+                    ) for i in range(len(track)-1)
+                )
+            )
+    print(f"Mean track length: {np.mean(lens)}")
