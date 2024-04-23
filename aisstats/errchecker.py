@@ -1591,14 +1591,20 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    # ships = SA.extract_all(njobs=8)#,skip_tsplit=True)
+    ships = SA.extract_all(njobs=8)#,skip_tsplit=True)
+    lens = []
+    for ship in ships.values():
+        for track in ship.tracks:
+            lens.append(len(track))
+    plt.hist(lens,bins=np.array([*np.linspace(0,50,50),np.inf]))
+    plt.show()
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
     # average_smoothness_quantiles(ships)
     
     # Plot calculated vs reported speed --------------------------------------------
-    plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
+    # plot_speed_scatter(sa=SA,savename="aisstats/out/speed_scatter.png") 
     # plot_convex_hull_area_histogram(ships,"aisstats/out/convex_hull_area_histogram.pdf")
     # plot_npoints_vs_cvh_area(ships,"aisstats/out/npoints_vs_cvh_area.pdf")
 

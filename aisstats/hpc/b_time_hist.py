@@ -30,14 +30,14 @@ def plot_td_histogram(tdiffs: np.ndarray,
     between two consecutive messages.
     """
     
-    fig, ax = plt.subplots(figsize=(6,4))
+    fig, ax = plt.subplots(figsize=(12,4))
 
     # Quantiles of time diffs
     qs = np.quantile(
         tdiffs,
         [0.99,0.95,0.90]
     )
-    bins = np.linspace(0,500,100)
+    bins = np.linspace(0,500,200)
     np.append(bins,np.inf)
     ax.hist(tdiffs, bins=bins, color=COLORWHEEL[0])
 
