@@ -111,3 +111,4 @@ if __name__ == "__main__":
                 )
             )
     print(f"Mean track length: {np.mean(lens)}")
+    print(f"Median track length: {np.median(lens)}")
