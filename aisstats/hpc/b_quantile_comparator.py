@@ -79,7 +79,7 @@ def bootstrap_replication(shm_names, lengths, q):
     __time_diffs = np.random.choice(time_diffs, len(time_diffs), replace=True)
     __diff_speeds = np.random.choice(diff_speeds, len(diff_speeds), replace=True)
 
-    # Assuming harrel_davis is defined elsewhere and imports are handled
+    print("Calculating Harrel-Davis estimator")
     result = {
         'speed': harrel_davis(__speed_changes, q, len(__speed_changes)),
         'turning_upper': harrel_davis(__turning_rate, 1-q/2, len(__turning_rate)),
