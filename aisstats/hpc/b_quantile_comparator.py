@@ -64,6 +64,7 @@ def bootstrap_replication(speed_changes, turning_rate, ddiffs, time_diffs, diff_
     __diff_speeds = np.random.choice(diff_speeds, len(diff_speeds), replace=True)
 
     # Compute Harrel-Davis estimates for each sample
+    print("Computing HD estimates")
     result = {
         'speed': harrel_davis(__speed_changes, q, len(__speed_changes)),
         'turning_upper': harrel_davis(__turning_rate, 1-q/2, len(__turning_rate)),
@@ -75,6 +76,7 @@ def bootstrap_replication(speed_changes, turning_rate, ddiffs, time_diffs, diff_
         'diff_speed_upper': harrel_davis(__diff_speeds, 1-q/2, len(__diff_speeds)),
         'diff_speed_lower': harrel_davis(__diff_speeds, q/2, len(__diff_speeds))
     }
+    print("Done")
     return result
 
 def multiprocessing_bootstrap(B, speed_changes, turning_rate, ddiffs, time_diffs, diff_speeds, q):
@@ -95,7 +97,7 @@ def multiprocessing_bootstrap(B, speed_changes, turning_rate, ddiffs, time_diffs
     hd_est_time_lower = [res['time_lower'] for res in results]
     hd_est_diff_speed_upper = [res['diff_speed_upper'] for res in results]
     hd_est_diff_speed_lower = [res['diff_speed_lower'] for res in results]
-
+    
     return {
         'hd_est_speed': hd_est_speed,
         'hd_est_turning_upper': hd_est_turning_upper,
