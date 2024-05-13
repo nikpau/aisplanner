@@ -8,6 +8,7 @@ Script to generate the ECDF and its quantiles for two variables:
 
 Barnard (HPC) specific script.
 """
+from multiprocessing import Pool
 from pathlib import Path
 from pytsa import SearchAgent
 from pytsa.utils import heading_change
@@ -52,6 +53,60 @@ def harrel_davis(x: np.ndarray, q: float, n: int):
     x = np.sort(x)
     return np.sum(x*w)
 
+def bootstrap_replication(speed_changes, turning_rate, ddiffs, time_diffs, diff_speeds, q):
+    np.random.seed()  # Ensure each process has a different seed
+    
+    # Resample the data with replacement
+    __speed_changes = np.random.choice(speed_changes, len(speed_changes), replace=True)
+    __turning_rate = np.random.choice(turning_rate, len(turning_rate), replace=True)
+    __ddiffs = np.random.choice(ddiffs, len(ddiffs), replace=True)
+    __time_diffs = np.random.choice(time_diffs, len(time_diffs), replace=True)
+    __diff_speeds = np.random.choice(diff_speeds, len(diff_speeds), replace=True)
+
+    # Compute Harrel-Davis estimates for each sample
+    result = {
+        'speed': harrel_davis(__speed_changes, q, len(__speed_changes)),
+        'turning_upper': harrel_davis(__turning_rate, 1-q/2, len(__turning_rate)),
+        'turning_lower': harrel_davis(__turning_rate, q/2, len(__turning_rate)),
+        'ddiff_upper': harrel_davis(__ddiffs, 1-q/2, len(__ddiffs)),
+        'ddiff_lower': harrel_davis(__ddiffs, q/2, len(__ddiffs)),
+        'time_upper': harrel_davis(__time_diffs, 1-q/2, len(__time_diffs)),
+        'time_lower': harrel_davis(__time_diffs, q/2, len(__time_diffs)),
+        'diff_speed_upper': harrel_davis(__diff_speeds, 1-q/2, len(__diff_speeds)),
+        'diff_speed_lower': harrel_davis(__diff_speeds, q/2, len(__diff_speeds))
+    }
+    return result
+
+def multiprocessing_bootstrap(B, speed_changes, turning_rate, ddiffs, time_diffs, diff_speeds, q):
+    # Setup multiprocessing pool
+    with Pool() as pool:
+        results = pool.starmap(
+            bootstrap_replication,
+            [(b, speed_changes, turning_rate, ddiffs, time_diffs, diff_speeds, q) for b in range(B)]
+        )
+    
+    # Unpack results
+    hd_est_speed = [res['speed'] for res in results]
+    hd_est_turning_upper = [res['turning_upper'] for res in results]
+    hd_est_turning_lower = [res['turning_lower'] for res in results]
+    hd_est_ddiff_upper = [res['ddiff_upper'] for res in results]
+    hd_est_ddiff_lower = [res['ddiff_lower'] for res in results]
+    hd_est_time_upper = [res['time_upper'] for res in results]
+    hd_est_time_lower = [res['time_lower'] for res in results]
+    hd_est_diff_speed_upper = [res['diff_speed_upper'] for res in results]
+    hd_est_diff_speed_lower = [res['diff_speed_lower'] for res in results]
+
+    return {
+        'hd_est_speed': hd_est_speed,
+        'hd_est_turning_upper': hd_est_turning_upper,
+        'hd_est_turning_lower': hd_est_turning_lower,
+        'hd_est_ddiff_upper': hd_est_ddiff_upper,
+        'hd_est_ddiff_lower': hd_est_ddiff_lower,
+        'hd_est_time_upper': hd_est_time_upper,
+        'hd_est_time_lower': hd_est_time_lower,
+        'hd_est_diff_speed_upper': hd_est_diff_speed_upper,
+        'hd_est_diff_speed_lower': hd_est_diff_speed_lower,
+    }
 
 # MAIN MATTER ---------------------------------------------------------------    
 
@@ -110,38 +165,9 @@ for interval in intervals:
 
     for q in [0.01,0.05,0.1]:
         
-        hd_est_speed = []
-        hd_est_turning_upper = []
-        hd_est_turning_lower = []
-        hd_est_ddiff_upper = []
-        hd_est_ddiff_lower = []
-        hd_est_time_upper = []
-        hd_est_time_lower = []
-        hd_est_diff_speed_upper = []
-        hd_est_diff_speed_lower = []
-        for b in range(B):
-            
-            print(f"Bootstrap repetition {b+1}/{B}")
-            # Resample the data with replacement
-            __speed_changes = np.random.choice(speed_changes, len(speed_changes), replace=True)
-            __turning_rate = np.random.choice(turning_rate, len(turning_rate), replace=True)
-            __ddiffs = np.random.choice(ddiffs, len(ddiffs), replace=True)
-            __time_diffs = np.random.choice(time_diffs, len(time_diffs), replace=True)
-            __diff_speeds = np.random.choice(diff_speeds, len(diff_speeds), replace=True)
-        
-            hd_est_speed.append(harrel_davis(__speed_changes, q, len(__speed_changes)))
-            
-            hd_est_turning_upper.append(harrel_davis(__turning_rate, 1-q/2, len(__turning_rate)))
-            hd_est_turning_lower.append(harrel_davis(__turning_rate, q/2, len(__turning_rate)))
-            
-            hd_est_ddiff_upper.append(harrel_davis(__ddiffs, 1-q/2, len(__ddiffs)))
-            hd_est_ddiff_lower.append(harrel_davis(__ddiffs, q/2, len(__ddiffs)))
-            
-            hd_est_time_upper.append(harrel_davis(__time_diffs, 1-q/2, len(__time_diffs)))
-            hd_est_time_lower.append(harrel_davis(__time_diffs, q/2, len(__time_diffs)))
-            
-            hd_est_diff_speed_upper.append(harrel_davis(__diff_speeds, 1-q/2, len(__diff_speeds)))
-            hd_est_diff_speed_lower.append(harrel_davis(__diff_speeds, q/2, len(__diff_speeds)))
+        res = multiprocessing_bootstrap(
+            B, speed_changes, turning_rate, ddiffs, time_diffs, diff_speeds, q
+        )
             
             
         HD_ESTIMATES = pd.concat([
@@ -150,55 +176,55 @@ for interval in intervals:
                 "Interval": f"{interval[0]}-{interval[1]}" ,
                 "Variable": "Speed",
                 "Quantile": q,
-                "Estimate": hd_est_speed
+                "Estimate": res["hd_est_speed"]
             }),
             pd.DataFrame({
                 "Interval": f"{interval[0]}-{interval[1]}" ,
                 "Variable": "Turning upper",
                 "Quantile": 1-q/2,
-                "Estimate": hd_est_turning_upper
+                "Estimate": res["hd_est_turning_upper"]
             }),
             pd.DataFrame({
                 "Interval": f"{interval[0]}-{interval[1]}" ,
                 "Variable": "Turning lower",
                 "Quantile": q/2,
-                "Estimate": hd_est_turning_lower
+                "Estimate": res["hd_est_turning_lower"]
             }),
             pd.DataFrame({
                 "Interval": f"{interval[0]}-{interval[1]}" ,
                 "Variable": "Distance upper",
                 "Quantile": 1-q/2,
-                "Estimate": hd_est_ddiff_upper
+                "Estimate": res["hd_est_ddiff_upper"]
             }),
             pd.DataFrame({
                 "Interval": f"{interval[0]}-{interval[1]}" ,
                 "Variable": "Distance lower",
                 "Quantile": q/2,
-                "Estimate": hd_est_ddiff_lower
+                "Estimate": res["hd_est_ddiff_lower"]
             }),
             pd.DataFrame({
                 "Interval": f"{interval[0]}-{interval[1]}" ,
                 "Variable": "Time upper",
                 "Quantile": 1-q/2,
-                "Estimate": hd_est_time_upper
+                "Estimate": res["hd_est_time_upper"]
             }),
             pd.DataFrame({
                 "Interval": f"{interval[0]}-{interval[1]}" ,
                 "Variable": "Time lower",
                 "Quantile": q/2,
-                "Estimate": hd_est_time_lower
+                "Estimate": res["hd_est_time_lower"]
             }),
             pd.DataFrame({
                 "Interval": f"{interval[0]}-{interval[1]}" ,
                 "Variable": "Diff Speed upper",
                 "Quantile": 1-q/2,
-                "Estimate": hd_est_diff_speed_upper
+                "Estimate": res["hd_est_diff_speed_upper"]
             }),
             pd.DataFrame({
                 "Interval": f"{interval[0]}-{interval[1]}" ,
                 "Variable": "Diff Speed lower",
                 "Quantile": q/2,
-                "Estimate": hd_est_diff_speed_lower
+                "Estimate": res["hd_est_diff_speed_lower"]
             })
         ])
         
