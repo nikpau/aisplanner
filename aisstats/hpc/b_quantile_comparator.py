@@ -18,6 +18,7 @@ from functools import partial
 from aisplanner.encounters.main import NorthSea
 import random
 import pandas as pd
+import uuid
 
 # Beta distribution
 from scipy.stats import beta
@@ -79,7 +80,7 @@ def bootstrap_replication(shm_names, lengths, q):
     __time_diffs = np.random.choice(time_diffs, len(time_diffs), replace=True)
     __diff_speeds = np.random.choice(diff_speeds, len(diff_speeds), replace=True)
 
-    print("Calculating Harrel-Davis estimator")
+    print(f"Calculating Harrel-Davis estimator. Fingerprints: {uuid.uuid4()}")
     result = {
         'speed': harrel_davis(__speed_changes, q, len(__speed_changes)),
         'turning_upper': harrel_davis(__turning_rate, 1-q/2, len(__turning_rate)),
@@ -135,7 +136,7 @@ def multiprocessing_bootstrap(B, shm_names, q, lengths):
 # MAIN MATTER ---------------------------------------------------------------    
 
 # Bootstrap repetitions
-B = 2000
+B = 1000
 
 SEARCHAREA = NorthSea
 
