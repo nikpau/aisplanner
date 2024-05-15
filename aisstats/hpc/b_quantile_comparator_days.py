@@ -168,7 +168,7 @@ for day in days:
     STATIC_MESSAGES = Path('/data/horse/ws/s2075466-ais-shared/s2075466-ais/decoded/jan2020_to_jun2022/msgtype5')
 
 
-    dates = date_list(days)
+    dates = date_list(days=day)
     dyn = [DYNAMIC_MESSAGES / f"{day}.csv" for day in dates]
     sta = [STATIC_MESSAGES / f"{day}.csv" for day in dates]
 
