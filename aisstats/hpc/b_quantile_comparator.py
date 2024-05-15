@@ -29,7 +29,7 @@ COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#7326
 from aisstats.errchecker import speed_filter
 from pytsa.utils import haversine
 
-resample_size = 1e6
+resample_size = int(1e6)
 
 def harrel_davis(x: np.ndarray, q: float, n: int):
     """
