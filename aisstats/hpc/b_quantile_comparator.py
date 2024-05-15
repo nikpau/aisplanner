@@ -74,23 +74,23 @@ def bootstrap_replication(shm_names, lengths, q):
     np.random.seed()  # Ensure each process has a different seed
     
     # Resample the data with replacement
-    __speed_changes = np.random.choice(speed_changes, len(speed_changes), replace=True)
-    __turning_rate = np.random.choice(turning_rate, len(turning_rate), replace=True)
-    __ddiffs = np.random.choice(ddiffs, len(ddiffs), replace=True)
-    __time_diffs = np.random.choice(time_diffs, len(time_diffs), replace=True)
-    __diff_speeds = np.random.choice(diff_speeds, len(diff_speeds), replace=True)
+    __speed_changes = np.random.choice(speed_changes, 100_000, replace=True)
+    __turning_rate = np.random.choice(turning_rate, 100_000, replace=True)
+    __ddiffs = np.random.choice(ddiffs, 100_000, replace=True)
+    __time_diffs = np.random.choice(time_diffs, 100_000, replace=True)
+    __diff_speeds = np.random.choice(diff_speeds, 100_000, replace=True)
 
     print(f"Calculating Harrel-Davis estimator. Fingerprints: {uuid.uuid4()}")
     result = {
-        'speed': harrel_davis(__speed_changes, q, len(__speed_changes)),
-        'turning_upper': harrel_davis(__turning_rate, 1-q/2, len(__turning_rate)),
-        'turning_lower': harrel_davis(__turning_rate, q/2, len(__turning_rate)),
-        'ddiff_upper': harrel_davis(__ddiffs, 1-q/2, len(__ddiffs)),
-        'ddiff_lower': harrel_davis(__ddiffs, q/2, len(__ddiffs)),
-        'time_upper': harrel_davis(__time_diffs, 1-q/2, len(__time_diffs)),
-        'time_lower': harrel_davis(__time_diffs, q/2, len(__time_diffs)),
-        'diff_speed_upper': harrel_davis(__diff_speeds, 1-q/2, len(__diff_speeds)),
-        'diff_speed_lower': harrel_davis(__diff_speeds, q/2, len(__diff_speeds))
+        'speed': harrel_davis(__speed_changes, q, 100_000),
+        'turning_upper': harrel_davis(__turning_rate, 1-q/2, 100_000),
+        'turning_lower': harrel_davis(__turning_rate, q/2, 100_000),
+        'ddiff_upper': harrel_davis(__ddiffs, 1-q/2, 100_000),
+        'ddiff_lower': harrel_davis(__ddiffs, q/2, 100_000),
+        'time_upper': harrel_davis(__time_diffs, 1-q/2, 100_000),
+        'time_lower': harrel_davis(__time_diffs, q/2, 100_000),
+        'diff_speed_upper': harrel_davis(__diff_speeds, 1-q/2, 100_000),
+        'diff_speed_lower': harrel_davis(__diff_speeds, q/2, 100_000)
     }
 
     # Clean up by closing the shared memory blocks
