@@ -29,6 +29,8 @@ COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#7326
 from aisstats.errchecker import speed_filter
 from pytsa.utils import haversine
 
+resample_size = 1e6
+
 def harrel_davis(x: np.ndarray, q: float, n: int):
     """
     Harrel-Davis quantile estimator.
@@ -74,23 +76,23 @@ def bootstrap_replication(shm_names, lengths, q):
     np.random.seed()  # Ensure each process has a different seed
     
     # Resample the data with replacement
-    __speed_changes = np.random.choice(speed_changes, 100_000, replace=True)
-    __turning_rate = np.random.choice(turning_rate, 100_000, replace=True)
-    __ddiffs = np.random.choice(ddiffs, 100_000, replace=True)
-    __time_diffs = np.random.choice(time_diffs, 100_000, replace=True)
-    __diff_speeds = np.random.choice(diff_speeds, 100_000, replace=True)
+    __speed_changes = np.random.choice(speed_changes, resample_size, replace=True)
+    __turning_rate = np.random.choice(turning_rate, resample_size, replace=True)
+    __ddiffs = np.random.choice(ddiffs, resample_size, replace=True)
+    __time_diffs = np.random.choice(time_diffs, resample_size, replace=True)
+    __diff_speeds = np.random.choice(diff_speeds, resample_size, replace=True)
 
     print(f"Calculating Harrel-Davis estimator. Fingerprints: {uuid.uuid4()}")
     result = {
-        'speed': harrel_davis(__speed_changes, q, 100_000),
-        'turning_upper': harrel_davis(__turning_rate, 1-q/2, 100_000),
-        'turning_lower': harrel_davis(__turning_rate, q/2, 100_000),
-        'ddiff_upper': harrel_davis(__ddiffs, 1-q/2, 100_000),
-        'ddiff_lower': harrel_davis(__ddiffs, q/2, 100_000),
-        'time_upper': harrel_davis(__time_diffs, 1-q/2, 100_000),
-        'time_lower': harrel_davis(__time_diffs, q/2, 100_000),
-        'diff_speed_upper': harrel_davis(__diff_speeds, 1-q/2, 100_000),
-        'diff_speed_lower': harrel_davis(__diff_speeds, q/2, 100_000)
+        'speed': harrel_davis(__speed_changes, q, resample_size),
+        'turning_upper': harrel_davis(__turning_rate, 1-q/2, resample_size),
+        'turning_lower': harrel_davis(__turning_rate, q/2, resample_size),
+        'ddiff_upper': harrel_davis(__ddiffs, 1-q/2, resample_size),
+        'ddiff_lower': harrel_davis(__ddiffs, q/2, resample_size),
+        'time_upper': harrel_davis(__time_diffs, 1-q/2, resample_size),
+        'time_lower': harrel_davis(__time_diffs, q/2, resample_size),
+        'diff_speed_upper': harrel_davis(__diff_speeds, 1-q/2, resample_size),
+        'diff_speed_lower': harrel_davis(__diff_speeds, q/2, resample_size)
     }
 
     # Clean up by closing the shared memory blocks
