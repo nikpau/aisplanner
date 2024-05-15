@@ -169,8 +169,8 @@ for day in days:
 
 
     dates = date_list(days=day)
-    dyn = [DYNAMIC_MESSAGES / f"{day}.csv" for day in dates]
-    sta = [STATIC_MESSAGES / f"{day}.csv" for day in dates]
+    dyn = [str(DYNAMIC_MESSAGES / f"{day}.csv") for day in dates]
+    sta = [str(STATIC_MESSAGES / f"{day}.csv") for day in dates]
 
     print(f"Processing {dyn}")
     print(f"Processing {sta}")
