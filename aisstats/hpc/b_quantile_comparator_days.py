@@ -176,9 +176,9 @@ for day in days:
     print(f"Processing {sta}")
 
     SA = SearchAgent(
-        dynamic_paths=DYNAMIC_MESSAGES,
+        dynamic_paths=dyn,
         frame=SEARCHAREA,
-        static_paths=STATIC_MESSAGES,
+        static_paths=sta,
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
