@@ -164,45 +164,39 @@ for day in days:
     diff_speeds = [] # Difference between reported speed and speed calculated from positions
     time_diffs = []
     ddiffs = []
-    try:
-        DYNAMIC_MESSAGES = Path('/data/horse/ws/s2075466-ais-shared/s2075466-ais/decoded/jan2020_to_jun2022')
-        STATIC_MESSAGES = Path('/data/horse/ws/s2075466-ais-shared/s2075466-ais/decoded/jan2020_to_jun2022/msgtype5')
+    DYNAMIC_MESSAGES = Path('/data/horse/ws/s2075466-ais-shared/s2075466-ais/decoded/jan2020_to_jun2022')
+    STATIC_MESSAGES = Path('/data/horse/ws/s2075466-ais-shared/s2075466-ais/decoded/jan2020_to_jun2022/msgtype5')
 
 
-        dates = date_list(days)
-        dyn = [DYNAMIC_MESSAGES / f"{day}.csv" for day in dates]
-        sta = [STATIC_MESSAGES / f"{day}.csv" for day in dates]
+    dates = date_list(days)
+    dyn = [DYNAMIC_MESSAGES / f"{day}.csv" for day in dates]
+    sta = [STATIC_MESSAGES / f"{day}.csv" for day in dates]
 
-        SA = SearchAgent(
-            dynamic_paths=DYNAMIC_MESSAGES,
-            frame=SEARCHAREA,
-            static_paths=STATIC_MESSAGES,
-            preprocessor=partial(speed_filter, speeds= (1,30))
-        )
+    SA = SearchAgent(
+        dynamic_paths=DYNAMIC_MESSAGES,
+        frame=SEARCHAREA,
+        static_paths=STATIC_MESSAGES,
+        preprocessor=partial(speed_filter, speeds= (1,30))
+    )
 
-        ships = SA.extract_all(njobs=16,skip_tsplit=True)
-        l = len(ships)
-        for idx, ship in enumerate(ships.values()):
-            print(f"Processing ship {idx+1}/{l}")
-            for track in ship.tracks:
-                for i in range(1, len(track)):
-                    turning_rate.append(
-                        heading_change(
-                            track[i-1].COG, track[i].COG
-                            ) / (track[i].timestamp - track[i-1].timestamp)
-                    )
-                    speed_changes.append(abs(track[i].SOG - track[i-1].SOG))
-                    rspeed = split.Splitter.avg_speed(track[i-1],track[i])
-                    cspeed = split.Splitter.speed_from_position(track[i-1],track[i])
-                    diff_speeds.append(rspeed - cspeed)
-                    time_diffs.append(track[i].timestamp - track[i-1].timestamp)
-                    ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
+    ships = SA.extract_all(njobs=16,skip_tsplit=True)
+    l = len(ships)
+    for idx, ship in enumerate(ships.values()):
+        print(f"Processing ship {idx+1}/{l}")
+        for track in ship.tracks:
+            for i in range(1, len(track)):
+                turning_rate.append(
+                    heading_change(
+                        track[i-1].COG, track[i].COG
+                        ) / (track[i].timestamp - track[i-1].timestamp)
+                )
+                speed_changes.append(abs(track[i].SOG - track[i-1].SOG))
+                rspeed = split.Splitter.avg_speed(track[i-1],track[i])
+                cspeed = split.Splitter.speed_from_position(track[i-1],track[i])
+                diff_speeds.append(rspeed - cspeed)
+                time_diffs.append(track[i].timestamp - track[i-1].timestamp)
+                ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
         
-    except Exception as e:
-        print(e)
-        print(f"Failed")
-        continue
-    
     speed_changes = np.array(speed_changes)
     turning_rate = np.array(turning_rate)
     diff_speeds = np.array(diff_speeds)
