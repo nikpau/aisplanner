@@ -172,6 +172,9 @@ for day in days:
     dyn = [DYNAMIC_MESSAGES / f"{day}.csv" for day in dates]
     sta = [STATIC_MESSAGES / f"{day}.csv" for day in dates]
 
+    print(f"Processing {dyn}")
+    print(f"Processing {sta}")
+
     SA = SearchAgent(
         dynamic_paths=DYNAMIC_MESSAGES,
         frame=SEARCHAREA,
