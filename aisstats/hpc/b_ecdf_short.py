@@ -98,7 +98,7 @@ for days in [1,7,30,120]:
                 time_diffs.append(track[i].timestamp - track[i-1].timestamp)
                 ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
     S += f"\n\n{days} days:\n"
-    S *= f"""                
+    S += f"""                
     95% Quantiles for {days} days:")
     Turning rate: Low:{np.percentile(turning_rate, 2.5)} | High:{np.percentile(turning_rate, 97.5)}")
     Diff bet. rep and calc: Low:{np.percentile(diff_speeds, 2.5)} | High:{np.percentile(diff_speeds, 97.5)}")
