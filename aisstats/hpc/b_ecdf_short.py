@@ -10,10 +10,13 @@ Barnard (HPC) specific script.
 """
 from pathlib import Path
 from pytsa import SearchAgent
+import pytsa
 from pytsa.utils import heading_change
 import pytsa.tsea.split as split
 import numpy as np
 from functools import partial
+
+import pytsa.utils
 from aisplanner.encounters.main import NorthSea
 import ciso8601
 import pickle
@@ -56,13 +59,17 @@ def date_list(days: int = 7) -> list[Path]:
         dates.append(f"2021_07_{day}")
     return dates
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob(f"2021*.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob(f"2021*.csv"))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022'))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5'))
 
 for days in [1,7,30,120]:
     
     SEARCHAREA = NorthSea
 
+    dyn = DYNAMIC_MESSAGES[:days]
+    static = STATIC_MESSAGES[:days]
+    
+    dyn, static = pytsa.utils.DataLoader.align_data_files(dyn, static)
 
     turning_rate = []
     speed_changes = []
@@ -73,9 +80,9 @@ for days in [1,7,30,120]:
     dates = date_list(days)
 
     SA = SearchAgent(
-        dynamic_paths=DYNAMIC_MESSAGES[:days],
+        dynamic_paths=dyn,
         frame=SEARCHAREA,
-        static_paths=STATIC_MESSAGES[:days],
+        static_paths=static,
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
