@@ -20,6 +20,8 @@ import pickle
 COLORWHEEL = ["#264653","#2a9d8f","#e9c46a","#f4a261","#e76f51","#E45C3A","#732626"]
 from aisstats.errchecker import haversine, speed_filter
 
+S = ""
+
 def quantiles(data, quantiles):
     """
     Calculate the quantiles of a given dataset.
@@ -95,11 +97,14 @@ for days in [1,7,30,120]:
                 diff_speeds.append(rspeed - cspeed)
                 time_diffs.append(track[i].timestamp - track[i-1].timestamp)
                 ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
-                    
-    print(f"95% Quantiles for {days} days:")
-    print(f"Turning rate: Low:{np.percentile(turning_rate, 2.5)} | High:{np.percentile(turning_rate, 97.5)}")
-    print(f"Diff bet. rep and calc: Low:{np.percentile(diff_speeds, 2.5)} | High:{np.percentile(diff_speeds, 97.5)}")
+    S += f"\n\n{days} days:\n"
+    S *= f"""                
+    95% Quantiles for {days} days:")
+    Turning rate: Low:{np.percentile(turning_rate, 2.5)} | High:{np.percentile(turning_rate, 97.5)}")
+    Diff bet. rep and calc: Low:{np.percentile(diff_speeds, 2.5)} | High:{np.percentile(diff_speeds, 97.5)}")
+    Speed changes: {np.percentile(speed_changes, 95)}
+    Time differences: {np.percentile(time_diffs, 95)}
+    Distance differences: {np.percentile(ddiffs, 95)}
+    """
     
-    print(f"Speed changes: {np.percentile(speed_changes, 95)}")
-    print(f"Time differences: {np.percentile(time_diffs, 95)}")
-    print(f"Distance differences: {np.percentile(ddiffs, 95)}")
+print(S)
