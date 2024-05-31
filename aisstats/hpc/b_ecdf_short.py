@@ -54,7 +54,7 @@ def date_list(days: int = 7) -> list[Path]:
         dates.append(f"2021_07_{day}")
     return dates
 
-for days, name in zip([1,7,14],["one_day","one_week","two_week"]):
+for days in zip([1,7,30,120]):
     
     SEARCHAREA = NorthSea
 
@@ -90,27 +90,16 @@ for days, name in zip([1,7,14],["one_day","one_week","two_week"]):
                         ) / (track[i].timestamp - track[i-1].timestamp)
                 )
                 speed_changes.append(abs(track[i].SOG - track[i-1].SOG))
-                rspeed = split.avg_speed(track[i-1],track[i])
-                cspeed = split.speed_from_position(track[i-1],track[i])
+                rspeed = split.Splitter.avg_speed(track[i-1],track[i])
+                cspeed = split.Splitter.speed_from_position(track[i-1],track[i])
                 diff_speeds.append(rspeed - cspeed)
                 time_diffs.append(track[i].timestamp - track[i-1].timestamp)
                 ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
                     
-    squants = quantiles(speed_changes, np.linspace(0,1,10001))
-    trquants = quantiles(turning_rate, np.linspace(0,1,10001))
-    tquants = quantiles(time_diffs, np.linspace(0,1,10001))
-    diffquants = quantiles(diff_speeds, np.linspace(0,1,10001))
-    dquants = quantiles(ddiffs, np.linspace(0,1,10001))
-
-    # Save the quantiles
-    suffix = name
-    with open(f'/home/s2075466/aisplanner/results/squants_{suffix}.pkl', 'wb') as f:
-        pickle.dump(squants, f)
-    with open(f'/home/s2075466/aisplanner/results/trquants_{suffix}.pkl', 'wb') as f:    
-        pickle.dump(trquants, f)
-    with open(f'/home/s2075466/aisplanner/results/tquants_{suffix}.pkl', 'wb') as f:
-        pickle.dump(tquants, f)
-    with open(f'/home/s2075466/aisplanner/results/diffquants_{suffix}.pkl', 'wb') as f:
-        pickle.dump(diffquants, f)
-    with open(f'/home/s2075466/aisplanner/results/dquants_{suffix}.pkl', 'wb') as f:
-        pickle.dump(dquants, f)
+    print(f"95% Quantiles for {days} days:")
+    print(f"Turning rate: Low:{np.percentile(turning_rate, 2.5)} | High:{np.percentile(turning_rate, 97.5)}")
+    print(f"Diff bet. rep and calc: Low:{np.percentile(diff_speeds, 2.5)} | High:{np.percentile(diff_speeds, 97.5)}")
+    
+    print(f"Speed changes: {np.percentile(speed_changes, 95)}")
+    print(f"Time differences: {np.percentile(time_diffs, 95)}")
+    print(f"Distance differences: {np.percentile(ddiffs, 95)}")
