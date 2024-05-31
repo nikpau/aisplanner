@@ -69,8 +69,6 @@ for days in [1,7,30,120]:
     dyn = DYNAMIC_MESSAGES[:days]
     static = STATIC_MESSAGES[:days]
     
-    dyn, static = pytsa.utils.DataLoader.align_data_files(dyn, static)
-
     turning_rate = []
     speed_changes = []
     diff_speeds = [] # Difference between reported speed and speed calculated from positions
