@@ -56,12 +56,13 @@ def date_list(days: int = 7) -> list[Path]:
         dates.append(f"2021_07_{day}")
     return dates
 
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob(f"2021*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob(f"2021*.csv"))
+
 for days in [1,7,30,120]:
     
     SEARCHAREA = NorthSea
 
-    DYNAMIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022')
-    STATIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5')
 
     turning_rate = []
     speed_changes = []
@@ -70,13 +71,11 @@ for days in [1,7,30,120]:
     ddiffs = []
 
     dates = date_list(days)
-    dyn = [DYNAMIC_MESSAGES / f"{day}.csv" for day in dates]
-    sta = [STATIC_MESSAGES / f"{day}.csv" for day in dates]
 
     SA = SearchAgent(
-        dynamic_paths=dyn,
+        dynamic_paths=DYNAMIC_MESSAGES[:days+1],
         frame=SEARCHAREA,
-        static_paths=sta,
+        static_paths=STATIC_MESSAGES[:days+1],
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
