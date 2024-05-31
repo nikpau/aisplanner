@@ -59,8 +59,8 @@ def date_list(days: int = 7) -> list[Path]:
         dates.append(f"2021_07_{day}")
     return dates
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022'))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5'))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_*.csv"))
 
 for days in [1,7,30,120]:
     
