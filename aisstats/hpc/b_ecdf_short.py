@@ -60,8 +60,6 @@ def date_list(days: int = 7) -> list[Path]:
         dates.append(f"2021_07_{day}")
     return dates
 
-DYNAMIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_*.csv")
-STATIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_*.csv")
 
 datetimeranges = [
     (datetime(2021,7,1),datetime(2021,7,1)),
@@ -73,6 +71,8 @@ datetimeranges = [
 for daterange in datetimeranges:
     
     SEARCHAREA = NorthSea
+    DYNAMIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_*.csv")
+    STATIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_*.csv")
     
     turning_rate = []
     speed_changes = []
