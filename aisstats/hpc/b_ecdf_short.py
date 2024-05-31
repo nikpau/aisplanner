@@ -15,6 +15,7 @@ from pytsa.utils import heading_change
 import pytsa.tsea.split as split
 import numpy as np
 from functools import partial
+from datetime import datetime
 
 import pytsa.utils
 from aisplanner.encounters.main import NorthSea
@@ -59,15 +60,19 @@ def date_list(days: int = 7) -> list[Path]:
         dates.append(f"2021_07_{day}")
     return dates
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_*.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_*.csv"))
+DYNAMIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_*.csv")
+STATIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_*.csv")
 
-for days in [1,7,30,120]:
+datetimeranges = [
+    (datetime(2021,7,1),datetime(2021,7,1)),
+    (datetime(2021,7,1),datetime(2021,7,7)),
+    (datetime(2021,7,1),datetime(2021,7,31)),
+    (datetime(2021,7,1),datetime(2021,10,31)),
+]
+
+for daterange in datetimeranges:
     
     SEARCHAREA = NorthSea
-
-    dyn = DYNAMIC_MESSAGES[:days]
-    static = STATIC_MESSAGES[:days]
     
     turning_rate = []
     speed_changes = []
@@ -75,12 +80,11 @@ for days in [1,7,30,120]:
     time_diffs = []
     ddiffs = []
 
-    dates = date_list(days)
-
     SA = SearchAgent(
-        dynamic_paths=dyn,
+        dynamic_paths=DYNAMIC_MESSAGES,
         frame=SEARCHAREA,
-        static_paths=static,
+        static_paths=STATIC_MESSAGES,
+        date_range=daterange,
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
@@ -101,6 +105,7 @@ for days in [1,7,30,120]:
                 diff_speeds.append(rspeed - cspeed)
                 time_diffs.append(track[i].timestamp - track[i-1].timestamp)
                 ddiffs.append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
+
     S += f"\n\n{days} days:\n"
     S += f"""                
     95% Quantiles for {days} days:")
