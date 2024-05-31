@@ -54,7 +54,7 @@ def date_list(days: int = 7) -> list[Path]:
         dates.append(f"2021_07_{day}")
     return dates
 
-for days in zip([1,7,30,120]):
+for days in [1,7,30,120]:
     
     SEARCHAREA = NorthSea
 
