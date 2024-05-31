@@ -73,9 +73,9 @@ for days in [1,7,30,120]:
     dates = date_list(days)
 
     SA = SearchAgent(
-        dynamic_paths=DYNAMIC_MESSAGES[:days+1],
+        dynamic_paths=DYNAMIC_MESSAGES[:days],
         frame=SEARCHAREA,
-        static_paths=STATIC_MESSAGES[:days+1],
+        static_paths=STATIC_MESSAGES[:days],
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
