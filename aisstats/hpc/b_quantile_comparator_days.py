@@ -84,7 +84,7 @@ def bootstrap_replication(shm_names, lengths, q):
 
     print(f"Calculating Harrel-Davis estimator. Fingerprints: {uuid.uuid4()}")
     result = {
-        'speed': harrel_davis(__speed_changes, q, resample_size),
+        'speed': harrel_davis(__speed_changes, 1-q, resample_size),
         'turning_upper': harrel_davis(__turning_rate, 1-q/2, resample_size),
         'turning_lower': harrel_davis(__turning_rate, q/2, resample_size),
         'ddiff_upper': harrel_davis(__ddiffs, 1-q/2, resample_size),
@@ -254,7 +254,7 @@ for day in days:
             pd.DataFrame({
                 "Interval": f"{day}" ,
                 "Variable": "Speed",
-                "Quantile": q,
+                "Quantile": 1-q,
                 "Estimate": res["hd_est_speed"]
             }),
             pd.DataFrame({
