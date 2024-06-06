@@ -166,8 +166,8 @@ for day in days:
     diff_speeds = [] # Difference between reported speed and speed calculated from positions
     time_diffs = []
     ddiffs = []
-    DYNAMIC_MESSAGES = Path('/data/horse/ws/s2075466-ais-shared/s2075466-ais/decoded/jan2020_to_jun2022')
-    STATIC_MESSAGES = Path('/data/horse/ws/s2075466-ais-shared/s2075466-ais/decoded/jan2020_to_jun2022/msgtype5')
+    DYNAMIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022')
+    STATIC_MESSAGES = Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5')
 
 
     dates = date_list(days=day)

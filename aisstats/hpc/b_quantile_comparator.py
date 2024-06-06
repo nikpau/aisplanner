@@ -157,8 +157,8 @@ for interval in intervals:
         try:
             if month < 10:
                 month = f"0{month}"
-            DYNAMIC_MESSAGES = list(Path('/data/horse/ws/s2075466-ais-shared/s2075466-ais/decoded/jan2020_to_jun2022').glob(f"2021_{month}*.csv"))
-            STATIC_MESSAGES = list(Path('/data/horse/ws/s2075466-ais-shared/s2075466-ais/decoded/jan2020_to_jun2022/msgtype5').glob(f"2021_{month}*.csv"))
+            DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob(f"2021_{month}*.csv"))
+            STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob(f"2021_{month}*.csv"))
 
             SA = SearchAgent(
                 dynamic_paths=DYNAMIC_MESSAGES,
