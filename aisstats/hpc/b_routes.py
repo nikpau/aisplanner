@@ -52,7 +52,7 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ]
     spl = Splitter()
     speedchange = [
-        spl.speed_from_position(m1,m2) - spl.avg_speed(m1,m2) for m1,m2 in zip(track,track[1:])
+        spl.avg_speed(m1,m2) - spl.speed_from_position(m1,m2) for m1,m2 in zip(track,track[1:])
     ]
     
     ax[1].plot(speedchange,color=COLORWHEEL[0],ls="-", alpha = 0.9,lw=0.5)
@@ -99,8 +99,8 @@ if __name__ == "__main__":
                 tracks.append(track)
     
     def _sort_by_speed(track: list[AISMessage]) -> float:
-        return max(
-            abs(Splitter().speed_from_position(m1,m2) - Splitter().avg_speed(m1,m2)) for m1,m2 in zip(track,track[1:])
+        return min(
+            abs(Splitter().avg_speed(m1,m2) - Splitter().speed_from_position(m1,m2)) for m1,m2 in zip(track,track[1:])
         )
         
     def _sort_by_length(track: list[AISMessage]) -> float:
