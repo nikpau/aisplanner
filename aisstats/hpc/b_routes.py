@@ -12,7 +12,7 @@ from pathlib import Path
 from pytsa import SearchAgent
 from pytsa.trajectories.rules import *
 from aisstats.errchecker import COLORWHEEL, speed_filter, _heading_change
-from pytsa.tsea.split import speed_from_position, avg_speed, AISMessage
+from pytsa.tsea.split import Splitter, AISMessage
 
 SEARCHAREA = NorthSea
 
@@ -41,8 +41,8 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ax[0].scatter(lons,lats,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9,linewidths=0.5)
         
     # Set labels
-    ax[0].set_xlabel('Longitude')
-    ax[0].set_ylabel('Latitude')
+    ax[0].set_xlabel('Longitude [°]')
+    ax[0].set_ylabel('Latitude [°]')
     
     ax[0].set_title(f"Trajectory",fontsize=8)
     
@@ -50,14 +50,19 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     cogchange = [
         abs(_heading_change(m1.COG,m2.COG)) for m1,m2 in zip(track,track[1:])
     ]
-    ax[1].plot(cogchange,color=COLORWHEEL[0],ls="-", alpha = 0.9,lw=0.5)
-    ax[1].scatter(range(len(cogchange)),cogchange,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9,linewidths=0.5)
+    spl = Splitter()
+    speedchange = [
+        spl.speed_from_position(m1,m2) - spl.avg_speed(m1,m2) for m1,m2 in zip(track,track[1:])
+    ]
+    
+    ax[1].plot(speedchange,color=COLORWHEEL[0],ls="-", alpha = 0.9,lw=0.5)
+    ax[1].scatter(range(len(speedchange)),speedchange,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9,linewidths=0.5)
     ax[1].set_xlabel("Message number")
     ax[1].set_ylabel("Abs. COG change [°]")
     
     # Add title
-    #ax[1].set_title(r"$\overline{SOG}_{m_i}^{m_{i+1}} - \widehat{SOG}_{m_i}^{m_{i+1}}$",fontsize=8)
-    ax[1].set_title("Abs. COG change\nbetween consecutive messages",fontsize=8)
+    ax[1].set_title(r"$\overline{SOG}_{m_i}^{m_{i+1}} - \widehat{SOG}_{m_i}^{m_{i+1}}$",fontsize=8)
+    # ax[1].set_title("Abs. COG change\nbetween consecutive messages",fontsize=8)
     
     # Save figure
     fname = f"/home/s2075466/aisplanner/results/routes/{track[0].sender}"
@@ -95,7 +100,7 @@ if __name__ == "__main__":
     
     def _sort_by_speed(track: list[AISMessage]) -> float:
         return max(
-            abs(m2.SOG - m1.SOG) for m1,m2 in zip(track,track[1:])
+            abs(Splitter().speed_from_position(m1,m2) - Splitter().avg_speed(m1,m2)) for m1,m2 in zip(track,track[1:])
         )
         
     def _sort_by_length(track: list[AISMessage]) -> float:
@@ -115,7 +120,7 @@ if __name__ == "__main__":
         )
     
     
-    tracks = sorted(tracks,key=_sort_by_heading_change ,reverse=True)
+    tracks = sorted(tracks,key=_sort_by_speed ,reverse=True)
     
     for i in range(1000):
         t = tracks[i]
