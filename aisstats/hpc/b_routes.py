@@ -121,7 +121,7 @@ if __name__ == "__main__":
         )
     
     
-    tracks = sorted(tracks,key=_sort_by_speed ,reverse=True)
+    tracks = sorted(tracks,key=_sort_by_speed)
     
     for i in range(1000):
         t = tracks[i]
