@@ -5,7 +5,6 @@ from typing import Union
 from pytsa.structs import BoundingBox
 from dataclasses import dataclass, fields
 
-@dataclass
 class LocationDatabase:
     # Frederikshavn to Gothenburg
     fre_got: BoundingBox = BoundingBox(
