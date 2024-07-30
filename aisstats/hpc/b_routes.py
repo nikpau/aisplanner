@@ -6,7 +6,7 @@ from glob import glob
 from pathlib import Path
 from matplotlib import pyplot as plt
 import numpy as np
-from aisplanner.encounters.filter import haversine
+from pytsa.utils import haversine
 from aisplanner.encounters.main import NorthSea
 from pathlib import Path
 from pytsa import SearchAgent
