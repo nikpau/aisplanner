@@ -7,7 +7,7 @@ from pathlib import Path
 from matplotlib import pyplot as plt
 import numpy as np
 from pytsa.utils import haversine
-from aisplanner.encounters.main import NorthSea
+from aisplanner.encounters._locdb import NorthSea
 from pathlib import Path
 from pytsa import SearchAgent
 from pytsa.trajectories.rules import *
