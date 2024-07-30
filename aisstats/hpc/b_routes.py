@@ -58,7 +58,8 @@ def plot_simple_route(track: list[AISMessage]) -> None:
     ax[1].plot(speedchange,color=COLORWHEEL[0],ls="-", alpha = 0.9,lw=0.5)
     ax[1].scatter(range(len(speedchange)),speedchange,color=COLORWHEEL[0],s=15,marker="x", alpha = 0.9,linewidths=0.5)
     ax[1].set_xlabel("Message number")
-    ax[1].set_ylabel("Abs. COG change [°]")
+    #ax[1].set_ylabel("Abs. COG change [°]")
+    ax[1].set_ylabel("Difference in speed [kn]")
     
     # Add title
     ax[1].set_title(r"$\overline{SOG}_{m_i}^{m_{i+1}} - \widehat{SOG}_{m_i}^{m_{i+1}}$",fontsize=8)
@@ -100,7 +101,7 @@ if __name__ == "__main__":
     
     def _sort_by_speed(track: list[AISMessage]) -> float:
         return min(
-            abs(Splitter().avg_speed(m1,m2) - Splitter().speed_from_position(m1,m2)) for m1,m2 in zip(track,track[1:])
+            Splitter().avg_speed(m1,m2) - Splitter().speed_from_position(m1,m2) for m1,m2 in zip(track,track[1:])
         )
         
     def _sort_by_length(track: list[AISMessage]) -> float:
