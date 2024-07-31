@@ -75,8 +75,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     ax.plot(9.9,55.271,marker="x",markersize=8,c=COLORWHEEL[6])
     ax.text(9.91,55.271,"Assens",fontsize=14,c="white")
             
-    ax.set_xlabel("Longitude")
-    ax.set_ylabel("Latitude")
+    ax.set_xlabel("Longitude [°]")
+    ax.set_ylabel("Latitude [°]")
     plt.tight_layout()
     plt.savefig(f"/home/s2075466/aisplanner/results/maps/{savename}.png",dpi=600)
     plt.savefig(f"/home/s2075466/aisplanner/results/maps/{savename}.pdf")
@@ -90,25 +90,25 @@ if __name__ == "__main__":
         preprocessor=partial(speed_filter, speeds = (1,30)),
     )
 
-    # ships = SA.extract_all(njobs=16,skip_tsplit=True)
-    # plot_trajectories_on_map(ships,AABENRAA,"trmap_raw")
+    ships = SA.extract_all(njobs=16,skip_tsplit=True)
+    plot_trajectories_on_map(ships,AABENRAA,"trmap_raw")
     
     # With filter
     from pytsa.utils import haversine
     ships = SA.extract_all(njobs=16,skip_tsplit=False)
-    #plot_trajectories_on_map(ships,AABENRAA,"trmap_raw_tshd")
-    lens = []
-    for ship in ships.values():
-        for track in ship.tracks:
-            lens.append(
-                sum(
-                    haversine(
-                        track[i].lat,
-                        track[i].lon,
-                        track[i+1].lat,
-                        track[i+1].lon
-                    ) for i in range(len(track)-1)
-                )
-            )
-    print(f"Mean track length: {np.mean(lens)}")
-    print(f"Median track length: {np.median(lens)}")
+    plot_trajectories_on_map(ships,AABENRAA,"trmap_raw_tshd")
+    # lens = []
+    # for ship in ships.values():
+    #     for track in ship.tracks:
+    #         lens.append(
+    #             sum(
+    #                 haversine(
+    #                     track[i].lat,
+    #                     track[i].lon,
+    #                     track[i+1].lat,
+    #                     track[i+1].lon
+    #                 ) for i in range(len(track)-1)
+    #             )
+    #         )
+    # print(f"Mean track length: {np.mean(lens)}")
+    # print(f"Median track length: {np.median(lens)}")
