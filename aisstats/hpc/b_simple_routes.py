@@ -38,10 +38,10 @@ def plot_simple_route(tv: TargetShip, mode: str) -> None:
     
     fig, ax = plt.subplots(figsize=(8,6))
     
-    plot_coastline(
-        datapath="/home/s2075466/aisplanner/data/geometry",
-        extent = SEARCHAREA,
-        ax = ax)
+    # plot_coastline(
+    #     datapath="/home/s2075466/aisplanner/data/geometry",
+    #     extent = SEARCHAREA,
+    #     ax = ax)
     # Plot the trajectory
     ax.plot(lons,lats,color=COLORWHEEL_MAP[0],ls="-", alpha = 0.9)
     ax.scatter(lons,lats,color=COLORWHEEL_MAP[0],s=10)
