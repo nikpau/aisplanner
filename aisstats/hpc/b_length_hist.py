@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 from aisplanner.encounters.main import NorthSea
-from aisstats.errchecker import plot_speed_histogram
+from aisstats.errchecker import plot_speed_histogram, COLORWHEEL
 from pathlib import Path
 from pytsa.structs import ShipType
 import ciso8601
@@ -41,6 +41,8 @@ if __name__ == "__main__":
         for s in ShipType:
             stdict[s].extend(res[s])
             
-    fig, ax = plt.subplots(figsize=(12,6))
-    for s in ShipType:
-        ax.hist(stdict[s], bins=100, alpha=0.5, label=s.name)
+    for i,s in enumerate(ShipType):
+        fig, ax = plt.subplots(figsize=(8,6))
+        ax.hist(stdict[s], bins=np.linspace(0,300,100), color=COLORWHEEL[0])
+        plt.savefig(f"/home/s2075466/aisplanner/results/length_hist_{s}.pdf",dpi=300)
+        plt.close()
