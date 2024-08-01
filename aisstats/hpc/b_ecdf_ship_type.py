@@ -86,10 +86,10 @@ for s in ShipType:
     with open(f'/home/s2075466/aisplanner/results/trquants_21_{s.name}.pkl', 'wb') as f:    
         pickle.dump(quantiles(turning_rate[s],_ls), f)
     with open(f'/home/s2075466/aisplanner/results/squants_21_{s.name}.pkl', 'wb') as f:
-        pickle.dump(quantiles(diff_speeds,_ls), f)
+        pickle.dump(quantiles(diff_speeds[s],_ls), f)
     with open(f'/home/s2075466/aisplanner/results/tquants_21_{s.name}.pkl', 'wb') as f:
-        pickle.dump(quantiles(time_diffs,_ls) , f)
+        pickle.dump(quantiles(time_diffs[s],_ls) , f)
     with open(f'/home/s2075466/aisplanner/results/diffquants_21_{s.name}.pkl', 'wb') as f:
-        pickle.dump(quantiles(time_diffs,_ls), f)
+        pickle.dump(quantiles(time_diffs[s],_ls), f)
     with open(f'/home/s2075466/aisplanner/results/dquants_21_{s.name}.pkl', 'wb') as f:
-        pickle.dump(quantiles(ddiffs,_ls), f)
+        pickle.dump(quantiles(ddiffs[s],_ls), f)
