@@ -18,8 +18,8 @@ from pathlib import Path
 from pytsa import SearchAgent
 from matplotlib import patches
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_*.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_*.csv"))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
 
 SEARCHAREA = NorthSea
 
@@ -73,7 +73,7 @@ if __name__ == "__main__":
         preprocessor=partial(speed_filter, speeds = (1,30))
     )
     
-    ships = SA.extract_all(njobs=16,skip_tsplit=True)
+    ships = SA.extract_all(njobs=32,skip_tsplit=True)
     temp_diffs = []
     for ship in ships.values():
         for track in ship.tracks:
