@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 def _date_transformer(datefile: Path) -> float:
     return ciso8601.parse_datetime(datefile.stem.replace("_", "-"))
 
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_1*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_0*.csv"))
 
 def load_and_count(path: Path) -> int:
     stdict = {s:[] for s in ShipType}
