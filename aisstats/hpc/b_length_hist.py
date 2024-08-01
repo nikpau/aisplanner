@@ -41,14 +41,15 @@ if __name__ == "__main__":
         for s in ShipType:
             stdict[s].extend(res[s])
             
-    fig, axs = plt.subplots(1,4,figsize=(24,6))
+    fig, axs = plt.subplots(4,3,figsize=(12,8))
     
     for i,s in enumerate(ShipType):
-        axs[i].hist(stdict[s],bins=50,color=COLORWHEEL[i])
-        axs[i].set_title(f"Ship Type {s.name}")
-        axs[i].set_xlabel("Length [m]")
-        axs[i].set_ylabel("Number of observations")
-        axs[i].set_yscale('log')
+        row, col = divmod(i,3)
+        axs[row,col].hist(stdict[s],bins=50,color=COLORWHEEL[i])
+        axs[row,col].set_title(f"Ship Type {s.name}")
+        axs[row,col].set_xlabel("Length [m]")
+        axs[row,col].set_ylabel("Number of observations")
+        axs[row,col].set_yscale('log')
     
     plt.tight_layout()
     plt.savefig("/home/s2075466/aisplanner/results/length_hist_21.pdf")
