@@ -81,9 +81,8 @@ for idx, ship in enumerate(ships.values()):
 
 _ls = np.linspace(0,1,1001)        
 for s in ShipType:
-    print(turning_rate)
     print(s)
-    print(turning_rate[s])
+    print(type(turning_rate[s]))
     with open(f'/home/s2075466/aisplanner/results/trquants_21_{s.name}.pkl', 'wb') as f:    
         pickle.dump(quantiles(turning_rate[s],_ls), f)
     with open(f'/home/s2075466/aisplanner/results/squants_21_{s.name}.pkl', 'wb') as f:
