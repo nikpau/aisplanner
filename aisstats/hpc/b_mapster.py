@@ -9,7 +9,7 @@ from aisplanner.encounters.main import NorthSea
 from pathlib import Path
 from pytsa import SearchAgent
 from pytsa.trajectories.rules import *
-from aisstats.errchecker import COLORWHEEL,COLORWHEEL_MAP, speed_filter,plot_coastline
+from aisstats.errchecker import COLORWHEEL,COLORWHEEL_MAP, speed_filter,plot_coastline, get_overpass_roads
 
 SEARCHAREA = NorthSea
 
@@ -49,7 +49,9 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     plot_coastline(
         datapath=Path("/home/s2075466/aisplanner/data/geometry"),
         extent=extent,
-        ax=ax)
+        ax=ax,
+        query=get_overpass_roads(extent)
+    )
     for ship in ships.values():
         for track in ship.tracks:
             idx += 1

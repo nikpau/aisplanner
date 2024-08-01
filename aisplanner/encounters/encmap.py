@@ -14,6 +14,8 @@ import pickle
 from scipy.stats import gaussian_kde
 import matplotlib.cm as cm
 from pytsa import BoundingBox
+import requests
+from osm2geojson import json2geojson
 
 # Types
 Latitude = float
@@ -25,7 +27,8 @@ ENCOUNTERS = Path("results/encounters")
 def plot_coastline(datapath: Path,
                     extent: BoundingBox , ax: plt.Axes = None,
                    save_plot: bool = False,
-                   return_figure: bool = False) -> plt.Figure | None:
+                   return_figure: bool = False,
+                   query: str = None) -> plt.Figure | None:
     """
     Plots the coastline of the North-Sea area.
     """
@@ -36,6 +39,15 @@ def plot_coastline(datapath: Path,
         gdf = gpd.read_file(coast)
         gdf.crs = 'epsg:3395' # Mercator projection
         gdf.plot(ax=ax, color="#007d57", alpha=0.8,linewidth=2)
+        
+    # Additional query for overpass API
+    if query is not None:
+        url = f"https://overpass-api.de/api/interpreter?data={query}"
+        r = requests.get(url)
+        data = r.json()
+        data = json2geojson(data)
+        gdf = gpd.GeoDataFrame.from_features(data["features"])
+        gdf.plot(ax=ax, color='#7D0026', linewidth=.3)
         
     # Crop the plot to the extent
     ax.set_xlim(extent.LONMIN, extent.LONMAX)

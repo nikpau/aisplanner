@@ -42,11 +42,17 @@ import utm
 from pytsa.trajectories.rules import too_few_obs,spatial_deviation
 from functools import partial
 
-TEST_FILE_DYN = 'data/aisrecords/2021_08_02.csv'
-TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_08_02.csv'
+TEST_FILE_DYN = 'data/aisrecords/2021_04_01.csv'
+TEST_FILE_STA = 'data/aisrecords/msgtype5/2021_04_01.csv'
 # TEST_FILE_DYN = '/warm_archive/ws/s2075466-ais/decoded/jan2020_to_jun2022/2021_07_01.csv'
 # TEST_FILE_STA = '/warm_archive/ws/s2075466-ais/decoded/msgtype5/2021_07_01.csv'
 SEARCHAREA = NorthSea
+AABENRAA = BoundingBox(
+    LATMIN=54.9,
+    LATMAX=55.5,
+    LONMIN=9.2,
+    LONMAX=10
+)
 SAMPLINGRATE = 30 # seconds
 # Sampling rate in hours
 SAMPLINGRATE_H = SAMPLINGRATE / 60 / 60
@@ -54,6 +60,7 @@ import pickle
 import pandas as pd
 from functools import partial
 from aisplanner.dataprep import _file_descriptors as fd
+import requests
 
 # Color converter
 cc = matplotlib.colors.ColorConverter.to_rgb
@@ -74,6 +81,18 @@ COLORWHEEL_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL]
 COLORWHEEL2 = ["#386641", "#6a994e", "#a7c957", "#f2e8cf", "#bc4749"]
 COLORWHEEL2_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL2]
 COLORWHEEL_MAP = ["#0466c8","#0353a4","#023e7d","#002855","#001845","#001233","#33415c","#5c677d","#7d8597","#979dac"]
+
+def get_overpass_roads(bb: BoundingBox) -> str:
+    bbstr = f"{bb.LATMIN},{bb.LONMIN},{bb.LATMAX},{bb.LONMAX}"
+    return f"""
+        [out:json][timeout:100];
+        // fetch only larger roads and their relations within the bounding box
+        (
+        way["highway"~"motorway|trunk|primary|secondary|tertiary|residential"]({bbstr});
+        relation["highway"~"motorway|trunk|primary|secondary|tertiary|residential"]({bbstr});
+        );
+        out geom;
+        """
 
 def _bw_sel(kde: gaussian_kde) -> float:
     data = kde.dataset.reshape(-1,1)
@@ -610,7 +629,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     plot_coastline(
         datapath=Path("data/geometry"),
         extent=extent,
-        ax=ax
+        ax=ax,
+        query=get_overpass_roads(extent)
     )
     for ship in ships.values():
         for track in ship.tracks:
@@ -621,8 +641,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
                 alpha=0.5, linewidth=0.3, marker = "x", markersize = 0.5,
                 color = COLORWHEEL_MAP[idx % len(COLORWHEEL_MAP)]
             )
-    ax.set_xlabel("Longitude")
-    ax.set_ylabel("Latitude")
+    ax.set_xlabel("Longitude [°]")
+    ax.set_ylabel("Latitude [°]")
     plt.title(f"Trajectories for {mode} vessels: {specs}", size = 8)
     plt.tight_layout()
     if not specs:
@@ -1573,7 +1593,7 @@ if __name__ == "__main__":
         dynamic_paths=TEST_FILE_DYN,
         static_paths=TEST_FILE_STA,
         frame=SEARCHAREA,
-        preprocessor=partial(speed_filter, speeds=SPEEDRANGE)
+        #preprocessor= partial(speed_filter, speeds=SPEEDRANGE)
     )
 
     # Heading changes and speed changes --------------------------------------------
@@ -1591,13 +1611,7 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    ships = SA.extract_all(njobs=8)#,skip_tsplit=True)
-    lens = []
-    for ship in ships.values():
-        for track in ship.tracks:
-            lens.append(len(track))
-    plt.hist(lens,bins=np.array([*np.linspace(0,50,50),np.inf]))
-    plt.show()
+    #ships = SA.extract_all(njobs=6)#,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1668,7 +1682,7 @@ if __name__ == "__main__":
     # LATMAX=53.28,
     # LONMIN=5.5,
     # LONMAX=6.5)
-    # plot_trajectories_on_map(ships, "all",{},SEARCHAREA)
+    plot_trajectories_on_map({}, "all",{},AABENRAA)
     # plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
     # plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
 
