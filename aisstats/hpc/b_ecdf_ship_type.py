@@ -65,19 +65,20 @@ ships = SA.extract_all(njobs=48,skip_tsplit=True)
 l = len(ships)
 for idx, ship in enumerate(ships.values()):
     print(f"Processing ship {idx+1}/{l}")
+    _shiptype = ShipType.from_value(ship.ship_type)
     for track in ship.tracks:
         for i in range(1, len(track)):
             td = track[i].timestamp - track[i-1].timestamp
             if td >= 371: # 95th percentile of time differences
                 continue
             tr = heading_change(track[i-1].COG, track[i].COG) / (td)
-            turning_rate[ship.ship_type].append(tr)
-            speed_changes[ship.ship_type].append(abs(track[i].SOG - track[i-1].SOG))
+            turning_rate[_shiptype].append(tr)
+            speed_changes[_shiptype].append(abs(track[i].SOG - track[i-1].SOG))
             rspeed = split.Splitter.avg_speed(track[i-1],track[i])
             cspeed = split.Splitter.speed_from_position(track[i-1],track[i])
-            diff_speeds[ship.ship_type].append(rspeed - cspeed)
-            time_diffs[ship.ship_type].append(td)
-            ddiffs[ship.ship_type].append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
+            diff_speeds[_shiptype].append(rspeed - cspeed)
+            time_diffs[_shiptype].append(td)
+            ddiffs[_shiptype].append(haversine(track[i].lon,track[i].lat,track[i-1].lon,track[i-1].lat))
 
 _ls = np.linspace(0,1,1001)        
 for s in ShipType:
