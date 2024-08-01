@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 def _date_transformer(datefile: Path) -> float:
     return ciso8601.parse_datetime(datefile.stem.replace("_", "-"))
 
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_01.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_1*.csv"))
 
 def load_and_count(path: Path) -> int:
     stdict = {s:[] for s in ShipType}
@@ -41,8 +41,14 @@ if __name__ == "__main__":
         for s in ShipType:
             stdict[s].extend(res[s])
             
+    fig, axs = plt.subplots(1,4,figsize=(24,6))
+    
     for i,s in enumerate(ShipType):
-        fig, ax = plt.subplots(figsize=(8,6))
-        ax.hist(stdict[s], bins=np.linspace(0,300,100), color=COLORWHEEL[0])
-        plt.savefig(f"/home/s2075466/aisplanner/results/length_hist_{s}.pdf",dpi=300)
-        plt.close()
+        axs[i].hist(stdict[s],bins=50,color=COLORWHEEL[i])
+        axs[i].set_title(f"Ship Type {s.name}")
+        axs[i].set_xlabel("Length [m]")
+        axs[i].set_ylabel("Number of observations")
+        axs[i].set_yscale('log')
+    
+    plt.tight_layout()
+    plt.savefig("/home/s2075466/aisplanner/results/length_hist_21.pdf")
