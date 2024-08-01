@@ -45,7 +45,7 @@ if __name__ == "__main__":
     
     for i,s in enumerate(ShipType):
         row, col = divmod(i,3)
-        axs[row,col].hist(stdict[s],bins=50,color=COLORWHEEL[i])
+        axs[row,col].hist(stdict[s],bins=50,color=COLORWHEEL[i%len(COLORWHEEL)])
         axs[row,col].set_title(f"Ship Type {s.name}")
         axs[row,col].set_xlabel("Length [m]")
         axs[row,col].set_ylabel("Number of observations")
