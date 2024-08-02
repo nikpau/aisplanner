@@ -64,7 +64,7 @@ if __name__ == "__main__":
         bins = np.linspace(0,300,50)
         # Add inf 
         bins = np.append(bins, np.inf)
-        axs[row,col].hist(stdict[s],bins=bins,color=COLORWHEEL[i%len(COLORWHEEL)])
+        axs[row,col].hist([l for m,l in stdict[s]],bins=bins,color=COLORWHEEL[i%len(COLORWHEEL)])
         axs[row,col].set_title(f"Ship Type {s.name}")
         axs[row,col].set_xlabel("Length [m]")
         axs[row,col].set_ylabel("Number of observations")
