@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 def _date_transformer(datefile: Path) -> float:
     return ciso8601.parse_datetime(datefile.stem.replace("_", "-"))
 
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_1*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021*.csv"))
 
 def load_and_count(path: Path) -> int:
     seen_mmsis = set()
@@ -39,7 +39,7 @@ def load_and_count(path: Path) -> int:
     return stdict
 
 if __name__ == "__main__":
-    with mp.Pool(23) as pool:
+    with mp.Pool(31) as pool:
         results = pool.map(load_and_count, STATIC_MESSAGES)
     
     # Join all dicts into one
@@ -67,7 +67,7 @@ if __name__ == "__main__":
         axs[row,col].hist([l for m,l in stdict[s]],bins=bins,color=COLORWHEEL[i%len(COLORWHEEL)])
         axs[row,col].set_title(f"Ship Type {s.name}")
         axs[row,col].set_xlabel("Length [m]")
-        axs[row,col].set_ylabel("Number of observations")
+        axs[row,col].set_ylabel("Count")
         # axs[row,col].set_yscale('log')
     
     plt.tight_layout()
