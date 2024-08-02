@@ -72,7 +72,7 @@ ships = SA.extract_all(njobs=48,skip_tsplit=True)
 l = len(ships)
 for idx, ship in enumerate(ships.values()):
     print(f"Processing ship {idx+1}/{l}")
-    if not ship.length:
+    if not any(ship.length):
         continue
     else:
         thebin = get_bin_from_length(ship.length[0])
