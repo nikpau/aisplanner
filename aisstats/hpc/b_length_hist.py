@@ -20,7 +20,7 @@ def _date_transformer(datefile: Path) -> float:
 
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_1*.csv"))
 
-def load_and_count(path: Path, mmsis: set[int]) -> int:
+def load_and_count(path: Path) -> int:
     seen_mmsis = set()
     stdict = {s:[] for s in ShipType}
     print(f"Processing {path}")
@@ -30,7 +30,7 @@ def load_and_count(path: Path, mmsis: set[int]) -> int:
     df["length"] = df["to_bow"] + df["to_stern"]
     
     for row in df.itertuples():
-        if row.MMSI not in mmsis:
+        if row.MMSI not in seen_mmsis:
             seen_mmsis.add(row.MMSI) 
             stdict[ShipType.from_value(row.ship_type)].append((row.MMSI,row.length))
         else:
