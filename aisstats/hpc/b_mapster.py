@@ -41,6 +41,13 @@ AABENRAA = BoundingBox(
     LONMAX=10
 )
 
+COPENHAGEN = BoundingBox(
+    LATMIN=55.52,
+    LATMAX=56.16,
+    LONMIN=12.15,
+    LONMAX=13.13
+)
+
 DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_1*.csv"))
 STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_1*.csv"))
 
@@ -117,12 +124,12 @@ if __name__ == "__main__":
     )
 
     ships = SA.extract_all(njobs=30,skip_tsplit=True)
-    plot_trajectories_on_map(ships,AABENRAA,"trmap_raw")
+    plot_trajectories_on_map(ships,COPENHAGEN,"trmap_copenhagen_raw")
     
     # With filter
     from pytsa.utils import haversine
     ships = SA.extract_all(njobs=30,skip_tsplit=False)
-    plot_trajectories_on_map(ships,AABENRAA,"trmap_raw_tshd")
+    plot_trajectories_on_map(ships,COPENHAGEN,"trmap_copenhagen_raw_tshd")
     # lens = []
     # for ship in ships.values():
     #     for track in ship.tracks:
