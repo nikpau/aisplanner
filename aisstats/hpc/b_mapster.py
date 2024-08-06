@@ -48,8 +48,8 @@ COPENHAGEN = BoundingBox(
     LONMAX=13.13
 )
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07*.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07*.csv"))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_01.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_01.csv"))
 
 def plot_trajectories_on_map(ships: dict[int,TargetShip], 
                              extent: BoundingBox,
@@ -63,8 +63,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     plot_coastline(
         datapath=Path("/home/s2075466/aisplanner/data/geometry"),
         extent=extent,
-        ax=ax,
-        query=get_overpass_roads(extent)
+        ax=ax
     )
     for ship in ships.values():
         if ship.length is None:
@@ -83,17 +82,14 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
                 c = colors[k]
             )
 
-    # Add Aabenraa to the plot
-    ax.plot(9.421,55.044,marker="x",markersize=8,c=COLORWHEEL[6])
-    ax.text(9.361,55.054,"Aabenraa",fontsize=14,c="white")
+    # Add Copenhagen to the plot
+    ax.text(12.5,55.65,"Copenhagen",fontsize=14,c="white")
     
-    # Add Haderslev to the plot
-    ax.plot(9.489,55.251,marker="x",markersize=8,c=COLORWHEEL[6])
-    ax.text(9.439,55.261,"Haderslev",fontsize=14,c="white")
+    # Add Malmö to the plot
+    ax.text(13,55.6,"Malmö",fontsize=14,c="white")
     
-    # Add Assens to the plot
-    ax.plot(9.9,55.271,marker="x",markersize=8,c=COLORWHEEL[6])
-    ax.text(9.91,55.271,"Assens",fontsize=14,c="white")
+    # Add Helsingborg to the plot
+    ax.text(12.7,56.05,"Helsingborg",fontsize=14,c="white")
             
     ax.set_xlabel("Longitude [°]")
     ax.set_ylabel("Latitude [°]")
@@ -111,7 +107,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     ax.legend(custom_lines, labels, title='Ship lengths [m]', loc='upper left', fontsize = 8)
     
     plt.tight_layout()
-    plt.savefig(f"/home/s2075466/aisplanner/results/maps/{savename}.png",dpi=600)
+    plt.savefig(f"/home/s2075466/aisplanner/results/maps/{savename}.png",dpi=300)
     plt.savefig(f"/home/s2075466/aisplanner/results/maps/{savename}.pdf")
     plt.close()
 
