@@ -79,7 +79,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
             ax.plot(
                 tlon,
                 tlat,
-                alpha=0.4, linewidth=0.8, marker = "x", markersize = 2,
+                alpha=0.4, linewidth=0.4, marker = "x", markersize = 1,
                 c = colors[k]
             )
 
