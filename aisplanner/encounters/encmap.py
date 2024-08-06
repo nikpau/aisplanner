@@ -38,7 +38,7 @@ def plot_coastline(datapath: Path,
     for coast in coasts:
         gdf = gpd.read_file(coast)
         gdf.crs = 'epsg:3395' # Mercator projection
-        gdf.plot(ax=ax, color="#007d57", alpha=0.8,linewidth=2)
+        gdf.plot(ax=ax, color="#00657d", alpha=0.8,linewidth=2)
         
     # Additional query for overpass API
     if query is not None:
