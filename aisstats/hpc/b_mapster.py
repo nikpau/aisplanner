@@ -101,7 +101,6 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
             labels.append(f'{int(pair[0])}-$\infty$')
         else:
             labels.append(f'{int(pair[0])}-{int(pair[1])}')
-    labels = [f'({int(pair[0])},{int(pair[1])})' for pair in bins_pairs]
     ax.legend(custom_lines, labels, title='Ship lengths [m]', loc='upper left', fontsize = 8)
     
     plt.tight_layout()
