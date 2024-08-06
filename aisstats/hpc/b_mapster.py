@@ -95,6 +95,12 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
 
     # Step 3: Generate a list of custom Line2D objects for the legend
     custom_lines = [Line2D([0], [0], color=colors[i], lw=2) for i in range(len(bins_pairs))]
+    labels = []
+    for pair in bins_pairs:
+        if pair[1] == np.inf:
+            labels.append(f'{int(pair[0])}-$\infty$')
+        else:
+            labels.append(f'{int(pair[0])}-{int(pair[1])}')
     labels = [f'({int(pair[0])},{int(pair[1])})' for pair in bins_pairs]
     ax.legend(custom_lines, labels, title='Ship lengths [m]', loc='upper left', fontsize = 8)
     
