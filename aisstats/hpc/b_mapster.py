@@ -48,8 +48,8 @@ COPENHAGEN = BoundingBox(
     LONMAX=13.13
 )
 
-DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_07_01.csv"))
-STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_07_01.csv"))
+DYNAMIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022').glob("2021_08*.csv"))
+STATIC_MESSAGES = list(Path('/home/s2075466/ais/decoded/jan2020_to_jun2022/msgtype5').glob("2021_08*.csv"))
 
 def plot_trajectories_on_map(ships: dict[int,TargetShip], 
                              extent: BoundingBox,
@@ -57,7 +57,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     """
     Plot all trajectories on a map.
     """
-    fig, ax = plt.subplots(figsize=(12,8))
+    fig, ax = plt.subplots(figsize=(10,6))
     # fig, ax = plt.subplots(figsize=(10,12))
     idx = 0
     plot_coastline(
@@ -83,7 +83,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
             )
 
     # Add Copenhagen to the plot
-    ax.text(12.5,55.65,"Copenhagen",fontsize=14,c="white")
+    ax.text(12.5,55.68,"Copenhagen",fontsize=14,c="white")
     
     # Add Malmö to the plot
     ax.text(13,55.6,"Malmö",fontsize=14,c="white")
@@ -104,7 +104,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
             labels.append(f'{int(pair[0])}-$\infty$')
         else:
             labels.append(f'{int(pair[0])}-{int(pair[1])}')
-    ax.legend(custom_lines, labels, title='Ship lengths [m]', loc='upper left', fontsize = 8)
+    ax.legend(custom_lines, labels, title='Ship lengths [m]', loc='upper right', fontsize = 12)
     
     plt.tight_layout()
     plt.savefig(f"/home/s2075466/aisplanner/results/maps/{savename}.png",dpi=300)
