@@ -60,6 +60,8 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
         query=get_overpass_roads(extent)
     )
     for ship in ships.values():
+        if ship.length is None:
+            continue
         for k, (l1, l2) in enumerate(zip(LENGTH_BINS,LENGTH_BINS[1:])):
             if l1 <= ship.length < l2:
                 break
