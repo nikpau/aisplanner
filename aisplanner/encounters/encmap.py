@@ -47,7 +47,7 @@ def plot_coastline(datapath: Path,
         data = r.json()
         data = json2geojson(data)
         gdf = gpd.GeoDataFrame.from_features(data["features"])
-        gdf.plot(ax=ax, color='#e5f2ee', linewidth=.3)
+        gdf.plot(ax=ax, color='#66a2b1', linewidth=.3)
         
     # Crop the plot to the extent
     ax.set_xlim(extent.LONMIN, extent.LONMAX)
