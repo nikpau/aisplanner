@@ -87,7 +87,8 @@ def get_overpass_roads_all(bb: BoundingBox) -> str:
 def plot_coastline(datapath: Path,
                     extent: BoundingBox , ax: plt.Axes = None,
                    save_plot: bool = False,
-                   return_figure: bool = False) -> plt.Figure | None:
+                   return_figure: bool = False,
+                   detail_lvl: int = 4) -> plt.Figure | None:
     """
     Plots the coastline of the North-Sea area.
     """
@@ -107,6 +108,7 @@ def plot_coastline(datapath: Path,
     ]
         
     # Additional query for overpass API
+    level = 0
     for query, color, width in zip(
         queries, 
         ["#DB3123","#dba119","#bfa246","#999999"],
@@ -119,6 +121,9 @@ def plot_coastline(datapath: Path,
         data = json2geojson(data)
         gdf = gpd.GeoDataFrame.from_features(data["features"])
         gdf.plot(ax=ax, color=color, linewidth=width)
+        level += 1
+        if level > detail_lvl:
+            break
         
     # Crop the plot to the extent
     ax.set_xlim(extent.LONMIN, extent.LONMAX)

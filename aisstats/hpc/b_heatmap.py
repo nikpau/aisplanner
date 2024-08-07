@@ -17,7 +17,7 @@ SA = SearchAgent(
         preprocessor=partial(speed_filter, speeds= (1,30))
     )
 
-ships = SA.extract_all(njobs=16)
+ships = SA.extract_all(njobs=32)
 
 R = Recipe(
     partial(too_few_obs, n=50),
@@ -29,12 +29,12 @@ inspctr = Inspector(
     recipe=R
 )
 accepted, rejected = inspctr.inspect(njobs=1)
-print(
-    f"No. of accepted trajectories: {sum([len(t.tracks) for t in accepted.values()])}\n"
-    f"No. of rejected trajectories: {sum([len(t.tracks) for t in rejected.values()])}\n"
-    f"Total no. of accepted observations: {sum([sum(len(tr) for tr in t.tracks) for t in accepted.values()])}\n"
-    f"Total no. of rejected observations: {sum([sum(len(tr) for tr in t.tracks) for t in rejected.values()])}\n"
-)
+# print(
+#     f"No. of accepted trajectories: {sum([len(t.tracks) for t in accepted.values()])}\n"
+#     f"No. of rejected trajectories: {sum([len(t.tracks) for t in rejected.values()])}\n"
+#     f"Total no. of accepted observations: {sum([sum(len(tr) for tr in t.tracks) for t in accepted.values()])}\n"
+#     f"Total no. of rejected observations: {sum([sum(len(tr) for tr in t.tracks) for t in rejected.values()])}\n"
+# )
 binned_heatmap(accepted, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/maps/hm_accepted_all_21.png")
 binned_heatmap(rejected, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/maps/hm_rejected_all_21.png")
 # Split up accepted and rejected trajectories
