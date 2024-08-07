@@ -12,7 +12,7 @@ from pytsa import SearchAgent
 from pytsa.trajectories.rules import *
 from pytsa.structs import LENGTH_BINS
 from pytsa.tsea.split import get_length_bin
-from aisstats.errchecker import COLORWHEEL,COLORWHEEL_MAP, speed_filter,plot_coastline, get_overpass_roads
+from aisstats.errchecker import COLORWHEEL,COLORWHEEL_MAP, speed_filter,plot_coastline
 import matplotlib as mpl
 
 cmap = mpl.colormaps.get_cmap('seismic').resampled(10)
@@ -126,18 +126,18 @@ if __name__ == "__main__":
     from pytsa.utils import haversine
     ships = SA.extract_all(njobs=30,skip_tsplit=False)
     plot_trajectories_on_map(ships,COPENHAGEN,"trmap_copenhagen_raw_tshd")
-    # lens = []
-    # for ship in ships.values():
-    #     for track in ship.tracks:
-    #         lens.append(
-    #             sum(
-    #                 haversine(
-    #                     track[i].lat,
-    #                     track[i].lon,
-    #                     track[i+1].lat,
-    #                     track[i+1].lon
-    #                 ) for i in range(len(track)-1)
-    #             )
-    #         )
-    # print(f"Mean track length: {np.mean(lens)}")
-    # print(f"Median track length: {np.median(lens)}")
+    lens = []
+    for ship in ships.values():
+        for track in ship.tracks:
+            lens.append(
+                sum(
+                    haversine(
+                        track[i].lat,
+                        track[i].lon,
+                        track[i+1].lat,
+                        track[i+1].lon
+                    ) for i in range(len(track)-1)
+                )
+            )
+    print(f"Mean track length: {np.mean(lens)}")
+    print(f"Median track length: {np.median(lens)}")
