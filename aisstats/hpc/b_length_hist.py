@@ -56,6 +56,14 @@ if __name__ == "__main__":
                 seen_mmsis.add(mmsi)
             else:
                 stdict[s].remove((mmsi,length))
+
+    # Save the mean and median for each ship type
+    # to a CSV file
+    with open("/home/s2075466/aisplanner/results/length_stats_21.csv","w") as f:
+        f.write("ShipType,Mean,Median\n")
+        for s in ShipType:
+            lengths = [l for m,l in stdict[s]]
+            f.write(f"{s.name},{np.mean(lengths)},{np.median(lengths)}\n")
             
     fig, axs = plt.subplots(4,3,figsize=(12,8))
     
