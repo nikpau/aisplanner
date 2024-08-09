@@ -53,6 +53,13 @@ AABENRAA = BoundingBox(
     LONMIN=9.2,
     LONMAX=10
 )
+COPENHAGEN = BoundingBox(
+    LATMIN=55.52,
+    LATMAX=56.16,
+    LONMIN=12.15,
+    LONMAX=13.13
+)
+
 SAMPLINGRATE = 30 # seconds
 # Sampling rate in hours
 SAMPLINGRATE_H = SAMPLINGRATE / 60 / 60
@@ -81,18 +88,6 @@ COLORWHEEL_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL]
 COLORWHEEL2 = ["#386641", "#6a994e", "#a7c957", "#f2e8cf", "#bc4749"]
 COLORWHEEL2_DARK = [scale_lightness(cc(c), 0.6) for c in COLORWHEEL2]
 COLORWHEEL_MAP = ["#0466c8","#0353a4","#023e7d","#002855","#001845","#001233","#33415c","#5c677d","#7d8597","#979dac"]
-
-def get_overpass_roads(bb: BoundingBox) -> str:
-    bbstr = f"{bb.LATMIN},{bb.LONMIN},{bb.LATMAX},{bb.LONMAX}"
-    return f"""
-        [out:json][timeout:100];
-        // fetch only larger roads and their relations within the bounding box
-        (
-        way["highway"~"motorway|trunk|primary|secondary|tertiary|residential"]({bbstr});
-        relation["highway"~"motorway|trunk|primary|secondary|tertiary|residential"]({bbstr});
-        );
-        out geom;
-        """
 
 def _bw_sel(kde: gaussian_kde) -> float:
     data = kde.dataset.reshape(-1,1)
@@ -629,8 +624,7 @@ def plot_trajectories_on_map(ships: dict[int,TargetShip],
     plot_coastline(
         datapath=Path("data/geometry"),
         extent=extent,
-        ax=ax,
-        query=get_overpass_roads(extent)
+        ax=ax
     )
     for ship in ships.values():
         for track in ship.tracks:
@@ -1408,7 +1402,7 @@ def binned_heatmap(targets: dict[int,TargetShip],
 
     # Add coastline redered to an image
     # and plot it on top of the heatmap
-    plot_coastline("/home/s2075466/aisplanner/data/geometry/",bb,ax=ax)
+    plot_coastline("/home/s2075466/aisplanner/data/geometry/",bb,ax=ax, detail_lvl=1)
     
     # Mask the pixels with no messages
     counts = np.ma.masked_where(counts == 0,counts)
@@ -1611,7 +1605,7 @@ if __name__ == "__main__":
     # la, lo = f[fd.Fields12318.lat.name].values, f[fd.Fields12318.lon.name].values
     # lat_lon_outofbounds(la,lo)
     
-    #ships = SA.extract_all(njobs=6)#,skip_tsplit=True)
+    # ships = SA.extract_all(njobs=3,alpha= 0.1)#,skip_tsplit=True)
     
     # Plot average complexity ------------------------------------------------------
     # plot_average_complexity(ships)
@@ -1682,7 +1676,7 @@ if __name__ == "__main__":
     # LATMAX=53.28,
     # LONMIN=5.5,
     # LONMAX=6.5)
-    plot_trajectories_on_map({}, "all",{},AABENRAA)
+    plot_trajectories_on_map({}, "all",{},COPENHAGEN)
     # plot_trajectories_on_map(accepted,"accepted",specs,SEARCHAREA)
     # plot_trajectories_on_map(rejected,"rejected",specs,SEARCHAREA)
 
