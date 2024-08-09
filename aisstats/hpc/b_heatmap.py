@@ -39,8 +39,8 @@ binned_heatmap(accepted, SEARCHAREA, savename=f"/home/s2075466/aisplanner/result
 binned_heatmap(rejected, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/maps/hm_rejected_all_21.png")
 # Split up accepted and rejected trajectories
 
-for s in ShipType:
-    a = {mmsi:s for mmsi,s in accepted.items() if s.ship_type == s}
-    r = {mmsi:s for mmsi,s in rejected.items() if s.ship_type == s}
-    binned_heatmap(a, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/maps/hm_accepted_{s.name}_21.png")
-    binned_heatmap(r, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/maps/hm_rejected_{s.name}_21.png")
+for st in ShipType:
+    a = {mmsi:s for mmsi,s in accepted.items() if s.ship_type == st}
+    r = {mmsi:s for mmsi,s in rejected.items() if s.ship_type == st}
+    binned_heatmap(a, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/maps/hm_accepted_{st.name}_21.png")
+    binned_heatmap(r, SEARCHAREA, savename=f"/home/s2075466/aisplanner/results/maps/hm_rejected_{st.name}_21.png")
