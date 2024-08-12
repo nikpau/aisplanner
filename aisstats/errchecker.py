@@ -268,7 +268,7 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     cspeeds = []
     ship_types = []
     ships = sa.extract_all(skip_tsplit=True)
-    fig, (ax1,ax2) = plt.subplots(2,1,sharex=True,figsize=(6,6))
+    fig, (ax1,ax2) = plt.subplots(2,1,sharex=True,figsize=(12,6))
     ax1: plt.Axes; ax2: plt.Axes
     for ship in ships.values():
         if ship.ship_type is ShipType.NOTAVAILABLE:
