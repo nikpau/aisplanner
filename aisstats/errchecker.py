@@ -271,9 +271,13 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     ships = sa.extract_all(skip_tsplit=True)
     fig, (ax1,ax2) = plt.subplots(2,1,sharex=True,figsize=(12,6))
     ax1: plt.Axes; ax2: plt.Axes
+    ax1.set_facecolor('white')
+    ax2.set_facecolor('white')
+    ax1.grid(False)
+    ax2.grid(False)
     for ship in ships.values():
-        if ship.ship_type is ShipType.NOTAVAILABLE:
-            continue
+        # if ship.ship_type is ShipType.NOTAVAILABLE:
+        #     continue
         for track in ship.tracks:
             for i in range(1,len(track)):
                 rspeed = spl.avg_speed(track[i-1],track[i])
@@ -287,9 +291,9 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     ax1.scatter(
         rspeeds,
         cspeeds,
-        c=ship_type_cols,
+        c=COLORWHEEL_MAP[0],
         alpha=0.75,
-        s=0.05
+        s=0.1
     )
 
     # Plot line y = x
@@ -304,9 +308,9 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     ax2.scatter(
         rspeeds,
         cspeeds,
-        c=ship_type_cols,
+        c=COLORWHEEL_MAP[0],
         alpha=0.75,
-        s=0.05
+        s=0.1
     )
 
     ax2.set_ylim(0,100)
@@ -316,10 +320,10 @@ def plot_speed_scatter(sa: SearchAgent,savename: str) -> None:
     # Legend for each unique ship_type
     handles = []
     labels = []
-    for st, col in color_mapping.items():
-        handles.append(lines.Line2D([0], [0], color=col, lw=4))
-        labels.append(st.name)
-    ax1.legend(handles, labels, title="Ship type", fontsize=6, ncol=2)
+    # for st, col in color_mapping.items():
+    #     handles.append(lines.Line2D([0], [0], color=col, lw=4))
+    #     labels.append(st.name)
+    # ax1.legend(handles, labels, title="Ship type", fontsize=6, ncol=2)
     
     # hide the spines between ax1 and ax2
     ax1.spines['bottom'].set_visible(False)
