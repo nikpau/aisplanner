@@ -26,13 +26,13 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-HEADER = "timestamp,Message_id,Latitude,Longitude,Raw_message1,Raw_message2,MMSI,Originator"
+HEADER = "timestamp,message_id,latitude,longitude,raw_message1,raw_message2,MMSI,originator"
 
 # Hard coded file paths
 SOURCE = Path(os.environ["MSG5SOURCE"])
 DEST = Path(os.environ["TEMDEST"])
 
-def _merge(source: Path[str], dest: Path[str]) -> None:
+def merge_mm5(source: Path[str], dest: Path[str]) -> None:
     
     with open(source, "r") as src:
         s = src.read().splitlines()
@@ -55,7 +55,7 @@ def _merge(source: Path[str], dest: Path[str]) -> None:
 
 files = SOURCE.rglob("*.csv")
 for file in files:
-    _merge(
+    merge_mm5(
         file,
         f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts)-1:])}"
     )
