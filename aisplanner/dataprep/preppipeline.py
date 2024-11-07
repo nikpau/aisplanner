@@ -67,7 +67,7 @@ if __name__ == "__main__":
         print(f"Processing {file}")
         remove_null_bytes(
             file,
-            f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts)-1:])}"
+            f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts):])}"
         )
     
     # Prepare msgtype5 files  
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         print(f"Processing {file}")
         prepare_msg5(
             file,
-            f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts)-1:])}"
+            f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts):])}"
         )
     
     # Decode all files 
