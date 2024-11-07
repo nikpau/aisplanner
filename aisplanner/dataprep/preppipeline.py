@@ -41,10 +41,10 @@ def prepare_msg5(source: str, dest: str) -> None:
         print("Merging raw messages...")
         # Odd lines are the 1st, 3rd, 5th...
         # Due to zero indexing, they become even, however.
-        odd_lines = [s[i] for i in range(len(s)) if i%2 == 0 ]
+        odd_lines = [s[i].decode() for i in range(len(s)) if i%2 == 0 ]
         odd_lines = [line + '"' for line in odd_lines]
 
-        even_lines = [s[i] for i in range(len(s)) if i%2 != 0]
+        even_lines = [s[i].decode() for i in range(len(s)) if i%2 != 0]
         even_lines = ['"' + line for line in even_lines]
 
         # 2. Step
@@ -58,17 +58,17 @@ def prepare_msg5(source: str, dest: str) -> None:
     
 
 if __name__ == "__main__":
-    SOURCE = Path("/data/walrus/ws/s2075466-aisdata/raw/")
-    DEST = Path("/data/horse/ws/s2075466-aistemp/curated/")
+    # SOURCE = Path("/data/walrus/ws/s2075466-aisdata/raw/")
+    # DEST = Path("/data/horse/ws/s2075466-aistemp/curated/")
     
-    # Remove null bytes from all files
-    files = list(SOURCE.rglob("*.csv"))
-    for file in files:
-        print(f"Processing {file}")
-        remove_null_bytes(
-            file,
-            f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts):])}"
-        )
+    # # Remove null bytes from all files
+    # files = list(SOURCE.rglob("*.csv"))
+    # for file in files:
+    #     print(f"Processing {file}")
+    #     remove_null_bytes(
+    #         file,
+    #         f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts):])}"
+    #     )
     
     # Prepare msgtype5 files  
     SOURCE = Path("/data/horse/ws/s2075466-aistemp/curated/msgtype5")
