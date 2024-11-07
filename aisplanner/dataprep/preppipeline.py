@@ -59,7 +59,7 @@ def prepare_msg5(source: str, dest: str) -> None:
 
 if __name__ == "__main__":
     SOURCE = Path("/data/walrus/ws/s2075466-aisdata/raw/")
-    DEST = Path("/data/walrus/ws/s2075466-aisdata/curated/")
+    DEST = Path("/data/horse/ws/s2075466-aistemp/curated/")
     
     # Remove null bytes from all files
     files = list(SOURCE.rglob("*.csv"))
@@ -71,8 +71,8 @@ if __name__ == "__main__":
         )
     
     # Prepare msgtype5 files  
-    SOURCE = Path("/data/walrus/ws/s2075466-aisdata/curated/msgtype5")
-    DEST = Path("/data/walrus/ws/s2075466-aisdata/curated/msgtype5")
+    SOURCE = Path("/data/horse/ws/s2075466-aistemp/curated/msgtype5")
+    DEST = Path("/data/horse/ws/s2075466-aistemp/curated/msgtype5")
     
     files = list(SOURCE.rglob("*.csv")) 
     for file in files:
@@ -83,8 +83,8 @@ if __name__ == "__main__":
         )
     
     # Decode all files 
-    SOURCE = Path("/data/walrus/ws/s2075466-aisdata/curated/")
-    DEST = Path("/data/walrus/ws/s2075466-aisdata/decoded/")
+    SOURCE = Path("/data/horse/ws/s2075466-aistemp/curated/")
+    DEST = Path("/data/horse/ws/s2075466-aistemp/decoded/")
     
     files = list(SOURCE.rglob("*.csv"))
     # Split files into 16 batches
