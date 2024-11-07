@@ -5,20 +5,15 @@ to decode, sort, and export AIS Messages.
 The structures are specific to the EMSA dataset
 being analyzed with it. 
 """
-import os
 from typing import Any, Callable, List, Tuple, Dict
-from dotenv import load_dotenv
 
 import numpy as np
 import pandas as pd
 import pyais as ais
-import multiprocessing as mp
 from aisplanner.dataprep._file_descriptors import (
     StaticReport, DynamicReport, 
     AISFile, _FIELDS_MSG12318, _FIELDS_MSG5
 )
-
-load_dotenv()
 
 class StructuralError(Exception):
     pass
@@ -133,21 +128,3 @@ def decode_from_file(source: str,
     df = df.assign(**_extract_fields(decoded,fields))
     df.to_csv(dest)
     return
-
-# MAIN --------------------------------------------------------------------
-
-from pathlib import Path
-
-SOURCE = Path(os.environ["AISSOURCE"])
-DEST = Path(os.environ["DECODEDDEST"])
-
-files = list(SOURCE.rglob("*.csv")) 
-
-# Split files into 16 batches
-# to be processed in parallel
-batches = np.array_split(files,16)
-
-with mp.Pool(processes=16) as pool:
-    pool.starmap(decode_from_file, 
-                 [(file, f"{DEST.as_posix()}/{'/'.join(file.parts[len(SOURCE.parts):])}")
-                  for file in files])
